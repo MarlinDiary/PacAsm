@@ -113,7 +113,12 @@ export class CodeHighlighter {
   /**
    * Create mapping between addresses and source lines
    */
-  private createAddressMapping(disassemblyResult: any[]): void {
+  private createAddressMapping(disassemblyResult: Array<{
+    address: number;
+    bytes: Uint8Array;
+    mnemonic: string;
+    op_str: string;
+  }>): void {
     this.addressMap.clear();
 
     // Get executable source lines (excluding comments and labels)
@@ -161,7 +166,7 @@ export const createHighlighter = async (
 
 // Helper function to get highlight info from step result
 export const getHighlightFromStepResult = (
-  stepResult: any,
+  stepResult: { instruction?: { address: number } },
   highlighter: CodeHighlighter
 ): HighlightInfo | null => {
   if (!stepResult.instruction || !stepResult.instruction.address) {

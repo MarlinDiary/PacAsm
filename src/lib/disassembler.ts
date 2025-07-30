@@ -74,7 +74,7 @@ export class ARMDisassembler {
       if (this.options.detail && window.cs.OPT_DETAIL !== undefined) {
         try {
           this.capstone.option(window.cs.OPT_DETAIL, 1);
-        } catch (error) {
+        } catch {
           // Continue without detailed info if option fails
         }
       }

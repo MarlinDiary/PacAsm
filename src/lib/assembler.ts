@@ -156,7 +156,7 @@ export class ARMAssembler {
     if (this.keystone) {
       try {
         this.keystone.close();
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
       this.keystone = null;

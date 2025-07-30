@@ -22,14 +22,17 @@ export default function CodeEditor({
   className = '',
   highlightedLine
 }: CodeEditorProps) {
-  const editorRef = useRef<any>(null)
+  const editorRef = useRef<import('monaco-editor').editor.IStandaloneCodeEditor | null>(null)
   const decorationsRef = useRef<string[]>([])
 
-  function handleEditorDidMount(editor: any, monaco: any) {
+  function handleEditorDidMount(
+    editor: import('monaco-editor').editor.IStandaloneCodeEditor, 
+    monaco: typeof import('monaco-editor')
+  ) {
     editorRef.current = editor
 
     // Register assembly language if not already registered
-    if (!monaco.languages.getLanguages().some((lang: any) => lang.id === 'assembly')) {
+    if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === 'assembly')) {
       monaco.languages.register({ id: 'assembly' })
 
       // Define assembly language syntax highlighting
