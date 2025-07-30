@@ -1,8 +1,7 @@
 'use client'
 
 import { Editor } from '@monaco-editor/react'
-import { useRef } from 'react'
-import * as monaco from 'monaco-editor'
+import { useRef, useEffect } from 'react'
 
 interface CodeEditorProps {
   value?: string
@@ -11,6 +10,7 @@ interface CodeEditorProps {
   width?: string | number
   readOnly?: boolean
   className?: string
+  highlightedLine?: number
 }
 
 export default function CodeEditor({
@@ -19,15 +19,17 @@ export default function CodeEditor({
   height = '100%',
   width = '100%',
   readOnly = false,
-  className = ''
+  className = '',
+  highlightedLine
 }: CodeEditorProps) {
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+  const editorRef = useRef<any>(null)
+  const decorationsRef = useRef<string[]>([])
 
-  function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) {
+  function handleEditorDidMount(editor: any, monaco: any) {
     editorRef.current = editor
 
     // Register assembly language if not already registered
-    if (!monaco.languages.getLanguages().some((lang) => lang.id === 'assembly')) {
+    if (!monaco.languages.getLanguages().some((lang: any) => lang.id === 'assembly')) {
       monaco.languages.register({ id: 'assembly' })
 
       // Define assembly language syntax highlighting
@@ -42,11 +44,11 @@ export default function CodeEditor({
             // Labels
             [/^[a-zA-Z_][a-zA-Z0-9_]*:/, 'type'],
             
-            // Instructions (common assembly instructions)
-            [/\b(mov|add|sub|mul|div|jmp|je|jne|jg|jl|jge|jle|cmp|test|push|pop|call|ret|nop|int|inc|dec|and|or|xor|not|shl|shr|lea|loop)\b/i, 'keyword'],
+            // ARM instructions
+            [/\b(mov|add|sub|mul|div|cmp|b|bl|bx|blx|beq|bne|blt|ble|bgt|bge|ldr|str|ldm|stm|push|pop|nop)\b/i, 'keyword'],
             
-            // Registers (x86/x64 registers)
-            [/\b(eax|ebx|ecx|edx|esi|edi|esp|ebp|ax|bx|cx|dx|si|di|sp|bp|al|ah|bl|bh|cl|ch|dl|dh|rax|rbx|rcx|rdx|rsi|rdi|rsp|rbp|r[8-9]|r1[0-5])\b/i, 'variable.predefined'],
+            // ARM registers
+            [/\b(r[0-9]|r1[0-5]|sp|lr|pc|cpsr)\b/i, 'variable.predefined'],
             
             // Numbers
             [/\b0x[0-9a-fA-F]+\b/, 'number.hex'],
@@ -58,8 +60,8 @@ export default function CodeEditor({
             [/'([^'\\]|\\.)*$/, 'string.invalid'],
             [/'/, 'string', '@string_single'],
             
-            // Directives
-            [/\.(section|data|text|bss|global|extern|equ|db|dw|dd|dq)\b/i, 'keyword.control'],
+            // ARM directives and comments
+            [/@.*$/, 'comment'],
             
             // Memory references
             [/\[[^\]]+\]/, 'string.regexp'],
@@ -85,7 +87,7 @@ export default function CodeEditor({
       // Set language configuration
       monaco.languages.setLanguageConfiguration('assembly', {
         comments: {
-          lineComment: ';'
+          lineComment: '@'
         },
         brackets: [
           ['[', ']'],
@@ -106,6 +108,50 @@ export default function CodeEditor({
       })
     }
   }
+
+  // Effect to handle line highlighting
+  useEffect(() => {
+    if (!editorRef.current || highlightedLine === undefined) {
+      return
+    }
+
+    const editor = editorRef.current
+
+    // Clear previous decorations
+    if (decorationsRef.current.length > 0) {
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
+    }
+
+    // Add new decoration for highlighted line
+    // Import monaco dynamically to avoid SSR issues
+    import('monaco-editor').then((monaco) => {
+      decorationsRef.current = editor.deltaDecorations([], [
+        {
+          range: new monaco.Range(highlightedLine, 1, highlightedLine, 1),
+          options: {
+            isWholeLine: true,
+            className: 'highlighted-line',
+            glyphMarginClassName: 'highlighted-line-glyph'
+          }
+        }
+      ])
+    })
+
+    // Scroll to highlighted line
+    editor.revealLineInCenter(highlightedLine)
+  }, [highlightedLine])
+
+  // Effect to clear decorations when highlightedLine becomes undefined
+  useEffect(() => {
+    if (!editorRef.current || highlightedLine !== undefined) {
+      return
+    }
+
+    const editor = editorRef.current
+    if (decorationsRef.current.length > 0) {
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
+    }
+  }, [highlightedLine])
 
   return (
     <div className={`h-full w-full ${className}`}>

@@ -6,7 +6,8 @@ import CodeEditor from '@/components/CodeEditor'
 import { useState, useCallback } from 'react'
 import { ARMAssembler, AssemblerOptions } from '@/lib/assembler'
 import { createDisassembler, DisassemblerOptions } from '@/lib/disassembler'
-import { ARMEmulator, EmulationResult, StepResult, formatRegisters, formatMemory, formatStepResult } from '@/lib/emulator'
+import { ARMEmulator, formatRegisters, formatMemory, formatStepResult } from '@/lib/emulator'
+import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
 
 export default function PreviewPage() {
   // Only allow access in development mode
@@ -28,10 +29,10 @@ mov r2, r1        @ Store final sum in r2`)
   const [disassemblyOutput, setDisassemblyOutput] = useState('')
   const [isAssembling, setIsAssembling] = useState(false)
   const [isDisassembling, setIsDisassembling] = useState(false)
-  const [assemblerOptions, setAssemblerOptions] = useState<AssemblerOptions>({
+  const [assemblerOptions] = useState<AssemblerOptions>({
     baseAddress: 0x10000
   })
-  const [disassemblerOptions, setDisassemblerOptions] = useState<DisassemblerOptions>({
+  const [disassemblerOptions] = useState<DisassemblerOptions>({
     detail: true
   })
   const [emulationOutput, setEmulationOutput] = useState('')
@@ -39,6 +40,8 @@ mov r2, r1        @ Store final sum in r2`)
   const [stepOutput, setStepOutput] = useState('')
   const [isStepping, setIsStepping] = useState(false)
   const [emulator, setEmulator] = useState<ARMEmulator | null>(null)
+  const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
+  const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
 
      const handleAssemble = useCallback(async () => {
      if (!assemblyCode.trim()) {
@@ -208,10 +211,18 @@ mov r2, r1        @ Store final sum in r2`)
       await newEmulator.initialize()
       await newEmulator.loadCode(assemblyResult.mc)
 
-      // Registers are already initialized to 0 by the emulator
-
+      // Initialize code highlighter
+      setStepOutput('Initializing code highlighter...')
+      const newHighlighter = await createHighlighter(assemblyCode, assemblerOptions)
+      
       setEmulator(newEmulator)
-      setStepOutput('✅ Debugger initialized and ready for stepping!\n\nClick "Step" to execute one instruction at a time.')
+      setHighlighter(newHighlighter)
+      
+      // Clear any previous highlighting
+      setHighlightedLine(undefined)
+      
+      setStepOutput('✅ Debugger and highlighter initialized and ready for stepping!\n\nClick "Step" to execute one instruction at a time.')
+
 
       // Cleanup assembler
       assembler.destroy()
@@ -228,6 +239,11 @@ mov r2, r1        @ Store final sum in r2`)
       return
     }
 
+    if (!highlighter) {
+      setStepOutput('Error: Code highlighter not initialized. Please initialize first.')
+      return
+    }
+
     setIsStepping(true)
     setStepOutput('Stepping...')
 
@@ -235,13 +251,24 @@ mov r2, r1        @ Store final sum in r2`)
       const stepResult = await emulator.stepDebug()
       const formattedResult = formatStepResult(stepResult)
       
-      setStepOutput(formattedResult)
+      // Get highlight information from step result
+      const newHighlightInfo = getHighlightFromStepResult(stepResult, highlighter)
+      
+      if (newHighlightInfo) {
+        setHighlightedLine(newHighlightInfo.lineNumber)
+        const highlightOutput = `\n🎯 Highlighting Line ${newHighlightInfo.lineNumber}`
+        setStepOutput(`${formattedResult}${highlightOutput}`)
+      } else {
+        setHighlightedLine(undefined)
+        setStepOutput(formattedResult)
+      }
     } catch (error) {
       setStepOutput(`❌ Step execution failed:\n${error}`)
+      setHighlightedLine(undefined)
     } finally {
       setIsStepping(false)
     }
-  }, [emulator])
+  }, [emulator, highlighter])
 
   const handleResetDebugger = useCallback(async () => {
     if (!emulator) {
@@ -255,7 +282,7 @@ mov r2, r1        @ Store final sum in r2`)
     try {
       await emulator.reset()
       
-      // Registers are reset to 0 by the emulator
+      setHighlightedLine(undefined)
       
       setStepOutput('✅ Debugger reset successfully!\n\nPC reset to start of code. Ready for stepping.')
     } catch (error) {
@@ -269,9 +296,16 @@ mov r2, r1        @ Store final sum in r2`)
     if (emulator) {
       emulator.destroy()
       setEmulator(null)
-      setStepOutput('Debugger cleaned up.')
     }
-  }, [emulator])
+    
+    if (highlighter) {
+      highlighter.reset()
+      setHighlighter(null)
+    }
+    
+    setHighlightedLine(undefined)
+    setStepOutput('Debugger and highlighter cleaned up.')
+  }, [emulator, highlighter])
 
   const loadExampleAssembly = (example: string) => {
     const examples = {
@@ -380,6 +414,7 @@ sub r2, r1, #1`
                   onChange={(value) => setAssemblyCode(value || '')}
                   height="100%"
                   className="border border-neutral-200 rounded"
+                  highlightedLine={highlightedLine}
                 />
               </div>
             </div>
