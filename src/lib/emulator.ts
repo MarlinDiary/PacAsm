@@ -71,7 +71,7 @@ export class ARMEmulator {
     }
 
     try {
-      const workerUrl = new URL('../../workers/emulator.worker.ts', import.meta.url);
+      const workerUrl = new URL('../workers/emulator.worker.ts', import.meta.url);
       this.worker = new Worker(workerUrl, { type: 'module' });
       
       this.worker.onmessage = (event) => {
