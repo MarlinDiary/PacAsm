@@ -31,7 +31,7 @@ export class ARMAssembler {
 
   constructor(private options: AssemblerOptions = {}) {
     this.options = {
-      baseAddress: 0x1000,
+      baseAddress: 0x10000,
       ...options,
     };
   }
@@ -95,7 +95,7 @@ export class ARMAssembler {
       .join('\n');
 
     try {
-      const baseAddress = this.options.baseAddress || 0x1000;
+      const baseAddress = this.options.baseAddress || 0x10000;
       const result = this.keystone.asm(cleanedAssembly, baseAddress);
       
       if (!result) {

@@ -29,7 +29,7 @@ mov r2, r1        @ Store final sum in r2`)
   const [isAssembling, setIsAssembling] = useState(false)
   const [isDisassembling, setIsDisassembling] = useState(false)
   const [assemblerOptions, setAssemblerOptions] = useState<AssemblerOptions>({
-    baseAddress: 0x1000
+    baseAddress: 0x10000
   })
   const [disassemblerOptions, setDisassemblerOptions] = useState<DisassemblerOptions>({
     detail: true
@@ -62,7 +62,7 @@ mov r2, r1        @ Store final sum in r2`)
        '',
        `📊 Statistics:`,
        `  ${stats}`,
-       `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16)}`,
+       `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16).padStart(8, '0')}`,
         '',
         `🔢 Machine Code (hex):`,
         hexBytes,
@@ -97,7 +97,7 @@ mov r2, r1        @ Store final sum in r2`)
       await disassembler.initialize()
 
       const bytes = disassembler.hexToBytes(disassemblyInput)
-      const results = await disassembler.disassemble(bytes, 0x1000)
+      const results = await disassembler.disassemble(bytes, 0x10000)
       const stats = disassembler.getStats(results)
       const formatted = disassembler.formatInstructions(results)
 
@@ -109,7 +109,7 @@ mov r2, r1        @ Store final sum in r2`)
         `📊 Statistics:`,
         `  Instructions: ${stats.instructionCount}`,
         `  Total bytes: ${stats.totalBytes}`,
-        `  Address range: 0x${stats.addressRange.start.toString(16)} - 0x${stats.addressRange.end.toString(16)}`,
+        `  Address range: 0x${stats.addressRange.start.toString(16).padStart(8, '0')} - 0x${stats.addressRange.end.toString(16).padStart(8, '0')}`,
         `  Branch instructions: ${branchCount}`,
         '',
                  `📝 Disassembled code:`,
@@ -279,9 +279,9 @@ mov r2, r1        @ Store final sum in r2`)
 add r1, r0, #10
 sub r2, r1, r0`,
       
-      memory: `mov r1, #0x30000   @ Set r1 to data memory address
+      memory: `ldr r1, =0x30000   @ Set r1 to data memory address
 ldr r0, [r1]       @ Load from data memory
-mov r3, #0x30010   @ Set r3 to data memory + 16
+ldr r3, =0x30010   @ Set r3 to data memory + 16
 str r0, [r3]       @ Store to data memory + 16
 add r2, r0, #1     @ Add 1 to loaded value`,
       

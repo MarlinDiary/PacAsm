@@ -90,7 +90,7 @@ export class ARMDisassembler {
    */
   async disassemble(
     bytes: Uint8Array | number[],
-    address: number = 0x1000,
+    address: number = 0x10000,
     count?: number
   ): Promise<DisassemblyResult[]> {
     if (!this.isInitialized) {
