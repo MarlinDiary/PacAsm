@@ -1,7 +1,8 @@
 'use client'
 
 import { Editor } from '@monaco-editor/react'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import * as monaco from 'monaco-editor'
 
 interface CodeEditorProps {
   value?: string
@@ -20,13 +21,13 @@ export default function CodeEditor({
   readOnly = false,
   className = ''
 }: CodeEditorProps) {
-  const editorRef = useRef<any>(null)
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 
-  function handleEditorDidMount(editor: any, monaco: any) {
+  function handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) {
     editorRef.current = editor
 
     // Register assembly language if not already registered
-    if (!monaco.languages.getLanguages().some((lang: any) => lang.id === 'assembly')) {
+    if (!monaco.languages.getLanguages().some((lang) => lang.id === 'assembly')) {
       monaco.languages.register({ id: 'assembly' })
 
       // Define assembly language syntax highlighting
