@@ -1,8 +1,34 @@
 // Web Worker for ARM CPU emulation using Unicorn.js
 // This runs in a separate thread to avoid blocking the UI
 
-// @ts-nocheck - Disable TypeScript checking for this worker file
 declare function importScripts(...urls: string[]): void;
+
+// Define types for Unicorn.js global object
+interface UnicornGlobal {
+  Unicorn: new (arch: number, mode: number) => UnicornInstance;
+  ARCH_ARM: number;
+  MODE_ARM: number;
+  PROT_ALL: number;
+  PROT_READ: number;
+  PROT_WRITE: number;
+  ARM_REG_R0: number;
+  ARM_REG_R1: number;
+  ARM_REG_R2: number;
+  ARM_REG_R3: number;
+  ARM_REG_R4: number;
+  ARM_REG_R5: number;
+  ARM_REG_R6: number;
+  ARM_REG_R7: number;
+  ARM_REG_R8: number;
+  ARM_REG_R9: number;
+  ARM_REG_R10: number;
+  ARM_REG_R11: number;
+  ARM_REG_R12: number;
+  ARM_REG_SP: number;
+  ARM_REG_LR: number;
+  ARM_REG_PC: number;
+  ARM_REG_CPSR: number;
+}
 
 interface UnicornInstance {
   reg_write_i32(reg: number, value: number): void;
@@ -17,15 +43,50 @@ interface UnicornInstance {
 
 interface EmulatorMessage {
   type: 'init' | 'load-code' | 'set-register' | 'get-register' | 'step' | 'step-debug' | 'run' | 'stop' | 'reset' | 'get-memory';
-  payload?: any;
+  payload?: {
+    register?: string;
+    value?: number;
+    address?: number;
+    size?: number;
+    instructionCount?: number;
+  } | number[] | string;
   messageId?: string;
+}
+
+interface RegisterInfo {
+  register: string;
+  value: number;
+  hex: string;
+}
+
+interface StepResult {
+  success: boolean;
+  message: string;
+  pc: number;
+  instruction?: {
+    address: number;
+    bytes: number[];
+    hex: string;
+  };
+  registers?: RegisterInfo[];
 }
 
 interface EmulatorResponse {
   type: 'success' | 'error' | 'register-value' | 'memory-data' | 'execution-complete' | 'step-result';
-  payload?: any;
+  payload?: string | RegisterInfo | { address: number; size: number; data: number[]; hex: string } | StepResult;
   messageId?: string;
 }
+
+// Type for the global self with uc property
+interface WorkerSelf {
+  uc?: UnicornGlobal;
+  location: Location;
+  postMessage: (message: EmulatorResponse) => void;
+  addEventListener: (type: string, listener: (event: MessageEvent) => void) => void;
+}
+
+// Cast self to our extended type
+const workerSelf = self as unknown as WorkerSelf;
 
 class EmulatorWorker {
   private unicorn: UnicornInstance | null = null;
@@ -43,12 +104,12 @@ class EmulatorWorker {
 
   private async loadUnicornScript(): Promise<void> {
     try {
-      const baseUrl = self.location.origin;
+      const baseUrl = workerSelf.location.origin;
       importScripts(`${baseUrl}/arm/unicorn-arm.min.js`);
       
       await new Promise<void>((resolve) => {
         const checkUnicorn = () => {
-          if (typeof (self as any).uc !== 'undefined') {
+          if (typeof workerSelf.uc !== 'undefined') {
             resolve();
           } else {
             setTimeout(checkUnicorn, 10);
@@ -71,11 +132,11 @@ class EmulatorWorker {
 
   private initialize(): void {
     try {
-      if (typeof (self as any).uc === 'undefined') {
+      if (typeof workerSelf.uc === 'undefined') {
         throw new Error('Unicorn.js not loaded');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc;
       this.unicorn = new uc.Unicorn(uc.ARCH_ARM, uc.MODE_ARM);
       
       // Map memory regions
@@ -122,7 +183,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       this.unicorn.mem_write(this.codeAddress, machineCode);
       this.unicorn.reg_write_i32(uc.ARM_REG_PC, this.codeAddress);
 
@@ -144,7 +205,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       const regMap: { [key: string]: number } = {
         'r0': uc.ARM_REG_R0, 'r1': uc.ARM_REG_R1, 'r2': uc.ARM_REG_R2, 'r3': uc.ARM_REG_R3,
         'r4': uc.ARM_REG_R4, 'r5': uc.ARM_REG_R5, 'r6': uc.ARM_REG_R6, 'r7': uc.ARM_REG_R7,
@@ -178,7 +239,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       const regMap: { [key: string]: number } = {
         'r0': uc.ARM_REG_R0, 'r1': uc.ARM_REG_R1, 'r2': uc.ARM_REG_R2, 'r3': uc.ARM_REG_R3,
         'r4': uc.ARM_REG_R4, 'r5': uc.ARM_REG_R5, 'r6': uc.ARM_REG_R6, 'r7': uc.ARM_REG_R7,
@@ -210,12 +271,12 @@ class EmulatorWorker {
     }
   }
 
-  private getAllRegisters(): any[] {
+  private getAllRegisters(): RegisterInfo[] {
     if (!this.unicorn || !this.isInitialized) {
       return [];
     }
 
-    const uc = (self as any).uc;
+    const uc = workerSelf.uc!;
     const registers = [
       { name: 'r0', id: uc.ARM_REG_R0 }, { name: 'r1', id: uc.ARM_REG_R1 },
       { name: 'r2', id: uc.ARM_REG_R2 }, { name: 'r3', id: uc.ARM_REG_R3 },
@@ -241,7 +302,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
       const endAddress = this.codeAddress + 16384;
       this.unicorn.emu_start(pc, endAddress, 0, 1);
@@ -264,7 +325,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       
       // Get state before execution
       const pcBefore = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
@@ -277,7 +338,7 @@ class EmulatorWorker {
       try {
         instructionBytes = Array.from(this.unicorn.mem_read(pcBefore, 4));
         instructionHex = instructionBytes.map(b => b.toString(16).padStart(2, '0')).join(' ');
-      } catch (error) {
+      } catch {
         instructionHex = 'INVALID';
       }
       
@@ -327,7 +388,7 @@ class EmulatorWorker {
         throw new Error('Emulator not initialized');
       }
 
-      const uc = (self as any).uc;
+      const uc = workerSelf.uc!;
       const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
       const endAddress = this.codeAddress + 16384;
 
@@ -373,7 +434,7 @@ class EmulatorWorker {
   private reset(): void {
     try {
       if (this.unicorn && this.isInitialized) {
-        const uc = (self as any).uc;
+        const uc = workerSelf.uc!;
         
         // Clear all general-purpose registers to 0
         const gpRegisters = [
@@ -408,7 +469,7 @@ class EmulatorWorker {
     if (this.currentMessageId) {
       response.messageId = this.currentMessageId;
     }
-    (self as any).postMessage(response);
+    workerSelf.postMessage(response);
   }
 
   public handleMessage(message: EmulatorMessage): void {
@@ -419,13 +480,15 @@ class EmulatorWorker {
         this.initialize();
         break;
       case 'load-code':
-        this.loadCode(message.payload);
+        this.loadCode(message.payload as number[]);
         break;
       case 'set-register':
-        this.setRegister(message.payload.register, message.payload.value);
+        if (typeof message.payload === 'object' && message.payload && 'register' in message.payload && 'value' in message.payload) {
+          this.setRegister(message.payload.register!, message.payload.value!);
+        }
         break;
       case 'get-register':
-        this.getRegister(message.payload);
+        this.getRegister(message.payload as string);
         break;
       case 'step':
         this.stepExecution();
@@ -434,10 +497,16 @@ class EmulatorWorker {
         this.stepDebugExecution();
         break;
       case 'run':
-        this.runExecution(message.payload?.instructionCount);
+        if (typeof message.payload === 'object' && message.payload && 'instructionCount' in message.payload) {
+          this.runExecution(message.payload.instructionCount);
+        } else {
+          this.runExecution();
+        }
         break;
       case 'get-memory':
-        this.getMemory(message.payload.address, message.payload.size);
+        if (typeof message.payload === 'object' && message.payload && 'address' in message.payload && 'size' in message.payload) {
+          this.getMemory(message.payload.address!, message.payload.size!);
+        }
         break;
       case 'reset':
         this.reset();
@@ -455,6 +524,6 @@ class EmulatorWorker {
 const worker = new EmulatorWorker();
 
 // Handle messages from main thread
-self.addEventListener('message', (event) => {
+workerSelf.addEventListener('message', (event) => {
   worker.handleMessage(event.data);
 }); 
