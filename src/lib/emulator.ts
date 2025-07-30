@@ -40,13 +40,19 @@ export interface EmulationResult {
 
 interface WorkerMessage {
   type: 'init' | 'load-code' | 'set-register' | 'get-register' | 'step' | 'step-debug' | 'run' | 'stop' | 'reset' | 'get-memory';
-  payload?: any;
+  payload?: {
+    register?: string;
+    value?: number;
+    address?: number;
+    size?: number;
+    instructionCount?: number;
+  } | number[] | string;
   messageId?: string;
 }
 
 interface WorkerResponse {
   type: 'success' | 'error' | 'register-value' | 'memory-data' | 'execution-complete' | 'step-result';
-  payload?: any;
+  payload?: string | RegisterState | MemoryData | StepResult;
   messageId?: string;
 }
 
@@ -129,7 +135,7 @@ export class ARMEmulator {
       try {
         const state = await this.getRegister(reg);
         results.push(state);
-      } catch (error) {
+      } catch {
         results.push({
           register: reg,
           value: 0,
@@ -216,7 +222,7 @@ export class ARMEmulator {
     this.messageHandlers.clear();
   }
 
-  private sendMessage(type: string, payload?: any): Promise<WorkerResponse> {
+  private sendMessage(type: WorkerMessage['type'], payload?: WorkerMessage['payload']): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {
         reject(new Error('Worker not initialized'));
@@ -235,13 +241,13 @@ export class ARMEmulator {
         this.messageHandlers.delete(messageId);
         
         if (response.type === 'error') {
-          reject(new Error(response.payload));
+          reject(new Error(response.payload as string));
         } else {
           resolve(response);
         }
       });
 
-      const message: WorkerMessage = { type: type as any, payload, messageId };
+      const message: WorkerMessage = { type, payload, messageId };
       this.worker.postMessage(message);
     });
   }
