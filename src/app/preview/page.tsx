@@ -6,6 +6,7 @@ import CodeEditor from '@/components/CodeEditor'
 import { useState, useCallback } from 'react'
 import { ARMAssembler, AssemblerOptions } from '@/lib/assembler'
 import { createDisassembler, DisassemblerOptions } from '@/lib/disassembler'
+import { ARMEmulator, EmulationResult, StepResult, formatRegisters, formatMemory, formatStepResult } from '@/lib/emulator'
 
 export default function PreviewPage() {
   // Only allow access in development mode
@@ -13,7 +14,14 @@ export default function PreviewPage() {
     notFound()
   }
 
-  const [assemblyCode, setAssemblyCode] = useState(`mov r0, #42`)
+  const [assemblyCode, setAssemblyCode] = useState(`mov r0, #0        @ Initialize counter
+mov r1, #0        @ Initialize sum
+loop:
+add r1, r1, r0    @ sum += counter
+add r0, r0, #1    @ counter++
+cmp r0, #5        @ Compare counter with 5
+blt loop          @ Branch if less than 5
+mov r2, r1        @ Store final sum in r2`)
 
   const [assemblyOutput, setAssemblyOutput] = useState('')
   const [disassemblyInput, setDisassemblyInput] = useState('2a 00 a0 e3 0a 10 80 e2')
@@ -26,6 +34,11 @@ export default function PreviewPage() {
   const [disassemblerOptions, setDisassemblerOptions] = useState<DisassemblerOptions>({
     detail: true
   })
+  const [emulationOutput, setEmulationOutput] = useState('')
+  const [isEmulating, setIsEmulating] = useState(false)
+  const [stepOutput, setStepOutput] = useState('')
+  const [isStepping, setIsStepping] = useState(false)
+  const [emulator, setEmulator] = useState<ARMEmulator | null>(null)
 
      const handleAssemble = useCallback(async () => {
      if (!assemblyCode.trim()) {
@@ -40,23 +53,22 @@ export default function PreviewPage() {
        const assembler = new ARMAssembler(assemblerOptions)
        await assembler.initialize()
 
-       const result = await assembler.assemble(assemblyCode)
-       const stats = assembler.getStats(result)
-       const hexBytes = assembler.bytesToHex(result.mc)
+             const result = await assembler.assemble(assemblyCode)
+      const stats = assembler.getStats(result)
+      const hexBytes = assembler.bytesToHex(result.mc)
 
-      const output = [
-        '✅ Assembly successful!',
+     const output = [
+       '✅ Assembly successful!',
+       '',
+       `📊 Statistics:`,
+       `  ${stats}`,
+       `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16)}`,
         '',
-        `📊 Statistics:`,
-        `  Instructions: ${stats.instructionCount}`,
-        `  Bytes: ${stats.byteCount}`,
-                 `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16)}`,
-         '',
-         `🔢 Machine Code (hex):`,
-         hexBytes,
-         '',
-         `📋 Raw bytes:`,
-         `[${Array.from(result.mc).join(', ')}]`,
+        `🔢 Machine Code (hex):`,
+        hexBytes,
+        '',
+        `📋 Raw bytes:`,
+        `[${Array.from(result.mc).join(', ')}]`,
       ].join('\n')
 
       setAssemblyOutput(output)
@@ -109,10 +121,157 @@ export default function PreviewPage() {
       disassembler.destroy()
     } catch (error) {
       setDisassemblyOutput(`❌ Disassembly failed:\n${error}`)
-    } finally {
-      setIsDisassembling(false)
+         } finally {
+       setIsDisassembling(false)
+     }
+   }, [disassemblyInput, disassemblerOptions])
+
+   const handleEmulate = useCallback(async () => {
+     if (!assemblyCode.trim()) {
+       setEmulationOutput('Error: No assembly code provided')
+       return
+     }
+
+     setIsEmulating(true)
+     setEmulationOutput('Initializing emulator...')
+
+     try {
+       // First assemble the code
+       const assembler = new ARMAssembler(assemblerOptions)
+       await assembler.initialize()
+       const assemblyResult = await assembler.assemble(assemblyCode)
+       
+       setEmulationOutput('Assembly complete. Starting emulation...')
+
+       // Then emulate it
+       const emulator = new ARMEmulator()
+       await emulator.initialize()
+       await emulator.loadCode(assemblyResult.mc)
+
+             // Registers are already initialized to 0 by the emulator
+
+       setEmulationOutput('Running emulation...')
+
+             // Run the emulation with higher instruction limit for loops
+      await emulator.run(1000) // Allow up to 1000 instructions for complex programs
+
+               // Get the results
+        const result = await emulator.getEmulationResult()
+        const formattedRegisters = formatRegisters(result.registers || []);
+        const formattedMemory = result.memory ? formatMemory(result.memory) : 'No memory data';
+
+        const output = [
+          '✅ Emulation completed successfully!',
+          '',
+          '📊 Final Register State:',
+          formattedRegisters,
+          '',
+          '🧠 Memory Contents (first 64 bytes):',
+          formattedMemory,
+          '',
+          `📈 Statistics:`,
+          `  Instructions executed: ${assemblyResult.count}`,
+          `  Memory mapped: 8KB (4KB code + 4KB stack)`,
+        ].join('\n')
+
+       setEmulationOutput(output)
+
+       // Cleanup
+       emulator.destroy()
+       assembler.destroy()
+     } catch (error) {
+       setEmulationOutput(`❌ Emulation failed:\n${error}`)
+     } finally {
+       setIsEmulating(false)
+     }
+   }, [assemblyCode, assemblerOptions])
+
+  const handleInitializeDebugger = useCallback(async () => {
+    if (!assemblyCode.trim()) {
+      setStepOutput('Error: No assembly code provided')
+      return
     }
-  }, [disassemblyInput, disassemblerOptions])
+
+    setIsStepping(true)
+    setStepOutput('Initializing debugger...')
+
+    try {
+      // First assemble the code
+      const assembler = new ARMAssembler(assemblerOptions)
+      await assembler.initialize()
+      const assemblyResult = await assembler.assemble(assemblyCode)
+      
+      setStepOutput('Assembly complete. Initializing emulator...')
+
+      // Initialize emulator for debugging
+      const newEmulator = new ARMEmulator()
+      await newEmulator.initialize()
+      await newEmulator.loadCode(assemblyResult.mc)
+
+      // Registers are already initialized to 0 by the emulator
+
+      setEmulator(newEmulator)
+      setStepOutput('✅ Debugger initialized and ready for stepping!\n\nClick "Step" to execute one instruction at a time.')
+
+      // Cleanup assembler
+      assembler.destroy()
+    } catch (error) {
+      setStepOutput(`❌ Debugger initialization failed:\n${error}`)
+    } finally {
+      setIsStepping(false)
+    }
+  }, [assemblyCode, assemblerOptions])
+
+  const handleStep = useCallback(async () => {
+    if (!emulator) {
+      setStepOutput('Error: Debugger not initialized. Please initialize first.')
+      return
+    }
+
+    setIsStepping(true)
+    setStepOutput('Stepping...')
+
+    try {
+      const stepResult = await emulator.stepDebug()
+      const formattedResult = formatStepResult(stepResult)
+      
+      setStepOutput(formattedResult)
+    } catch (error) {
+      setStepOutput(`❌ Step execution failed:\n${error}`)
+    } finally {
+      setIsStepping(false)
+    }
+  }, [emulator])
+
+  const handleResetDebugger = useCallback(async () => {
+    if (!emulator) {
+      setStepOutput('Error: Debugger not initialized.')
+      return
+    }
+
+    setIsStepping(true)
+    setStepOutput('Resetting...')
+
+    try {
+      await emulator.reset()
+      
+      // Registers are reset to 0 by the emulator
+      
+      setStepOutput('✅ Debugger reset successfully!\n\nPC reset to start of code. Ready for stepping.')
+    } catch (error) {
+      setStepOutput(`❌ Reset failed:\n${error}`)
+    } finally {
+      setIsStepping(false)
+    }
+  }, [emulator])
+
+  const handleCleanupDebugger = useCallback(() => {
+    if (emulator) {
+      emulator.destroy()
+      setEmulator(null)
+      setStepOutput('Debugger cleaned up.')
+    }
+  }, [emulator])
 
   const loadExampleAssembly = (example: string) => {
     const examples = {
@@ -120,19 +279,31 @@ export default function PreviewPage() {
 add r1, r0, #10
 sub r2, r1, r0`,
       
-      memory: `ldr r0, [r1]
-str r2, [r3, #4]
-ldrb r4, [r5, r6]`,
+      memory: `mov r1, #0x30000   @ Set r1 to data memory address
+ldr r0, [r1]       @ Load from data memory
+mov r3, #0x30010   @ Set r3 to data memory + 16
+str r0, [r3]       @ Store to data memory + 16
+add r2, r0, #1     @ Add 1 to loaded value`,
       
-      branches: `cmp r0, #0
-beq end
-mov r1, #1
-end:
-bx lr`,
+      branches: `mov r0, #5       @ Set r0 to 5
+cmp r0, #0        @ Compare with 0
+beq skip          @ Branch if equal (won't branch)
+mov r1, #1        @ Set r1 to 1
+skip:
+mov r2, #2        @ Set r2 to 2`,
       
-             simple: `mov r0, #5
-add r1, r0
-bx lr`
+      loop: `mov r0, #0        @ Initialize counter
+mov r1, #0        @ Initialize sum
+loop:
+add r1, r1, r0    @ sum += counter
+add r0, r0, #1    @ counter++
+cmp r0, #5        @ Compare counter with 5
+blt loop          @ Branch if less than 5
+mov r2, r1        @ Store final sum in r2`,
+      
+      simple: `mov r0, #5
+add r1, r0, #3
+sub r2, r1, #1`
     }
     setAssemblyCode(examples[example as keyof typeof examples] || examples.basic)
   }
@@ -140,14 +311,14 @@ bx lr`
   return (
     <div className="h-screen w-full p-4">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold">ARM Assembler & Disassembler Test</h1>
-        <p className="text-neutral-600">Testing keystone.js and capstone.js TypeScript wrappers</p>
+        <h1 className="text-2xl font-bold">ARM Development Environment</h1>
+        <p className="text-neutral-600">Complete ARM assembly, disassembly, and CPU emulation toolkit</p>
       </div>
       
       <div className="h-[calc(100vh-8rem)] w-full border-0">
         <ResizablePanelGroup direction="horizontal" className="h-full w-full">
           {/* Left panel - Assembly */}
-          <ResizablePanel defaultSize={50} minSize={30}>
+          <ResizablePanel defaultSize={40} minSize={30}>
             <div className="h-full flex flex-col bg-neutral-50">
               <div className="p-3 border-b border-neutral-200 flex-shrink-0">
                                 <div className="flex items-center justify-between mb-2">
@@ -174,19 +345,34 @@ bx lr`
                     Branches
                   </button>
                   <button 
+                    onClick={() => loadExampleAssembly('loop')}
+                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                  >
+                    Loop
+                  </button>
+                  <button 
                     onClick={() => loadExampleAssembly('simple')}
                     className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
                   >
                     Simple
                   </button>
                 </div>
-                <button 
-                  onClick={handleAssemble}
-                  disabled={isAssembling}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded"
-                >
-                  {isAssembling ? 'Assembling...' : '🔧 Assemble'}
-                </button>
+                                 <div className="flex gap-2">
+                   <button 
+                     onClick={handleAssemble}
+                     disabled={isAssembling}
+                     className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded text-sm"
+                   >
+                     {isAssembling ? 'Assembling...' : '🔧 Assemble'}
+                   </button>
+                   <button 
+                     onClick={handleEmulate}
+                     disabled={isEmulating || isAssembling}
+                     className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded text-sm"
+                   >
+                     {isEmulating ? 'Emulating...' : '🚀 Emulate'}
+                   </button>
+                 </div>
               </div>
               <div className="flex-1 p-2 min-h-0">
                 <CodeEditor
@@ -201,11 +387,11 @@ bx lr`
           
           <ResizableHandle withHandle />
           
-          {/* Right side with two vertical panels */}
-          <ResizablePanel defaultSize={50}>
+          {/* Right side with three vertical panels */}
+          <ResizablePanel defaultSize={60}>
             <ResizablePanelGroup direction="vertical" className="h-full">
               {/* Assembly Output Panel */}
-              <ResizablePanel defaultSize={50} minSize={30}>
+              <ResizablePanel defaultSize={25} minSize={15}>
                 <div className="h-full flex flex-col bg-green-50">
                   <div className="p-3 border-b border-neutral-200 flex-shrink-0">
                     <h3 className="text-lg font-medium">Assembly Output</h3>
@@ -220,8 +406,72 @@ bx lr`
               
               <ResizableHandle withHandle />
               
+              {/* Emulation Panel */}
+              <ResizablePanel defaultSize={25} minSize={15}>
+                <div className="h-full flex flex-col bg-purple-50">
+                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
+                    <h3 className="text-lg font-medium">CPU Emulation</h3>
+                    <p className="text-xs text-neutral-500 mt-1">ARM Unicorn.js emulator</p>
+                  </div>
+                  <div className="flex-1 p-2 min-h-0">
+                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
+                      {emulationOutput || 'Click "Emulate" to run assembly code in ARM CPU emulator...'}
+                    </pre>
+                  </div>
+                </div>
+              </ResizablePanel>
+              
+              <ResizableHandle withHandle />
+              
+              {/* Step Debugging Panel */}
+              <ResizablePanel defaultSize={25} minSize={15}>
+                <div className="h-full flex flex-col bg-orange-50">
+                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
+                    <h3 className="text-lg font-medium">Step Debugger</h3>
+                    <p className="text-xs text-neutral-500 mt-1">Single-step ARM instruction execution</p>
+                    <div className="flex gap-2 mt-2">
+                      <button 
+                        onClick={handleInitializeDebugger}
+                        disabled={isStepping || !!emulator}
+                        className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-3 py-1 rounded text-xs"
+                      >
+                        {isStepping ? 'Initializing...' : (emulator ? '✅ Ready' : '🔧 Initialize')}
+                      </button>
+                      <button 
+                        onClick={handleStep}
+                        disabled={isStepping || !emulator}
+                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded text-xs"
+                      >
+                        {isStepping ? 'Stepping...' : '👣 Step'}
+                      </button>
+                      <button 
+                        onClick={handleResetDebugger}
+                        disabled={isStepping || !emulator}
+                        className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-3 py-1 rounded text-xs"
+                      >
+                        🔄 Reset
+                      </button>
+                      <button 
+                        onClick={handleCleanupDebugger}
+                        disabled={isStepping || !emulator}
+                        className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded text-xs"
+                      >
+                        🧹 Clean
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-2 min-h-0">
+                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
+                      {stepOutput || 'Click "Initialize" to prepare the debugger for single-step execution...'}
+                    </pre>
+                  </div>
+                </div>
+              </ResizablePanel>
+              
+              <ResizableHandle withHandle />
+              
               {/* Disassembly Panel */}
-              <ResizablePanel defaultSize={50} minSize={30}>
+              <ResizablePanel defaultSize={25} minSize={15}>
                 <div className="h-full flex flex-col bg-blue-50">
                   <div className="p-3 border-b border-neutral-200 flex-shrink-0">
                                         <div className="flex items-center justify-between mb-2">
