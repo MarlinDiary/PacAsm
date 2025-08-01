@@ -62,16 +62,16 @@ mov r2, r1        @ Store final sum in r2`)
       const hexBytes = assembler.bytesToHex(result.mc)
 
      const output = [
-       '✅ Assembly successful!',
+       'Assembly successful!',
        '',
-       `📊 Statistics:`,
+       `Statistics:`,
        `  ${stats}`,
        `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16).padStart(8, '0')}`,
         '',
-        `🔢 Machine Code (hex):`,
+        `Machine Code (hex):`,
         hexBytes,
         '',
-        `📋 Raw bytes:`,
+        `Raw bytes:`,
         `[${Array.from(result.mc).join(', ')}]`,
       ].join('\n')
 
@@ -81,7 +81,7 @@ mov r2, r1        @ Store final sum in r2`)
 
              assembler.destroy()
      } catch (error) {
-       setAssemblyOutput(`❌ Assembly failed:\n${error}`)
+       setAssemblyOutput(`Assembly failed:\n${error}`)
      } finally {
        setIsAssembling(false)
      }
@@ -108,15 +108,15 @@ mov r2, r1        @ Store final sum in r2`)
       const branchCount = results.filter(r => disassembler.isBranch(r)).length
 
       const output = [
-        '✅ Disassembly successful!',
+        'Disassembly successful!',
         '',
-        `📊 Statistics:`,
+        `Statistics:`,
         `  Instructions: ${stats.instructionCount}`,
         `  Total bytes: ${stats.totalBytes}`,
         `  Address range: 0x${stats.addressRange.start.toString(16).padStart(8, '0')} - 0x${stats.addressRange.end.toString(16).padStart(8, '0')}`,
         `  Branch instructions: ${branchCount}`,
         '',
-                 `📝 Disassembled code:`,
+        `Disassembled code:`,
          formatted,
       ].join('\n')
 
@@ -124,8 +124,8 @@ mov r2, r1        @ Store final sum in r2`)
 
       disassembler.destroy()
     } catch (error) {
-      setDisassemblyOutput(`❌ Disassembly failed:\n${error}`)
-         } finally {
+      setDisassemblyOutput(`Disassembly failed:\n${error}`)
+    } finally {
        setIsDisassembling(false)
      }
    }, [disassemblyInput, disassemblerOptions])
@@ -165,15 +165,15 @@ mov r2, r1        @ Store final sum in r2`)
         const formattedMemory = result.memory ? formatMemory(result.memory) : 'No memory data';
 
         const output = [
-          '✅ Emulation completed successfully!',
+          'Emulation completed successfully!',
           '',
-          '📊 Final Register State:',
+          'Final Register State:',
           formattedRegisters,
           '',
-          '🧠 Memory Contents (first 64 bytes):',
+          'Memory Contents (first 64 bytes):',
           formattedMemory,
           '',
-          `📈 Statistics:`,
+          `Statistics:`,
           `  Instructions executed: ${assemblyResult.count}`,
           `  Memory mapped: 8KB (4KB code + 4KB stack)`,
         ].join('\n')
@@ -183,9 +183,9 @@ mov r2, r1        @ Store final sum in r2`)
        // Cleanup
        emulator.destroy()
        assembler.destroy()
-     } catch (error) {
-       setEmulationOutput(`❌ Emulation failed:\n${error}`)
-     } finally {
+         } catch (error) {
+      setEmulationOutput(`Emulation failed:\n${error}`)
+    } finally {
        setIsEmulating(false)
      }
    }, [assemblyCode, assemblerOptions])
@@ -222,13 +222,13 @@ mov r2, r1        @ Store final sum in r2`)
       // Clear any previous highlighting
       setHighlightedLine(undefined)
       
-      setStepOutput('✅ Debugger and highlighter initialized and ready for stepping!\n\nClick "Step" to execute one instruction at a time.')
+      setStepOutput('Debugger and highlighter initialized and ready for stepping!\n\nClick "Step" to execute one instruction at a time.')
 
 
       // Cleanup assembler
       assembler.destroy()
     } catch (error) {
-      setStepOutput(`❌ Debugger initialization failed:\n${error}`)
+      setStepOutput(`Debugger initialization failed:\n${error}`)
     } finally {
       setIsStepping(false)
     }
@@ -257,14 +257,14 @@ mov r2, r1        @ Store final sum in r2`)
       
       if (newHighlightInfo) {
         setHighlightedLine(newHighlightInfo.lineNumber)
-        const highlightOutput = `\n🎯 Highlighting Line ${newHighlightInfo.lineNumber}`
+        const highlightOutput = `\nHighlighting Line ${newHighlightInfo.lineNumber}`
         setStepOutput(`${formattedResult}${highlightOutput}`)
       } else {
         setHighlightedLine(undefined)
         setStepOutput(formattedResult)
       }
     } catch (error) {
-      setStepOutput(`❌ Step execution failed:\n${error}`)
+      setStepOutput(`Step execution failed:\n${error}`)
       setHighlightedLine(undefined)
     } finally {
       setIsStepping(false)
@@ -285,9 +285,9 @@ mov r2, r1        @ Store final sum in r2`)
       
       setHighlightedLine(undefined)
       
-      setStepOutput('✅ Debugger reset successfully!\n\nPC reset to start of code. Ready for stepping.')
+      setStepOutput('Debugger reset successfully!\n\nPC reset to start of code. Ready for stepping.')
     } catch (error) {
-      setStepOutput(`❌ Reset failed:\n${error}`)
+      setStepOutput(`Reset failed:\n${error}`)
     } finally {
       setIsStepping(false)
     }
@@ -349,7 +349,7 @@ sub r2, r1, #1`
       <div className="absolute top-4 left-4 z-10">
         <Link
           href="/preview"
-          className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors duration-200"
+          className="flex items-center gap-2 bg-background hover:bg-accent hover:text-accent-foreground px-3 py-2 rounded-md border border-border transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -359,75 +359,72 @@ sub r2, r1, #1`
       </div>
       
       <div className="mb-4 pt-12">
-        <h1 className="text-2xl font-bold">ARM Emulator</h1>
-        <p className="text-neutral-600">Complete ARM assembly, disassembly, and CPU emulation toolkit with live debugging</p>
       </div>
       
       <div className="h-[calc(100vh-8rem)] w-full border-0">
         <ResizablePanelGroup direction="horizontal" className="h-full w-full">
           {/* Left panel - Assembly */}
           <ResizablePanel defaultSize={40} minSize={30}>
-            <div className="h-full flex flex-col bg-neutral-50">
-              <div className="p-3 border-b border-neutral-200 flex-shrink-0">
-                                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-medium">ARM Assembly</h3>
-                  <div className="text-xs text-neutral-500">ARM 32-bit</div>
+            <div className="h-full flex flex-col bg-card border border-border rounded-lg">
+              <div className="p-4 border-b border-border flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">Assembly</h3>
                 </div>
-                <div className="flex gap-1 mb-2">
+                <div className="flex gap-1 mb-3">
                   <button 
                     onClick={() => loadExampleAssembly('basic')}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                    className="text-xs bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
                   >
                     Basic
                   </button>
                   <button 
                     onClick={() => loadExampleAssembly('memory')}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                    className="text-xs bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
                   >
                     Memory
                   </button>
                   <button 
                     onClick={() => loadExampleAssembly('branches')}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                    className="text-xs bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
                   >
                     Branches
                   </button>
                   <button 
                     onClick={() => loadExampleAssembly('loop')}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                    className="text-xs bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
                   >
                     Loop
                   </button>
                   <button 
                     onClick={() => loadExampleAssembly('simple')}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded"
+                    className="text-xs bg-secondary hover:bg-secondary/80 px-2 py-1 rounded-md transition-colors"
                   >
                     Simple
                   </button>
                 </div>
-                                 <div className="flex gap-2">
-                   <button 
-                     onClick={handleAssemble}
-                     disabled={isAssembling}
-                     className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded text-sm"
-                   >
-                     {isAssembling ? 'Assembling...' : '🔧 Assemble'}
-                   </button>
-                   <button 
-                     onClick={handleEmulate}
-                     disabled={isEmulating || isAssembling}
-                     className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded text-sm"
-                   >
-                     {isEmulating ? 'Emulating...' : '🚀 Emulate'}
-                   </button>
-                 </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleAssemble}
+                    disabled={isAssembling}
+                    className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    {isAssembling ? 'Assembling...' : 'Assemble'}
+                  </button>
+                  <button 
+                    onClick={handleEmulate}
+                    disabled={isEmulating || isAssembling}
+                    className="flex-1 bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    {isEmulating ? 'Emulating...' : 'Emulate'}
+                  </button>
+                </div>
               </div>
               <div className="flex-1 p-2 min-h-0">
                 <CodeEditor
                   value={assemblyCode}
                   onChange={(value) => setAssemblyCode(value || '')}
                   height="100%"
-                  className="border border-neutral-200 rounded"
+                  className="border border-border rounded-md"
                   highlightedLine={highlightedLine}
                 />
               </div>
@@ -439,31 +436,14 @@ sub r2, r1, #1`
           {/* Right side with three vertical panels */}
           <ResizablePanel defaultSize={60}>
             <ResizablePanelGroup direction="vertical" className="h-full">
-              {/* Assembly Output Panel */}
-              <ResizablePanel defaultSize={25} minSize={15}>
-                <div className="h-full flex flex-col bg-green-50">
-                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
-                    <h3 className="text-lg font-medium">Assembly Output</h3>
-                  </div>
-                  <div className="flex-1 p-2 min-h-0">
-                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
-                      {assemblyOutput || 'Click "Assemble" to see machine code output...'}
-                    </pre>
-                  </div>
-                </div>
-              </ResizablePanel>
-              
-              <ResizableHandle withHandle />
-              
               {/* Emulation Panel */}
-              <ResizablePanel defaultSize={25} minSize={15}>
-                <div className="h-full flex flex-col bg-purple-50">
-                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
-                    <h3 className="text-lg font-medium">CPU Emulation</h3>
-                    <p className="text-xs text-neutral-500 mt-1">ARM Unicorn.js emulator</p>
+              <ResizablePanel defaultSize={50} minSize={30}>
+                <div className="h-full flex flex-col bg-card border border-border rounded-lg">
+                  <div className="p-4 border-b border-border flex-shrink-0">
+                    <h3 className="text-lg font-semibold">Emulation</h3>
                   </div>
                   <div className="flex-1 p-2 min-h-0">
-                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
+                    <pre className="h-full w-full bg-background border border-border rounded-md p-3 text-xs font-mono overflow-auto whitespace-pre-wrap">
                       {emulationOutput || 'Click "Emulate" to run assembly code in ARM CPU emulator...'}
                     </pre>
                   </div>
@@ -473,78 +453,44 @@ sub r2, r1, #1`
               <ResizableHandle withHandle />
               
               {/* Step Debugging Panel */}
-              <ResizablePanel defaultSize={25} minSize={15}>
-                <div className="h-full flex flex-col bg-orange-50">
-                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
-                    <h3 className="text-lg font-medium">Step Debugger</h3>
-                    <p className="text-xs text-neutral-500 mt-1">Single-step ARM instruction execution</p>
-                    <div className="flex gap-2 mt-2">
+              <ResizablePanel defaultSize={50} minSize={30}>
+                <div className="h-full flex flex-col bg-card border border-border rounded-lg">
+                  <div className="p-4 border-b border-border flex-shrink-0">
+                    <h3 className="text-lg font-semibold">Debugger</h3>
+                    <div className="flex gap-2 mt-3">
                       <button 
                         onClick={handleInitializeDebugger}
                         disabled={isStepping || !!emulator}
-                        className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white px-3 py-1 rounded text-xs"
+                        className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
                       >
-                        {isStepping ? 'Initializing...' : (emulator ? '✅ Ready' : '🔧 Initialize')}
+                        {isStepping ? 'Initializing...' : (emulator ? 'Ready' : 'Initialize')}
                       </button>
                       <button 
                         onClick={handleStep}
                         disabled={isStepping || !emulator}
-                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-3 py-1 rounded text-xs"
+                        className="flex-1 bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
                       >
-                        {isStepping ? 'Stepping...' : '👣 Step'}
+                        {isStepping ? 'Stepping...' : 'Step'}
                       </button>
                       <button 
                         onClick={handleResetDebugger}
                         disabled={isStepping || !emulator}
-                        className="flex-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-3 py-1 rounded text-xs"
+                        className="flex-1 bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
                       >
-                        🔄 Reset
+                        Reset
                       </button>
                       <button 
                         onClick={handleCleanupDebugger}
                         disabled={isStepping || !emulator}
-                        className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded text-xs"
+                        className="flex-1 bg-destructive hover:bg-destructive/90 disabled:opacity-50 text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
                       >
-                        🧹 Clean
+                        Clean
                       </button>
                     </div>
                   </div>
                   <div className="flex-1 p-2 min-h-0">
-                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
+                    <pre className="h-full w-full bg-background border border-border rounded-md p-3 text-xs font-mono overflow-auto whitespace-pre-wrap">
                       {stepOutput || 'Click "Initialize" to prepare the debugger for single-step execution...'}
-                    </pre>
-                  </div>
-                </div>
-              </ResizablePanel>
-              
-              <ResizableHandle withHandle />
-              
-              {/* Disassembly Panel */}
-              <ResizablePanel defaultSize={25} minSize={15}>
-                <div className="h-full flex flex-col bg-blue-50">
-                  <div className="p-3 border-b border-neutral-200 flex-shrink-0">
-                                        <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-medium">Disassembly</h3>
-                      <div className="text-xs text-neutral-500">ARM 32-bit</div>
-                    </div>
-                    <input
-                      type="text"
-                      value={disassemblyInput}
-                      onChange={(e) => setDisassemblyInput(e.target.value)}
-                      placeholder="Enter hex bytes (e.g., 2a 00 a0 e3)"
-                      className="w-full p-2 border border-neutral-300 rounded text-sm mb-2"
-                    />
-                    <button 
-                      onClick={handleDisassemble}
-                      disabled={isDisassembling}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded"
-                    >
-                      {isDisassembling ? 'Disassembling...' : '🔍 Disassemble'}
-                    </button>
-                  </div>
-                  <div className="flex-1 p-2 min-h-0">
-                    <pre className="h-full w-full bg-white border border-neutral-200 rounded p-2 text-xs font-mono overflow-auto whitespace-pre-wrap">
-                      {disassemblyOutput || 'Enter hex bytes and click "Disassemble" to see assembly code...'}
                     </pre>
                   </div>
                 </div>

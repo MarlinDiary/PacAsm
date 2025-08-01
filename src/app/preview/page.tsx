@@ -10,35 +10,51 @@ export default function PreviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">
             PacAsm Preview
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-muted-foreground">
             Choose your development environment
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Link
             href="/preview/emulator"
-            className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-medium py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
+            className="flex items-center justify-between w-full p-4 border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            ARM Emulator
+            <div className="space-y-1">
+              <div className="font-medium">ARM Emulator</div>
+              <div className="text-sm text-muted-foreground">
+                Assembly, disassembly, and CPU emulation
+              </div>
+            </div>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
           
           <Link
             href="/preview/game"
-            className="block w-full bg-green-600 hover:bg-green-700 text-white text-center font-medium py-4 px-6 rounded-lg transition-colors duration-200 text-lg"
+            className="flex items-center justify-between w-full p-4 border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            Game
+            <div className="space-y-1">
+              <div className="font-medium">Game</div>
+              <div className="text-sm text-muted-foreground">
+                Interactive game environment
+              </div>
+            </div>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">
             Development Mode Only
           </p>
         </div>
