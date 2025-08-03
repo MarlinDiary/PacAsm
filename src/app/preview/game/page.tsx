@@ -2,7 +2,7 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import MapRenderer from '@/components/MapRenderer'
 import { getMap, PlayerDirection, GameMap, TILE_MAPPING } from '@/data/maps'
 
@@ -13,15 +13,29 @@ export default function GamePage() {
   }
 
   const initialMap = getMap('initial')
-  
+  const [currentMap, setCurrentMap] = useState<GameMap>(() => {
+    return initialMap || {
+      id: 'empty',
+      name: 'Empty Map',
+      width: 1,
+      height: 1,
+      tiles: [['.']]
+    }
+  })
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  // Update currentMap when initialMap is available
+  useEffect(() => {
+    if (initialMap && currentMap.id === 'empty') {
+      setCurrentMap(initialMap)
+    }
+  }, [initialMap, currentMap.id])
+
   if (!initialMap) {
     return <div>Map not found</div>
   }
 
-  const [currentMap, setCurrentMap] = useState<GameMap>(initialMap)
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  const canMoveTo = (row: number, col: number): boolean => {
+  const canMoveTo = useCallback((row: number, col: number): boolean => {
     // Check boundaries
     if (row < 0 || row >= currentMap.height || col < 0 || col >= currentMap.width) {
       return false
@@ -31,7 +45,7 @@ export default function GamePage() {
     const tileSymbol = currentMap.tiles[row][col]
     const tileType = TILE_MAPPING[tileSymbol]
     return tileType === 'grass'
-  }
+  }, [currentMap.height, currentMap.width, currentMap.tiles])
 
   const getNextPosition = (currentRow: number, currentCol: number, direction: PlayerDirection) => {
     switch (direction) {
@@ -149,7 +163,7 @@ export default function GamePage() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [currentMap, isAnimating])
+  }, [currentMap, isAnimating, canMoveTo])
 
   return (
     <div className="h-screen w-full p-4">
