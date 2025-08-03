@@ -2,11 +2,19 @@
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import MapRenderer from '@/components/MapRenderer'
+import { getMap } from '@/data/maps'
 
 export default function GamePage() {
   // Only allow access in development mode
   if (process.env.NODE_ENV !== 'development') {
     notFound()
+  }
+
+  const initialMap = getMap('initial')
+
+  if (!initialMap) {
+    return <div>Map not found</div>
   }
 
   return (
@@ -24,7 +32,13 @@ export default function GamePage() {
         </Link>
       </div>
       
-      {/* Empty page content */}
+      {/* Game content */}
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">{initialMap.name}</h1>
+          <MapRenderer map={initialMap} />
+        </div>
+      </div>
     </div>
   )
 }
