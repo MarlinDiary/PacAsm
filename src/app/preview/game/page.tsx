@@ -7,11 +7,7 @@ import MapRenderer from '@/components/MapRenderer'
 import { getMap, PlayerDirection, GameMap, TILE_MAPPING } from '@/data/maps'
 
 export default function GamePage() {
-  // Only allow access in development mode
-  if (process.env.NODE_ENV !== 'development') {
-    notFound()
-  }
-
+  // All hooks must be at the top level
   const initialMap = getMap('initial')
   const [currentMap, setCurrentMap] = useState<GameMap>(() => {
     return initialMap || {
@@ -23,17 +19,6 @@ export default function GamePage() {
     }
   })
   const [isAnimating, setIsAnimating] = useState(false)
-
-  // Update currentMap when initialMap is available
-  useEffect(() => {
-    if (initialMap && currentMap.id === 'empty') {
-      setCurrentMap(initialMap)
-    }
-  }, [initialMap, currentMap.id])
-
-  if (!initialMap) {
-    return <div>Map not found</div>
-  }
 
   const canMoveTo = useCallback((row: number, col: number): boolean => {
     // Check boundaries
@@ -47,7 +32,7 @@ export default function GamePage() {
     return tileType === 'grass'
   }, [currentMap.height, currentMap.width, currentMap.tiles])
 
-  const getNextPosition = (currentRow: number, currentCol: number, direction: PlayerDirection) => {
+  const getNextPosition = useCallback((currentRow: number, currentCol: number, direction: PlayerDirection) => {
     switch (direction) {
       case 'right':
         return { row: currentRow, col: currentCol + 1 }
@@ -60,9 +45,9 @@ export default function GamePage() {
       default:
         return { row: currentRow, col: currentCol }
     }
-  }
+  }, [])
 
-  const animateMovement = (fromRow: number, fromCol: number, toRow: number, toCol: number, direction: PlayerDirection) => {
+  const animateMovement = useCallback((fromRow: number, fromCol: number, toRow: number, toCol: number, direction: PlayerDirection) => {
     const TILE_SIZE = 64
     setIsAnimating(true)
     
@@ -106,7 +91,7 @@ export default function GamePage() {
       }))
       setIsAnimating(false)
     }, 310) // Slightly longer than CSS animation duration
-  }
+  }, [])
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -163,7 +148,16 @@ export default function GamePage() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [currentMap, isAnimating, canMoveTo])
+  }, [currentMap, isAnimating, canMoveTo, getNextPosition, animateMovement])
+
+  // Conditional logic after all hooks
+  if (process.env.NODE_ENV !== 'development') {
+    notFound()
+  }
+
+  if (!initialMap) {
+    return <div>Map not found</div>
+  }
 
   return (
     <div className="h-screen w-full p-4">
