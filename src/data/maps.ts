@@ -13,12 +13,25 @@ export const TILE_MAPPING: Record<TileSymbol, TileType> = {
   '*': 'campfire'
 };
 
+export type PlayerDirection = 'right' | 'up' | 'left' | 'down';
+
+export interface PlayerPosition {
+  row: number;
+  col: number;
+  direction: PlayerDirection;
+  animationPosition?: {
+    x: number;
+    y: number;
+  };
+}
+
 export interface GameMap {
   id: string;
   name: string;
   width: number;
   height: number;
   tiles: TileSymbol[][];
+  playerPosition?: PlayerPosition;
 }
 
 export const MAPS: GameMap[] = [
@@ -31,7 +44,8 @@ export const MAPS: GameMap[] = [
       ['|', '|', '|', '|', '|'],
       ['|', '.', '.', '*', '|'],
       ['|', '|', '|', '|', '|']
-    ]
+    ],
+    playerPosition: { row: 1, col: 1, direction: 'right' }
   }
 ];
 
