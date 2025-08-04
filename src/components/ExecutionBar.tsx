@@ -1,10 +1,17 @@
 import { Bug, Play, Feather } from 'lucide-react'
 
-export default function ExecutionBar() {
+interface ExecutionBarProps {
+  onDebugClick?: () => void
+}
+
+export default function ExecutionBar({ onDebugClick }: ExecutionBarProps) {
   return (
     <div className="flex items-center h-8">
       {/* Debug button */}
-      <button className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center">
+      <button 
+        onClick={onDebugClick}
+        className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center"
+      >
         <Bug size={16} color="#f2a53f" />
       </button>
       

@@ -1,12 +1,13 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
 import ExecutionBar from '@/components/ExecutionBar'
+import DebuggerBar from '@/components/DebuggerBar'
 import IconButton from '@/components/IconButton'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -18,6 +19,9 @@ export default function LevelPage() {
   if (id !== '1') {
     notFound()
   }
+
+  // State for toggling between ExecutionBar and DebuggerBar
+  const [isDebugMode, setIsDebugMode] = useState(false)
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)
@@ -44,7 +48,11 @@ export default function LevelPage() {
           <div className="absolute left-0 top-0">
             <IconButton icon={ArrowLeft} />
           </div>
-          <ExecutionBar />
+          {isDebugMode ? (
+            <DebuggerBar onReturnClick={() => setIsDebugMode(false)} />
+          ) : (
+            <ExecutionBar onDebugClick={() => setIsDebugMode(true)} />
+          )}
           <div className="absolute right-0 top-0">
             <IconButton icon={Settings2} />
           </div>
