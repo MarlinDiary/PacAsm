@@ -15,7 +15,8 @@ export default async function LevelPage({ params }: LevelPageProps) {
 
   return (
     <div className="h-screen w-full" style={{ backgroundColor: '#f0f0f0' }}>
-      <ResizablePanelGroup direction="horizontal">
+      <div className="p-2 h-full">
+        <ResizablePanelGroup direction="horizontal">
         {/* First column with two panels */}
         <ResizablePanel defaultSize={33}>
           <ResizablePanelGroup direction="vertical">
@@ -24,7 +25,10 @@ export default async function LevelPage({ params }: LevelPageProps) {
                 Panel 1 - Level {id}
               </div>
             </ResizablePanel>
-            <ResizableHandle className="opacity-0" />
+            <ResizableHandle 
+              className="opacity-0" 
+              style={{ height: '8px' }}
+            />
             <ResizablePanel defaultSize={50}>
               <div className="p-4 h-full bg-gray-100">
                 Panel 2 - Level {id}
@@ -33,7 +37,10 @@ export default async function LevelPage({ params }: LevelPageProps) {
           </ResizablePanelGroup>
         </ResizablePanel>
         
-        <ResizableHandle className="opacity-0" />
+        <ResizableHandle 
+          className="opacity-0" 
+          style={{ width: '8px' }}
+        />
         
         {/* Second column */}
         <ResizablePanel defaultSize={34}>
@@ -42,7 +49,10 @@ export default async function LevelPage({ params }: LevelPageProps) {
           </div>
         </ResizablePanel>
         
-        <ResizableHandle className="opacity-0" />
+        <ResizableHandle 
+          className="opacity-0" 
+          style={{ width: '8px' }}
+        />
         
         {/* Third column */}
         <ResizablePanel defaultSize={33}>
@@ -50,7 +60,8 @@ export default async function LevelPage({ params }: LevelPageProps) {
             Panel 4 - Level {id}
           </div>
         </ResizablePanel>
-      </ResizablePanelGroup>
+        </ResizablePanelGroup>
+      </div>
     </div>
   )
 }
