@@ -23,8 +23,8 @@ export default function LevelPage() {
   const panel4Ref = useRef<ImperativePanelHandle>(null)
 
   const resetVerticalPanels = () => {
-    panel1Ref.current?.resize(50)
-    panel2Ref.current?.resize(50)
+    panel1Ref.current?.resize(60)
+    panel2Ref.current?.resize(40)
   }
 
   const resetHorizontalPanels = () => {
@@ -40,7 +40,7 @@ export default function LevelPage() {
         {/* First column with two panels */}
         <ResizablePanel defaultSize={33} ref={firstColumnRef}>
           <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={50} ref={panel1Ref}>
+            <ResizablePanel defaultSize={60} ref={panel1Ref}>
               <div className="p-4 h-full bg-gray-50">
                 Panel 1 - Level {id}
               </div>
@@ -49,7 +49,7 @@ export default function LevelPage() {
               style={{ height: '8px' }}
               onDoubleClick={resetVerticalPanels}
             />
-            <ResizablePanel defaultSize={50} ref={panel2Ref}>
+            <ResizablePanel defaultSize={40} ref={panel2Ref}>
               <div className="p-4 h-full bg-gray-100">
                 Panel 2 - Level {id}
               </div>
