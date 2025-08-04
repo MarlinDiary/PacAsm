@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
+import ExecutionBar from '@/components/ExecutionBar'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive } from 'lucide-react'
 
 export default function LevelPage() {
@@ -37,7 +38,11 @@ export default function LevelPage() {
 
   return (
     <div className="h-screen w-full" style={{ backgroundColor: '#f0f0f0' }}>
-      <div className="p-2 h-full">
+      <div className="p-2 h-full flex flex-col">
+        <div className="flex justify-center">
+          <ExecutionBar />
+        </div>
+        <div className="flex-1 pt-2">
         <ResizablePanelGroup direction="horizontal">
         {/* First column with two panels */}
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
@@ -78,6 +83,7 @@ export default function LevelPage() {
           ]} />
         </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
       </div>
     </div>
   )
