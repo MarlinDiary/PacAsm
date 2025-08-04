@@ -11,7 +11,7 @@ interface TabProps {
 export default function Tab({ icon: Icon, text, isSelected = false, color = "#666", onClick }: TabProps) {
   return (
     <div 
-      className={`h-7 px-2 py-1 flex items-center gap-1 cursor-pointer ${isSelected ? 'font-medium' : 'font-normal'}`}
+      className={`h-7 px-2 py-1 flex items-center gap-1 cursor-pointer hover:bg-[#f0f0f0] rounded-md ${isSelected ? 'font-medium' : 'font-normal'}`}
       onClick={onClick}
     >
       <div className="w-4 h-4 flex items-center justify-center">
