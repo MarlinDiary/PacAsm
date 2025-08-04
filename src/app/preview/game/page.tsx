@@ -144,16 +144,8 @@ export default function GamePage() {
             nextPos.col,
             newDirection
           )
-        } else {
-          // Just turn direction without moving
-          setCurrentMap(prev => ({
-            ...prev,
-            playerPosition: prev.playerPosition ? {
-              ...prev.playerPosition,
-              direction: newDirection
-            } : undefined
-          }))
         }
+        // If can't move, do nothing (don't change direction)
       }
     }
 
