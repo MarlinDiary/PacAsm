@@ -21,8 +21,8 @@ export default function ExecutionBar() {
       
       {/* Hint button */}
       <button className="h-8 px-3 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1">
-        <Brain size={16} color="#50b040" />
-        <span className="text-sm font-medium" style={{ color: '#50b040' }}>
+        <Brain size={16} color="#c46d76" />
+        <span className="text-sm font-medium" style={{ color: '#c46d76' }}>
           Hint
         </span>
       </button>
