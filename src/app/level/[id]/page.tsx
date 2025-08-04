@@ -7,7 +7,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
 import ExecutionBar from '@/components/ExecutionBar'
-import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive } from 'lucide-react'
+import IconButton from '@/components/IconButton'
+import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
 export default function LevelPage() {
   const params = useParams()
@@ -39,8 +40,14 @@ export default function LevelPage() {
   return (
     <div className="h-screen w-full" style={{ backgroundColor: '#f0f0f0' }}>
       <div className="p-2 h-full flex flex-col">
-        <div className="flex justify-center">
+        <div className="flex justify-center relative">
+          <div className="absolute left-0 top-0">
+            <IconButton icon={ArrowLeft} />
+          </div>
           <ExecutionBar />
+          <div className="absolute right-0 top-0">
+            <IconButton icon={Settings2} />
+          </div>
         </div>
         <div className="flex-1 pt-2">
         <ResizablePanelGroup direction="horizontal">
