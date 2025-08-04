@@ -26,7 +26,6 @@ export default async function LevelPage({ params }: LevelPageProps) {
               </div>
             </ResizablePanel>
             <ResizableHandle 
-              className="opacity-0" 
               style={{ height: '8px' }}
             />
             <ResizablePanel defaultSize={50}>
@@ -38,7 +37,6 @@ export default async function LevelPage({ params }: LevelPageProps) {
         </ResizablePanel>
         
         <ResizableHandle 
-          className="opacity-0" 
           style={{ width: '8px' }}
         />
         
@@ -50,7 +48,6 @@ export default async function LevelPage({ params }: LevelPageProps) {
         </ResizablePanel>
         
         <ResizableHandle 
-          className="opacity-0" 
           style={{ width: '8px' }}
         />
         
