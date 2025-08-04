@@ -1,3 +1,5 @@
+import Tab from './Tab'
+
 interface TabBarProps {
   children?: React.ReactNode
 }
@@ -5,7 +7,7 @@ interface TabBarProps {
 export default function TabBar({ children }: TabBarProps) {
   return (
     <div 
-      className="w-full flex items-center px-3 rounded-t-lg"
+      className="w-full flex items-center p-1 rounded-t-lg"
       style={{ 
         height: '36px', 
         backgroundColor: '#fafafa' 
@@ -15,3 +17,5 @@ export default function TabBar({ children }: TabBarProps) {
     </div>
   )
 }
+
+export { Tab }

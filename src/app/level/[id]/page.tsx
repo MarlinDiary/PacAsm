@@ -42,7 +42,7 @@ export default function LevelPage() {
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
-              <Card />
+              <Card showGameTab={true} />
             </ResizablePanel>
             <ResizableHandle 
               style={{ height: '8px' }}
