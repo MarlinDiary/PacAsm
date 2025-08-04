@@ -32,6 +32,7 @@ export interface GameMap {
   height: number;
   tiles: TileSymbol[][];
   playerPosition?: PlayerPosition;
+  dots?: { row: number; col: number }[];
 }
 
 export const MAPS: GameMap[] = [
@@ -45,7 +46,8 @@ export const MAPS: GameMap[] = [
       ['|', '.', '.', '*', '|'],
       ['|', '|', '|', '|', '|']
     ],
-    playerPosition: { row: 1, col: 1, direction: 'right' }
+    playerPosition: { row: 1, col: 1, direction: 'right' },
+    dots: [{ row: 1, col: 2 }]
   }
 ];
 

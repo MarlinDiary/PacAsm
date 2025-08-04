@@ -125,6 +125,28 @@ export default function MapRenderer({ map }: MapRendererProps) {
         })}
       </div>
       
+      {/* Dots overlay */}
+      {map.dots && map.dots.map((dot, index) => (
+        <div
+          key={`dot-${index}`}
+          className="absolute top-0 left-0 pointer-events-none z-5"
+          style={{
+            transform: `translate(${dot.col * TILE_SIZE}px, ${dot.row * TILE_SIZE}px)`,
+            width: TILE_SIZE,
+            height: TILE_SIZE
+          }}
+        >
+          <Image
+            src="/res/dot.gif"
+            alt="Dot"
+            width={TILE_SIZE}
+            height={TILE_SIZE}
+            className="object-cover"
+            priority
+          />
+        </div>
+      ))}
+
       {/* Player overlay */}
       {map.playerPosition && (
         <div

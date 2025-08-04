@@ -78,6 +78,17 @@ export default function GamePage() {
       }))
     }, 10)
 
+    // Remove dot halfway through animation (150ms)
+    setTimeout(() => {
+      setCurrentMap(prev => {
+        const newDots = prev.dots?.filter(dot => !(dot.row === toRow && dot.col === toCol)) || []
+        return {
+          ...prev,
+          dots: newDots
+        }
+      })
+    }, 150)
+
     // Complete animation and update final position
     setTimeout(() => {
       setCurrentMap(prev => ({
