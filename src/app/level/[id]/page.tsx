@@ -1,18 +1,20 @@
 import { notFound } from 'next/navigation'
 
 interface LevelPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default function LevelPage({ params }: LevelPageProps) {
+export default async function LevelPage({ params }: LevelPageProps) {
+  const { id } = await params
+  
   // Only allow level 1
-  if (params.id !== '1') {
+  if (id !== '1') {
     notFound()
   }
 
   return (
     <div>
-      Level {params.id}
+      Level {id}
     </div>
   )
 }
