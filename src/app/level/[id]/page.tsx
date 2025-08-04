@@ -5,6 +5,7 @@ import { useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
+import Card from '@/components/Card'
 
 export default function LevelPage() {
   const params = useParams()
@@ -38,21 +39,17 @@ export default function LevelPage() {
       <div className="p-2 h-full">
         <ResizablePanelGroup direction="horizontal">
         {/* First column with two panels */}
-        <ResizablePanel defaultSize={33} ref={firstColumnRef}>
+        <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={60} ref={panel1Ref}>
-              <div className="p-4 h-full bg-gray-50">
-                Panel 1 - Level {id}
-              </div>
+            <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
+              <Card />
             </ResizablePanel>
             <ResizableHandle 
               style={{ height: '8px' }}
               onDoubleClick={resetVerticalPanels}
             />
-            <ResizablePanel defaultSize={40} ref={panel2Ref}>
-              <div className="p-4 h-full bg-gray-100">
-                Panel 2 - Level {id}
-              </div>
+            <ResizablePanel defaultSize={40} ref={panel2Ref} minSize={10}>
+              <Card />
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
@@ -63,10 +60,8 @@ export default function LevelPage() {
         />
         
         {/* Second column */}
-        <ResizablePanel defaultSize={34} ref={panel3Ref}>
-          <div className="p-4 h-full bg-blue-50">
-            Panel 3 - Level {id}
-          </div>
+        <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
+          <Card />
         </ResizablePanel>
         
         <ResizableHandle 
@@ -75,10 +70,8 @@ export default function LevelPage() {
         />
         
         {/* Third column */}
-        <ResizablePanel defaultSize={33} ref={panel4Ref}>
-          <div className="p-4 h-full bg-green-50">
-            Panel 4 - Level {id}
-          </div>
+        <ResizablePanel defaultSize={33} ref={panel4Ref} minSize={10}>
+          <Card />
         </ResizablePanel>
         </ResizablePanelGroup>
       </div>
