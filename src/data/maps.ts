@@ -1,14 +1,12 @@
 export interface TileMapping {
-  '|': 'wall' | 'corner';
   '.': 'grass';
   '*': 'campfire';
 }
 
-export type TileType = 'wall' | 'corner' | 'grass' | 'campfire';
+export type TileType = 'grass' | 'campfire';
 export type TileSymbol = keyof TileMapping;
 
 export const TILE_MAPPING: Record<TileSymbol, TileType> = {
-  '|': 'wall',
   '.': 'grass', 
   '*': 'campfire'
 };
@@ -39,15 +37,13 @@ export const MAPS: GameMap[] = [
   {
     id: 'initial',
     name: 'Initial Map',
-    width: 5,
-    height: 3,
+    width: 3,
+    height: 1,
     tiles: [
-      ['|', '|', '|', '|', '|'],
-      ['|', '.', '.', '*', '|'],
-      ['|', '|', '|', '|', '|']
+      ['.', '.', '*']
     ],
-    playerPosition: { row: 1, col: 1, direction: 'right' },
-    dots: [{ row: 1, col: 2 }]
+    playerPosition: { row: 0, col: 0, direction: 'right' },
+    dots: [{ row: 0, col: 1 }]
   }
 ];
 

@@ -26,7 +26,7 @@ export default function GamePage() {
       return false
     }
     
-    // Check if tile is grass
+    // Check if tile is grass (player can only move on grass)
     const tileSymbol = currentMap.tiles[row][col]
     const tileType = TILE_MAPPING[tileSymbol]
     return tileType === 'grass'
