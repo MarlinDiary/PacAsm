@@ -20,8 +20,13 @@ export default function Tab({ icon: Icon, text, isSelected = false, color = "#66
           color={color}
         />
       </div>
-      <span className="text-sm text-black">
-        {text}
+      <span className="text-sm text-black relative inline-block">
+        <span className="invisible font-medium" aria-hidden="true">
+          {text}
+        </span>
+        <span className={`absolute inset-0 ${isSelected ? 'font-medium' : 'font-normal'}`}>
+          {text}
+        </span>
       </span>
     </div>
   )

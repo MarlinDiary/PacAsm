@@ -1,39 +1,35 @@
+import { useState } from 'react'
 import TabBar, { Tab } from './TabBar'
-import { Gamepad2, Move, CodeXml } from 'lucide-react'
+import { LucideIcon } from 'lucide-react'
+
+interface TabConfig {
+  icon: LucideIcon
+  text: string
+  color: string
+}
 
 interface CardProps {
   children?: React.ReactNode
-  tabType?: 'game' | 'actuator' | 'code'
+  tabs?: TabConfig[]
+  defaultSelectedTab?: number
 }
 
-export default function Card({ children, tabType }: CardProps) {
+export default function Card({ children, tabs = [], defaultSelectedTab = 0 }: CardProps) {
+  const [selectedTab, setSelectedTab] = useState(defaultSelectedTab)
+
   return (
     <div className="w-full h-full bg-white rounded-lg flex flex-col overflow-hidden">
       <TabBar>
-        {tabType === 'game' && (
+        {tabs.map((tab, index) => (
           <Tab 
-            icon={Gamepad2}
-            text="Game"
-            color="#3579f6"
-            isSelected={true}
+            key={index}
+            icon={tab.icon}
+            text={tab.text}
+            color={tab.color}
+            isSelected={selectedTab === index}
+            onClick={() => setSelectedTab(index)}
           />
-        )}
-        {tabType === 'actuator' && (
-          <Tab 
-            icon={Move}
-            text="Actuator"
-            color="#f4ba40"
-            isSelected={true}
-          />
-        )}
-        {tabType === 'code' && (
-          <Tab 
-            icon={CodeXml}
-            text="Code"
-            color="#4fae40"
-            isSelected={true}
-          />
-        )}
+        ))}
       </TabBar>
       <div className="flex-1">
         {children}

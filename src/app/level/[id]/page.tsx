@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
+import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive } from 'lucide-react'
 
 export default function LevelPage() {
   const params = useParams()
@@ -42,14 +43,14 @@ export default function LevelPage() {
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
-              <Card tabType="game" />
+              <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]} />
             </ResizablePanel>
             <ResizableHandle 
               style={{ height: '8px' }}
               onDoubleClick={resetVerticalPanels}
             />
             <ResizablePanel defaultSize={40} ref={panel2Ref} minSize={10}>
-              <Card tabType="actuator" />
+              <Card tabs={[{ icon: Move, text: "Actuator", color: "#f4ba40" }]} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
@@ -61,7 +62,7 @@ export default function LevelPage() {
         
         {/* Second column */}
         <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
-          <Card tabType="code" />
+          <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]} />
         </ResizablePanel>
         
         <ResizableHandle 
@@ -71,7 +72,10 @@ export default function LevelPage() {
         
         {/* Third column */}
         <ResizablePanel defaultSize={33} ref={panel4Ref} minSize={10}>
-          <Card />
+          <Card tabs={[
+            { icon: CircuitBoard, text: "Register", color: "#633dbf" },
+            { icon: HardDrive, text: "Memory", color: "#01A2C2" }
+          ]} />
         </ResizablePanel>
         </ResizablePanelGroup>
       </div>
