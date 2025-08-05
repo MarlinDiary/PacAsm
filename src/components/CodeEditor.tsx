@@ -172,6 +172,8 @@ export default function CodeEditor({
           fontSize: 14,
           fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
           lineNumbers: 'on',
+          lineNumbersMinChars: 3,
+          glyphMargin: false,
           roundedSelection: false,
           scrollBeyondLastLine: false,
           automaticLayout: true,

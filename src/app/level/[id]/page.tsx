@@ -11,6 +11,7 @@ import DebuggerBar from '@/components/DebuggerBar'
 import IconButton from '@/components/IconButton'
 import MapRenderer from '@/components/MapRenderer'
 import WaterRenderer from '@/components/WaterRenderer'
+import CodeEditor from '@/components/CodeEditor'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -111,7 +112,9 @@ export default function LevelPage() {
         
         {/* Second column */}
         <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
-          <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]} />
+          <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]}>
+            <CodeEditor />
+          </Card>
         </ResizablePanel>
         
         <ResizableHandle 
