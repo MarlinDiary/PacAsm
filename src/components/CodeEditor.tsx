@@ -38,7 +38,10 @@ export default function CodeEditor({
       rules: [],
       colors: {
         'editor.lineHighlightBackground': '#f6f8fa',
-        'editor.lineHighlightBorder': '#f6f8fa'
+        'editor.lineHighlightBorder': '#f6f8fa',
+        'editorLineNumber.foreground': '#bdbebf',
+        'editorLineNumber.activeForeground': '#000000',
+        'editorCursor.foreground': '#1b4184'
       }
     })
 
@@ -188,6 +191,26 @@ export default function CodeEditor({
           .monaco-editor:not(.focused) .margin-view-overlays .current-line-margin {
             background-color: transparent !important;
           }
+          .monaco-editor .line-numbers {
+            color: #bdbebf !important;
+          }
+          .monaco-editor .current-line .line-numbers,
+          .monaco-editor .active-line-number {
+            color: #000000 !important;
+          }
+          .monaco-editor .margin-view-overlays .current-line-margin,
+          .monaco-editor .margin-view-overlays .current-line-margin * {
+            color: #000000 !important;
+          }
+          .monaco-editor .cursors-layer .cursor {
+            background-color: #1b4184 !important;
+            border-left: 2px solid #1b4184 !important;
+            color: #1b4184 !important;
+          }
+          .monaco-editor .cursors-layer > .cursor {
+            background-color: #1b4184 !important;
+            border-color: #1b4184 !important;
+          }
         `
       }} />
       <Editor
@@ -203,7 +226,7 @@ export default function CodeEditor({
           readOnly,
           minimap: { enabled: false },
           fontSize: 14,
-          fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
           lineNumbers: 'on',
           lineNumbersMinChars: 3,
           glyphMargin: false,
@@ -212,7 +235,7 @@ export default function CodeEditor({
           automaticLayout: true,
           tabSize: 4,
           insertSpaces: true,
-          wordWrap: 'off',
+          wordWrap: 'on',
           contextmenu: true,
           mouseWheelZoom: false,
           cursorStyle: 'line',
