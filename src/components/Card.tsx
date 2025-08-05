@@ -32,7 +32,7 @@ export default function Card({ children, tabs = [], defaultSelectedTab = 0, tabC
           />
         ))}
       </TabBar>
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         {tabContent.length > 0 ? tabContent[selectedTab] : children}
       </div>
     </div>

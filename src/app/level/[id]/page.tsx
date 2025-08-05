@@ -53,7 +53,7 @@ export default function LevelPage() {
   }
 
   return (
-    <div className="h-screen w-full" style={{ backgroundColor: '#f0f0f0' }}>
+    <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
       <div className="p-2 h-full flex flex-col">
         <div className="flex justify-center relative">
           <div className="absolute left-0 top-0">
@@ -72,11 +72,11 @@ export default function LevelPage() {
             <IconButton icon={Settings2} />
           </div>
         </div>
-        <div className="flex-1 pt-2">
-        <ResizablePanelGroup direction="horizontal">
+        <div className="flex-1 pt-2 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* First column with two panels */}
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
-          <ResizablePanelGroup direction="vertical">
+          <ResizablePanelGroup direction="vertical" className="h-full">
             <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
               <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
                 <div className="w-full h-full relative overflow-hidden">
