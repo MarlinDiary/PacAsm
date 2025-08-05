@@ -42,10 +42,10 @@ export default function MemoryPanel() {
         <TableBody>
           {memoryRows.map((row, index) => (
             <TableRow key={row.address} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
-              <TableCell className="h-12 w-1/4 text-center border-none font-mono text-xs" style={{ color: '#5a5a5a' }}>
+              <TableCell className="h-12 w-1/4 text-left border-none font-mono text-xs pl-5" style={{ color: '#5a5a5a' }}>
                 {row.address}
               </TableCell>
-              <TableCell className="font-mono h-12 w-3/4 text-center border-none text-xs" style={{ color: '#5a5a5a' }}>
+              <TableCell className="font-mono h-12 w-3/4 text-right border-none text-xs pr-5" style={{ color: '#5a5a5a' }}>
                 {row.hex}
               </TableCell>
             </TableRow>

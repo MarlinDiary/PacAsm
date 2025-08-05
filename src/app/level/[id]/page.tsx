@@ -149,7 +149,18 @@ export default function LevelPage() {
                   <RegisterPanel />
                 </div>
               </div>,
-              <MemoryPanel key="memory" />
+              <div key="memory" className="h-full flex flex-col">
+                <SubBar />
+                <div 
+                  className="flex-1 overflow-y-auto"
+                  style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}
+                >
+                  <MemoryPanel />
+                </div>
+              </div>
             ]}
           />
         </ResizablePanel>
