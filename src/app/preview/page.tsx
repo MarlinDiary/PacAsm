@@ -36,21 +36,6 @@ export default function PreviewPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
-          
-          <Link
-            href="/preview/game"
-            className="flex items-center justify-between w-full p-4 border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-          >
-            <div className="space-y-1">
-              <div className="font-medium">Game</div>
-              <div className="text-sm text-muted-foreground">
-                Interactive game environment
-              </div>
-            </div>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
         </div>
 
         <div className="text-center">

@@ -35,8 +35,8 @@ export interface GameMap {
 
 export const MAPS: GameMap[] = [
   {
-    id: 'initial',
-    name: 'Initial Map',
+    id: 'level1',
+    name: 'Level 1',
     width: 3,
     height: 1,
     tiles: [
@@ -49,4 +49,8 @@ export const MAPS: GameMap[] = [
 
 export function getMap(id: string): GameMap | undefined {
   return MAPS.find(map => map.id === id);
+}
+
+export function getMapByLevel(levelId: string): GameMap | undefined {
+  return MAPS.find(map => map.id === `level${levelId}`);
 }

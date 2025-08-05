@@ -9,6 +9,8 @@ import Card from '@/components/Card'
 import ExecutionBar from '@/components/ExecutionBar'
 import DebuggerBar from '@/components/DebuggerBar'
 import IconButton from '@/components/IconButton'
+import MapRenderer from '@/components/MapRenderer'
+import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
 export default function LevelPage() {
@@ -17,6 +19,12 @@ export default function LevelPage() {
   
   // Only allow level 1
   if (id !== '1') {
+    notFound()
+  }
+
+  // Load the map for this level
+  const levelMap = getMapByLevel(id)
+  if (!levelMap) {
     notFound()
   }
 
@@ -67,7 +75,11 @@ export default function LevelPage() {
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
-              <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]} />
+              <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
+                <div className="p-4 flex items-center justify-center h-full">
+                  <MapRenderer map={levelMap} />
+                </div>
+              </Card>
             </ResizablePanel>
             <ResizableHandle 
               style={{ height: '8px' }}

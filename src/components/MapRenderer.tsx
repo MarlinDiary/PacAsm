@@ -38,7 +38,7 @@ const getPlayerRotation = (direction: PlayerDirection): number => {
 
 export default function MapRenderer({ map }: MapRendererProps) {
   return (
-    <div className="inline-block border-2 border-gray-400 bg-gray-100 relative">
+    <div className="inline-block relative">
       <div 
         className="grid"
         style={{
