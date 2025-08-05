@@ -31,6 +31,17 @@ export default function CodeEditor({
   ) {
     editorRef.current = editor
 
+    // Define custom theme
+    monaco.editor.defineTheme('custom-vs', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.lineHighlightBackground': '#f6f8fa',
+        'editor.lineHighlightBorder': '#f6f8fa'
+      }
+    })
+
     // Register assembly language if not already registered
     if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === 'assembly')) {
       monaco.languages.register({ id: 'assembly' })
@@ -158,6 +169,21 @@ export default function CodeEditor({
 
   return (
     <div className={`h-full w-full ${className}`}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .monaco-editor .view-overlays .current-line {
+            background-color: #f6f8fa !important;
+            border: none !important;
+          }
+          .monaco-editor .margin-view-overlays .current-line-margin {
+            background-color: #f6f8fa !important;
+            border: none !important;
+          }
+          .monaco-editor .scroll-decoration {
+            display: none !important;
+          }
+        `
+      }} />
       <Editor
         height={height}
         width={width}
@@ -165,7 +191,7 @@ export default function CodeEditor({
         value={value}
         onChange={onChange}
         onMount={handleEditorDidMount}
-        theme="vs"
+        theme="custom-vs"
         loading=""
         options={{
           readOnly,
@@ -182,7 +208,7 @@ export default function CodeEditor({
           insertSpaces: true,
           wordWrap: 'off',
           contextmenu: true,
-          mouseWheelZoom: true,
+          mouseWheelZoom: false,
           cursorStyle: 'line',
           lineHeight: 1.5,
           renderWhitespace: 'selection',
@@ -190,7 +216,14 @@ export default function CodeEditor({
           folding: true,
           foldingHighlight: true,
           unfoldOnClickAfterEndOfLine: false,
-          selectOnLineNumbers: true
+          selectOnLineNumbers: true,
+          padding: { top: 8 },
+          scrollbar: { 
+            vertical: 'hidden',
+            horizontal: 'hidden'
+          },
+          overviewRulerLanes: 0,
+          renderLineHighlight: 'all'
         }}
       />
     </div>
