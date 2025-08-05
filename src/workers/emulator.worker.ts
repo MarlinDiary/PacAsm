@@ -93,9 +93,9 @@ class EmulatorWorker {
   private isInitialized = false;
   private codeAddress = 0x10000;
   private stackAddress = 0x20000;
-  private stackSize = 8192;
+  private stackSize = 4096;
   private dataAddress = 0x30000;
-  private dataSize = 8192;
+  private dataSize = 4096;
   private currentMessageId: string | undefined;
 
   constructor() {
@@ -140,7 +140,7 @@ class EmulatorWorker {
       this.unicorn = new uc.Unicorn(uc.ARCH_ARM, uc.MODE_ARM);
       
       // Map memory regions
-      this.unicorn!.mem_map(this.codeAddress, 16384, uc.PROT_ALL);
+      this.unicorn!.mem_map(this.codeAddress, 4096, uc.PROT_ALL);
       this.unicorn!.mem_map(this.stackAddress, this.stackSize, uc.PROT_READ | uc.PROT_WRITE);
       this.unicorn!.mem_map(this.dataAddress, this.dataSize, uc.PROT_READ | uc.PROT_WRITE);
       
@@ -304,7 +304,7 @@ class EmulatorWorker {
 
       const uc = workerSelf.uc!;
       const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
-      const endAddress = this.codeAddress + 16384;
+      const endAddress = this.codeAddress + 4096;
       this.unicorn.emu_start(pc, endAddress, 0, 1);
 
       this.postMessage({
@@ -343,7 +343,7 @@ class EmulatorWorker {
       }
       
       // Execute one instruction
-      const endAddress = this.codeAddress + 16384;
+      const endAddress = this.codeAddress + 4096;
       this.unicorn.emu_start(pcBefore, endAddress, 0, 1);
       
       // Get state after execution
@@ -390,7 +390,7 @@ class EmulatorWorker {
 
       const uc = workerSelf.uc!;
       const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
-      const endAddress = this.codeAddress + 16384;
+      const endAddress = this.codeAddress + 4096;
 
       this.unicorn.emu_start(pc, endAddress, 0, instructionCount || 0);
 
