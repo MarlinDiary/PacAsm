@@ -65,7 +65,7 @@ export default function MapRenderer({ map }: MapRendererProps) {
                 alt={`${tileType} tile`}
                 width={TILE_SIZE}
                 height={TILE_SIZE}
-                className="object-cover"
+                className="object-cover pointer-events-none select-none"
                 priority
               />
             </div>
