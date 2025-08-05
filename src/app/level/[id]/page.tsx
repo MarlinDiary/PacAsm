@@ -12,6 +12,7 @@ import IconButton from '@/components/IconButton'
 import MapRenderer from '@/components/MapRenderer'
 import WaterRenderer from '@/components/WaterRenderer'
 import CodeEditor from '@/components/CodeEditor'
+import RegisterPanel from '@/components/RegisterPanel'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -124,10 +125,16 @@ export default function LevelPage() {
         
         {/* Third column */}
         <ResizablePanel defaultSize={33} ref={panel4Ref} minSize={10}>
-          <Card tabs={[
-            { icon: CircuitBoard, text: "Register", color: "#633dbf" },
-            { icon: HardDrive, text: "Memory", color: "#01A2C2" }
-          ]} />
+          <Card 
+            tabs={[
+              { icon: CircuitBoard, text: "Register", color: "#633dbf" },
+              { icon: HardDrive, text: "Memory", color: "#01A2C2" }
+            ]}
+            tabContent={[
+              <RegisterPanel key="register" />,
+              <div key="memory" className="p-4">Memory content coming soon...</div>
+            ]}
+          />
         </ResizablePanel>
         </ResizablePanelGroup>
         </div>

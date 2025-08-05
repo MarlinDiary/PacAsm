@@ -12,9 +12,10 @@ interface CardProps {
   children?: React.ReactNode
   tabs?: TabConfig[]
   defaultSelectedTab?: number
+  tabContent?: React.ReactNode[]
 }
 
-export default function Card({ children, tabs = [], defaultSelectedTab = 0 }: CardProps) {
+export default function Card({ children, tabs = [], defaultSelectedTab = 0, tabContent = [] }: CardProps) {
   const [selectedTab, setSelectedTab] = useState(defaultSelectedTab)
 
   return (
@@ -32,7 +33,7 @@ export default function Card({ children, tabs = [], defaultSelectedTab = 0 }: Ca
         ))}
       </TabBar>
       <div className="flex-1">
-        {children}
+        {tabContent.length > 0 ? tabContent[selectedTab] : children}
       </div>
     </div>
   )
