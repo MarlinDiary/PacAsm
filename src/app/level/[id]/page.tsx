@@ -48,11 +48,15 @@ export default function LevelPage() {
           <div className="absolute left-0 top-0">
             <IconButton icon={ArrowLeft} />
           </div>
-          {isDebugMode ? (
-            <DebuggerBar onReturnClick={() => setIsDebugMode(false)} />
-          ) : (
-            <ExecutionBar onDebugClick={() => setIsDebugMode(true)} />
-          )}
+          <div className="relative">
+            <ExecutionBar 
+              onDebugClick={() => setIsDebugMode(true)} 
+              isDebugMode={isDebugMode}
+            />
+            <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <DebuggerBar onReturnClick={() => setIsDebugMode(false)} />
+            </div>
+          </div>
           <div className="absolute right-0 top-0">
             <IconButton icon={Settings2} />
           </div>

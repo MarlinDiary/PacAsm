@@ -131,3 +131,13 @@
   background-color: #ffc107 !important;
   width: 4px !important;
 }
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
