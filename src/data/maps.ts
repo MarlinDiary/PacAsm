@@ -46,10 +46,10 @@ export const MAPS: GameMap[] = [
     width: 3,
     height: 1,
     tiles: [
-      ['.', '.', '*']
+      ['.', '.', '.']
     ],
     playerPosition: { row: 0, col: 0, direction: 'right' },
-    dots: [{ row: 0, col: 1 }],
+    dots: [{ row: 0, col: 2 }],
     waterBackground: { tilesX: 35, tilesY: 35 }
   }
 ];
