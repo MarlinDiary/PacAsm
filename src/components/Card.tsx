@@ -32,7 +32,14 @@ export default function Card({ children, tabs = [], defaultSelectedTab = 0, tabC
           />
         ))}
       </TabBar>
-      <div className="flex-1 overflow-y-auto">
+      <div 
+        className="flex-1 overflow-y-auto"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitScrollbar: { display: 'none' }
+        } as React.CSSProperties & { WebkitScrollbar: { display: string } }}
+      >
         {tabContent.length > 0 ? tabContent[selectedTab] : children}
       </div>
     </div>

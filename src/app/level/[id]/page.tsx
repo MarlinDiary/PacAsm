@@ -13,6 +13,7 @@ import MapRenderer from '@/components/MapRenderer'
 import WaterRenderer from '@/components/WaterRenderer'
 import CodeEditor from '@/components/CodeEditor'
 import RegisterPanel from '@/components/RegisterPanel'
+import SubBar from '@/components/SubBar'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -131,7 +132,22 @@ export default function LevelPage() {
               { icon: HardDrive, text: "Memory", color: "#01A2C2" }
             ]}
             tabContent={[
-              <RegisterPanel key="register" />,
+              <div key="register" className="h-full flex flex-col">
+                <SubBar>
+                  <div className="w-1/4 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Reg</div>
+                  <div className="w-1/2 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Hex</div>
+                  <div className="w-1/4 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Dec</div>
+                </SubBar>
+                <div 
+                  className="flex-1 overflow-y-auto"
+                  style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}
+                >
+                  <RegisterPanel />
+                </div>
+              </div>,
               <div key="memory" className="p-4">Memory content coming soon...</div>
             ]}
           />
