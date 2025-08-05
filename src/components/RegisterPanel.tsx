@@ -34,14 +34,15 @@ export default function RegisterPanel() {
                 <Badge 
                   variant="outline" 
                   className="font-mono text-xs"
+                  style={{ color: '#5a5a5a' }}
                 >
                   {formatRegisterName(register)}
                 </Badge>
               </TableCell>
-              <TableCell className="font-mono h-12 w-1/2 text-center border-none">
+              <TableCell className="font-mono h-12 w-1/2 text-center border-none" style={{ color: '#5a5a5a' }}>
                 00000000
               </TableCell>
-              <TableCell className="font-mono h-12 w-1/4 text-center border-none">
+              <TableCell className="font-mono h-12 w-1/4 text-center border-none" style={{ color: '#5a5a5a' }}>
                 0
               </TableCell>
             </TableRow>
