@@ -10,6 +10,7 @@ import ExecutionBar from '@/components/ExecutionBar'
 import DebuggerBar from '@/components/DebuggerBar'
 import IconButton from '@/components/IconButton'
 import MapRenderer from '@/components/MapRenderer'
+import WaterRenderer from '@/components/WaterRenderer'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -76,8 +77,20 @@ export default function LevelPage() {
           <ResizablePanelGroup direction="vertical">
             <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
               <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
-                <div className="p-4 flex items-center justify-center h-full">
-                  <MapRenderer map={levelMap} />
+                <div className="w-full h-full relative overflow-hidden">
+                  {levelMap.waterBackground && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative flex items-center justify-center">
+                        <WaterRenderer 
+                          tilesX={levelMap.waterBackground.tilesX} 
+                          tilesY={levelMap.waterBackground.tilesY}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
+                          <MapRenderer map={levelMap} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
             </ResizablePanel>

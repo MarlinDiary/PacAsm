@@ -23,6 +23,11 @@ export interface PlayerPosition {
   };
 }
 
+export interface WaterBackground {
+  tilesX: number;
+  tilesY: number;
+}
+
 export interface GameMap {
   id: string;
   name: string;
@@ -31,6 +36,7 @@ export interface GameMap {
   tiles: TileSymbol[][];
   playerPosition?: PlayerPosition;
   dots?: { row: number; col: number }[];
+  waterBackground?: WaterBackground;
 }
 
 export const MAPS: GameMap[] = [
@@ -43,7 +49,8 @@ export const MAPS: GameMap[] = [
       ['.', '.', '*']
     ],
     playerPosition: { row: 0, col: 0, direction: 'right' },
-    dots: [{ row: 0, col: 1 }]
+    dots: [{ row: 0, col: 1 }],
+    waterBackground: { tilesX: 35, tilesY: 35 }
   }
 ];
 
