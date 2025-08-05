@@ -233,12 +233,14 @@ export default function CodeEditor({
           }
           .monaco-editor .cursors-layer .cursor {
             background-color: #1b4184 !important;
-            border-left: 2px solid #1b4184 !important;
+            border-left: 1px solid #1b4184 !important;
             color: #1b4184 !important;
+            transition: all 0.1s ease-out !important;
           }
           .monaco-editor .cursors-layer > .cursor {
             background-color: #1b4184 !important;
             border-color: #1b4184 !important;
+            transition: all 0.1s ease-out !important;
           }
         `
       }} />
