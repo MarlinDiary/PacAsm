@@ -31,20 +31,6 @@ export default function CodeEditor({
   ) {
     editorRef.current = editor
 
-    // Define custom theme
-    monaco.editor.defineTheme('custom-vs', {
-      base: 'vs',
-      inherit: true,
-      rules: [],
-      colors: {
-        'editor.lineHighlightBackground': '#f6f8fa',
-        'editor.lineHighlightBorder': '#f6f8fa',
-        'editorLineNumber.foreground': '#bdbebf',
-        'editorLineNumber.activeForeground': '#000000',
-        'editorCursor.foreground': '#1b4184'
-      }
-    })
-
     // Register assembly language if not already registered
     if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === 'assembly')) {
       monaco.languages.register({ id: 'assembly' })
@@ -57,6 +43,7 @@ export default function CodeEditor({
             [/;.*$/, 'comment'],
             [/#.*$/, 'comment'],
             [/\/\/.*$/, 'comment'],
+            [/@.*$/, 'comment'],
             
             // Labels
             [/^[a-zA-Z_][a-zA-Z0-9_]*:/, 'type'],
@@ -76,9 +63,6 @@ export default function CodeEditor({
             [/"/, 'string', '@string'],
             [/'([^'\\]|\\.)*$/, 'string.invalid'],
             [/'/, 'string', '@string_single'],
-            
-            // ARM directives and comments
-            [/@.*$/, 'comment'],
             
             // Memory references
             [/\[[^\]]+\]/, 'string.regexp'],
@@ -124,6 +108,51 @@ export default function CodeEditor({
         ]
       })
     }
+
+    // Define custom theme after language registration
+    monaco.editor.defineTheme('custom-assembly-theme', {
+      base: 'vs',
+      inherit: false,
+      rules: [
+        // Default text - black
+        { token: '', foreground: '000000' },
+        
+        // Comments - #647182
+        { token: 'comment', foreground: '647182' },
+        
+        // Strings - #003d99
+        { token: 'string', foreground: '003d99' },
+        { token: 'string.invalid', foreground: '003d99' },
+        { token: 'string.escape.invalid', foreground: '003d99' },
+        { token: 'string.regexp', foreground: '003d99' },
+        
+        // Keywords (ARM instructions) - #df0c24
+        { token: 'keyword', foreground: 'df0c24' },
+        
+        // Functions/Labels - #894ceb
+        { token: 'type', foreground: '894ceb' },
+        
+        // Variables (ARM registers) - #a24610
+        { token: 'variable.predefined', foreground: 'a24610' },
+        { token: 'identifier', foreground: '000000' },
+        
+        // Numbers/Constants - #005fcc
+        { token: 'number', foreground: '005fcc' },
+        { token: 'number.hex', foreground: '005fcc' }
+      ],
+      colors: {
+        'editor.background': '#ffffff',
+        'editor.foreground': '#000000',
+        'editor.lineHighlightBackground': '#f6f8fa',
+        'editor.lineHighlightBorder': '#f6f8fa',
+        'editorLineNumber.foreground': '#bdbebf',
+        'editorLineNumber.activeForeground': '#000000',
+        'editorCursor.foreground': '#1b4184'
+      }
+    })
+
+    // Apply the theme
+    monaco.editor.setTheme('custom-assembly-theme')
   }
 
   // Effect to handle line highlighting
@@ -220,7 +249,7 @@ export default function CodeEditor({
         value={value}
         onChange={onChange}
         onMount={handleEditorDidMount}
-        theme="custom-vs"
+        theme="custom-assembly-theme"
         loading=""
         options={{
           readOnly,
@@ -252,7 +281,9 @@ export default function CodeEditor({
             horizontal: 'hidden'
           },
           overviewRulerLanes: 0,
-          renderLineHighlight: 'all'
+          renderLineHighlight: 'all',
+          occurrencesHighlight: 'off',
+          selectionHighlight: false
         }}
       />
     </div>
