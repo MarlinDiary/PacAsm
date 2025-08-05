@@ -182,6 +182,12 @@ export default function CodeEditor({
           .monaco-editor .scroll-decoration {
             display: none !important;
           }
+          .monaco-editor:not(.focused) .view-overlays .current-line {
+            background-color: transparent !important;
+          }
+          .monaco-editor:not(.focused) .margin-view-overlays .current-line-margin {
+            background-color: transparent !important;
+          }
         `
       }} />
       <Editor
