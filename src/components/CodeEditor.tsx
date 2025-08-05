@@ -257,7 +257,7 @@ export default function CodeEditor({
           fontSize: 14,
           fontFamily: 'Menlo, Monaco, "Courier New", monospace',
           lineNumbers: 'on',
-          lineNumbersMinChars: 3,
+          lineNumbersMinChars: 5,
           glyphMargin: false,
           roundedSelection: false,
           scrollBeyondLastLine: false,
