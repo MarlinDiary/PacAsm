@@ -166,6 +166,7 @@ export default function CodeEditor({
         onChange={onChange}
         onMount={handleEditorDidMount}
         theme="vs"
+        loading=""
         options={{
           readOnly,
           minimap: { enabled: false },
