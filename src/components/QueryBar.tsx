@@ -43,7 +43,7 @@ export default function QueryBar({ children, onSearch, onFilterToggle }: QueryBa
       >
         <Search 
           size={16} 
-          color="#8c8c8c"
+          color="#a8a8a8"
           onClick={() => inputRef.current?.focus()}
         />
         <input
