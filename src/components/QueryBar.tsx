@@ -1,10 +1,14 @@
-import { Search } from 'lucide-react'
+import { Search, ListFilter } from 'lucide-react'
+import { useState, useRef } from 'react'
 
 interface QueryBarProps {
   children?: React.ReactNode
 }
 
 export default function QueryBar({ children }: QueryBarProps) {
+  const [isFilterActive, setIsFilterActive] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   return (
     <div 
       className="w-full"
@@ -17,7 +21,7 @@ export default function QueryBar({ children }: QueryBarProps) {
         className="w-full h-full flex items-center"
         style={{
           paddingLeft: '20px',
-          paddingRight: '12px',
+          paddingRight: '20px',
           paddingTop: '4px',
           paddingBottom: '4px'
         }}
@@ -25,8 +29,10 @@ export default function QueryBar({ children }: QueryBarProps) {
         <Search 
           size={16} 
           color="#8c8c8c"
+          onClick={() => inputRef.current?.focus()}
         />
         <input
+          ref={inputRef}
           type="text"
           placeholder="Search..."
           autoComplete="off"
@@ -34,6 +40,12 @@ export default function QueryBar({ children }: QueryBarProps) {
           style={{
             lineHeight: '1rem'
           }}
+        />
+        <ListFilter
+          size={16}
+          color={isFilterActive ? "#737373" : "#a8a8a8"}
+          className="cursor-pointer ml-1"
+          onClick={() => setIsFilterActive(!isFilterActive)}
         />
       </div>
       {children}
