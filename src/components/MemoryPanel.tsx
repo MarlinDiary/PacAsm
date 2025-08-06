@@ -8,6 +8,7 @@ import {
 interface MemoryRow {
   address: string;
   hex: string;
+  ascii: string;
 }
 
 const generateMemoryRows = (): MemoryRow[] => {
@@ -19,13 +20,15 @@ const generateMemoryRows = (): MemoryRow[] => {
   ]
   memoryRegions.forEach(region => {
     for (let i = 0; i < 256; i++) {
-      const address = region.start + (i * 16)
+      const address = region.start + (i * 4)
       const addressHex = `0x${address.toString(16).toUpperCase().padStart(8, '0')}`
-      const hexBytes = '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+      const hexBytes = '00 00 00 00'
+      const asciiBytes = '....'
       
       rows.push({
         address: addressHex,
-        hex: hexBytes
+        hex: hexBytes,
+        ascii: asciiBytes
       })
     }
   })
@@ -45,10 +48,11 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false }: 
     // Search filter
     const matchesSearch = !searchQuery || 
       row.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      row.hex.toLowerCase().includes(searchQuery.toLowerCase())
+      row.hex.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      row.ascii.toLowerCase().includes(searchQuery.toLowerCase())
     
     // Zero rows filter - check if all hex bytes are '00'
-    const isAllZeros = hideZeroRows && row.hex === '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+    const isAllZeros = hideZeroRows && row.hex === '00 00 00 00'
     
     return matchesSearch && !isAllZeros
   })
@@ -71,11 +75,14 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false }: 
         <TableBody>
           {filteredRows.map((row, index) => (
             <TableRow key={row.address} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
-              <TableCell className="h-12 w-1/4 text-left border-none font-mono text-xs pl-5" style={{ color: '#5a5a5a' }}>
+              <TableCell className="h-12 w-1/3 text-left border-none font-mono text-xs pl-5" style={{ color: '#5a5a5a' }}>
                 {row.address}
               </TableCell>
-              <TableCell className="font-mono h-12 w-3/4 text-right border-none text-xs pr-5" style={{ color: '#5a5a5a' }}>
+              <TableCell className="font-mono h-12 w-1/3 text-center border-none text-xs" style={{ color: '#5a5a5a' }}>
                 {row.hex}
+              </TableCell>
+              <TableCell className="font-mono h-12 w-1/3 text-right border-none text-xs pr-5" style={{ color: '#5a5a5a' }}>
+                {row.ascii}
               </TableCell>
             </TableRow>
           ))}

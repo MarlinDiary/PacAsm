@@ -4,6 +4,9 @@ export interface EmulatorOptions {
   codeAddress?: number;
   stackAddress?: number;
   stackSize?: number;
+  codeSize?: number;
+  dataAddress?: number;
+  dataSize?: number;
 }
 
 export interface RegisterState {
@@ -66,7 +69,10 @@ export class ARMEmulator {
     this.options = {
       codeAddress: 0x10000,
       stackAddress: 0x20000,
-      stackSize: 4096,
+      stackSize: 1024,
+      codeSize: 1024,
+      dataAddress: 0x30000,
+      dataSize: 1024,
       ...options,
     };
   }
@@ -197,7 +203,7 @@ export class ARMEmulator {
   async getEmulationResult(): Promise<EmulationResult> {
     try {
       const registers = await this.getAllRegisters();
-      const memory = await this.readMemory(this.options.codeAddress || 0x10000, 64);
+      const memory = await this.readMemory(this.options.codeAddress || 0x10000, this.options.codeSize || 1024);
 
       return {
         success: true,
