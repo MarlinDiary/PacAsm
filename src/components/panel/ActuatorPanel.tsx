@@ -18,7 +18,7 @@ export default function ActuatorPanel() {
       <Table className="border-none">
         <TableBody>
           {actuatorData.map((item) => (
-            <TableRow key={item.direction} className="h-12" style={{ borderBottom: '0.5px solid #ebebeb' }}>
+            <TableRow key={item.direction} className="h-12 hover:bg-transparent" style={{ borderBottom: '0.5px solid #ebebeb' }}>
               <TableCell className="h-12 w-1/3 text-center border-none" style={{ color: '#5a5a5a' }}>
                 <span className="text-lg">{item.symbol}</span>
               </TableCell>

@@ -53,8 +53,8 @@ export default function LevelPage() {
   const panel4Ref = useRef<ImperativePanelHandle>(null)
 
   const resetVerticalPanels = () => {
-    panel1Ref.current?.resize(60)
-    panel2Ref.current?.resize(40)
+    panel1Ref.current?.resize(70)
+    panel2Ref.current?.resize(30)
   }
 
   const resetHorizontalPanels = () => {
@@ -88,7 +88,7 @@ export default function LevelPage() {
         {/* First column with two panels */}
         <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical" className="h-full">
-            <ResizablePanel defaultSize={60} ref={panel1Ref} minSize={10}>
+            <ResizablePanel defaultSize={70} ref={panel1Ref} minSize={10}>
               <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
                 <div className="w-full h-full relative overflow-hidden">
                   {levelMap.waterBackground && (
@@ -111,7 +111,7 @@ export default function LevelPage() {
               style={{ height: '8px' }}
               onDoubleClick={resetVerticalPanels}
             />
-            <ResizablePanel defaultSize={40} ref={panel2Ref} minSize={10}>
+            <ResizablePanel defaultSize={30} ref={panel2Ref} minSize={10}>
               <Card tabs={[{ icon: Move, text: "Actuator", color: "#f4ba40" }]}>
                 <div className="h-full flex flex-col">
                   <ActuatorBar />
