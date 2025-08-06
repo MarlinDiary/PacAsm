@@ -267,7 +267,7 @@ export default function CodeEditor({
           tabSize: 4,
           insertSpaces: true,
           wordWrap: 'on',
-          contextmenu: true,
+          contextmenu: false,
           mouseWheelZoom: false,
           cursorStyle: 'line',
           lineHeight: 1.5,
