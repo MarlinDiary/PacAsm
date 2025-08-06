@@ -17,6 +17,7 @@ import MemoryPanel from '@/components/panel/MemoryPanel'
 import SubBar from '@/components/bar/SubBar'
 import QueryBar from '@/components/bar/QueryBar'
 import ActuatorBar from '@/components/bar/ActuatorBar'
+import ActuatorPanel from '@/components/panel/ActuatorPanel'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -112,7 +113,18 @@ export default function LevelPage() {
             />
             <ResizablePanel defaultSize={40} ref={panel2Ref} minSize={10}>
               <Card tabs={[{ icon: Move, text: "Actuator", color: "#f4ba40" }]}>
-                <ActuatorBar />
+                <div className="h-full flex flex-col">
+                  <ActuatorBar />
+                  <div 
+                    className="flex-1 overflow-y-auto"
+                    style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}
+                  >
+                    <ActuatorPanel />
+                  </div>
+                </div>
               </Card>
             </ResizablePanel>
           </ResizablePanelGroup>
