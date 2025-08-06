@@ -55,7 +55,7 @@ interface WorkerMessage {
 
 interface WorkerResponse {
   type: 'success' | 'error' | 'register-value' | 'memory-data' | 'execution-complete' | 'step-result';
-  payload?: string | RegisterState | MemoryData | StepResult;
+  payload?: string | RegisterState | MemoryData | StepResult | { message: string; executedInstructions: number };
   messageId?: string;
 }
 
@@ -175,12 +175,19 @@ export class ARMEmulator {
     return response.payload as StepResult;
   }
 
-  async run(instructionCount?: number): Promise<void> {
+  async run(instructionCount?: number): Promise<{ executedInstructions: number }> {
     if (!this.isInitialized) {
       throw new Error('Emulator not initialized');
     }
 
-    await this.sendMessage('run', { instructionCount });
+    const response = await this.sendMessage('run', { instructionCount });
+    
+    if (response.type === 'execution-complete' && typeof response.payload === 'object' && response.payload && 'executedInstructions' in response.payload) {
+      return { executedInstructions: (response.payload as { message: string; executedInstructions: number }).executedInstructions };
+    }
+    
+    // Fallback for old format
+    return { executedInstructions: 0 };
   }
 
   async readMemory(address: number, size: number): Promise<MemoryData> {

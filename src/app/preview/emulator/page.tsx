@@ -157,7 +157,7 @@ mov r2, r1        @ Store final sum in r2`)
        setEmulationOutput('Running emulation...')
 
              // Run the emulation with higher instruction limit for loops
-      await emulator.run(1000) // Allow up to 1000 instructions for complex programs
+      const runResult = await emulator.run(1000) // Allow up to 1000 instructions for complex programs
 
                // Get the results
         const result = await emulator.getEmulationResult()
@@ -174,7 +174,8 @@ mov r2, r1        @ Store final sum in r2`)
           formattedMemory,
           '',
           `Statistics:`,
-          `  Instructions executed: ${assemblyResult.count}`,
+          `  Instructions assembled: ${assemblyResult.count}`,
+          `  Instructions executed: ${runResult.executedInstructions}`,
           `  Memory mapped: 8KB (4KB code + 4KB stack)`,
         ].join('\n')
 

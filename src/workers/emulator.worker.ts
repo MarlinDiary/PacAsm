@@ -73,7 +73,7 @@ interface StepResult {
 
 interface EmulatorResponse {
   type: 'success' | 'error' | 'register-value' | 'memory-data' | 'execution-complete' | 'step-result';
-  payload?: string | RegisterInfo | { address: number; size: number; data: number[]; hex: string } | StepResult;
+  payload?: string | RegisterInfo | { address: number; size: number; data: number[]; hex: string } | StepResult | { message: string; executedInstructions: number };
   messageId?: string;
 }
 
@@ -97,9 +97,71 @@ class EmulatorWorker {
   private dataAddress = 0x30000;
   private dataSize = 4096;
   private currentMessageId: string | undefined;
+  private literalPoolAddresses: Set<number> = new Set();
 
   constructor() {
     this.loadUnicornScript();
+  }
+
+  // Check if an instruction looks like data (likely literal pool)
+  private isLikelyLiteralPool(instructionBytes: number[]): boolean {
+    if (instructionBytes.length !== 4) return false;
+    
+    const instruction = (instructionBytes[3] << 24) | (instructionBytes[2] << 16) | 
+                       (instructionBytes[1] << 8) | instructionBytes[0];
+    
+    // Check for all zeros (padding/end of code)
+    if (instruction === 0x00000000) {
+      return true; // Treat as literal pool to stop execution
+    }
+    
+    // Check for common literal pool patterns:
+    // 1. Very large numbers that are unlikely to be valid instructions
+    // 2. Numbers that look like addresses (in our memory ranges)
+    // 3. Common literal values used in code
+    
+    // Check if it looks like an address in our memory ranges
+    if ((instruction >= this.codeAddress && instruction < this.codeAddress + 4096) ||
+        (instruction >= this.stackAddress && instruction < this.stackAddress + this.stackSize) ||
+        (instruction >= this.dataAddress && instruction < this.dataAddress + this.dataSize)) {
+      return true;
+    }
+    
+    // Check for invalid instruction patterns
+    // ARM instructions have specific bit patterns in certain positions
+    const condition = (instruction >>> 28) & 0xF;
+    const opcode = (instruction >>> 21) & 0xF;
+    
+    // If condition field is invalid (0xF is reserved in many contexts)
+    // and it doesn't look like a valid instruction pattern
+    if (condition === 0xF && (opcode > 0xF || (instruction & 0x0FFFFFFF) > 0x0FFFFFFF)) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Find next valid instruction address by skipping literal pool
+  private findNextInstruction(currentPc: number): number {
+    if (!this.unicorn) return currentPc;
+    
+    let nextPc = currentPc + 4; // Start from next 4-byte aligned address
+    const maxSkip = 16; // Maximum bytes to skip (4 words)
+    
+    for (let offset = 0; offset <= maxSkip; offset += 4) {
+      try {
+        const testAddress = nextPc + offset;
+        const testBytes = Array.from(this.unicorn.mem_read(testAddress, 4));
+        
+        if (!this.isLikelyLiteralPool(testBytes)) {
+          return testAddress;
+        }
+      } catch {
+        break;
+      }
+    }
+    
+    return this.codeAddress + 4096; // Return end address to stop execution
   }
 
   private async loadUnicornScript(): Promise<void> {
@@ -334,20 +396,77 @@ class EmulatorWorker {
       // Read the instruction at current PC
       let instructionBytes: number[] = [];
       let instructionHex = '';
+      let isLiteralPool = false;
       
       try {
         instructionBytes = Array.from(this.unicorn.mem_read(pcBefore, 4));
         instructionHex = instructionBytes.map(b => b.toString(16).padStart(2, '0')).join(' ');
+        isLiteralPool = this.isLikelyLiteralPool(instructionBytes);
       } catch {
         instructionHex = 'INVALID';
       }
       
-      // Execute one instruction
-      const endAddress = this.codeAddress + 4096;
-      this.unicorn.emu_start(pcBefore, endAddress, 0, 1);
+      let pcAfter: number;
+      let stepMessage = 'Step executed successfully';
+      
+      if (isLiteralPool) {
+        const instruction = (instructionBytes[3] << 24) | (instructionBytes[2] << 16) | 
+                           (instructionBytes[1] << 8) | instructionBytes[0];
+        
+        if (instruction === 0x00000000) {
+          // Reached end of code (all zeros padding)
+          this.postMessage({
+            type: 'step-result',
+            payload: {
+              success: true,
+              message: 'Execution completed - reached end of code',
+              pc: pcBefore,
+              instruction: {
+                address: pcBefore,
+                bytes: instructionBytes,
+                hex: instructionHex.toUpperCase() + ' (END OF CODE)'
+              },
+              registers: undefined
+            }
+          });
+          return;
+        } else {
+          // Skip over literal pool instead of executing it
+          pcAfter = this.findNextInstruction(pcBefore);
+          
+          // Check if we found a valid next instruction
+          if (pcAfter >= this.codeAddress + 4096) {
+            this.postMessage({
+              type: 'step-result', 
+              payload: {
+                success: true,
+                message: 'Execution completed - no more instructions',
+                pc: pcBefore,
+                instruction: {
+                  address: pcBefore,
+                  bytes: instructionBytes,
+                  hex: instructionHex.toUpperCase() + ' (LITERAL POOL - END)'
+                },
+                registers: undefined
+              }
+            });
+            return;
+          }
+          
+          this.unicorn.reg_write_i32(uc.ARM_REG_PC, pcAfter);
+          stepMessage = 'Skipped literal pool data';
+          
+          // Mark this address as literal pool for future reference
+          this.literalPoolAddresses.add(pcBefore);
+        }
+      } else {
+        // Execute one instruction normally
+        const endAddress = this.codeAddress + 4096;
+        this.unicorn.emu_start(pcBefore, endAddress, 0, 1);
+        pcAfter = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
+      }
       
       // Get state after execution
-      const pcAfter = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
       const registersAfter = this.getAllRegisters();
       
       // Find changed registers
@@ -360,12 +479,12 @@ class EmulatorWorker {
         type: 'step-result',
         payload: {
           success: true,
-          message: 'Step executed successfully',
+          message: stepMessage,
           pc: pcAfter,
           instruction: {
             address: pcBefore,
             bytes: instructionBytes,
-            hex: instructionHex.toUpperCase()
+            hex: instructionHex.toUpperCase() + (isLiteralPool ? ' (LITERAL POOL)' : '')
           },
           registers: changedRegisters.length > 0 ? changedRegisters : undefined
         }
@@ -389,14 +508,67 @@ class EmulatorWorker {
       }
 
       const uc = workerSelf.uc!;
-      const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
-      const endAddress = this.codeAddress + 4096;
+      const maxInstructions = instructionCount || 1000;
+      let executedInstructions = 0;
 
-      this.unicorn.emu_start(pc, endAddress, 0, instructionCount || 0);
+      // Safe execution loop - check each instruction before executing
+      while (executedInstructions < maxInstructions) {
+        const pc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
+        
+        // Check if we've reached the end of code space
+        if (pc >= this.codeAddress + 4096) {
+          break;
+        }
+        
+        // Read the instruction at current PC
+        let instructionBytes: number[] = [];
+        let isLiteralPool = false;
+        
+        try {
+          instructionBytes = Array.from(this.unicorn.mem_read(pc, 4));
+          isLiteralPool = this.isLikelyLiteralPool(instructionBytes);
+        } catch {
+          break;
+        }
+        
+        if (isLiteralPool) {
+          const instruction = (instructionBytes[3] << 24) | (instructionBytes[2] << 16) | 
+                             (instructionBytes[1] << 8) | instructionBytes[0];
+          
+          if (instruction === 0x00000000) {
+            // Reached end of code (padding)
+            break;
+          } else {
+            // Skip literal pool
+            const nextPc = this.findNextInstruction(pc);
+            if (nextPc >= this.codeAddress + 4096) {
+              break;
+            }
+            
+            this.unicorn.reg_write_i32(uc.ARM_REG_PC, nextPc);
+            continue; // Don't count this as an executed instruction
+          }
+        } else {
+          // Execute one instruction normally
+          const endAddress = this.codeAddress + 4096;
+          this.unicorn.emu_start(pc, endAddress, 0, 1);
+          executedInstructions++;
+          
+          const newPc = this.unicorn.reg_read_i32(uc.ARM_REG_PC);
+          
+          // If PC didn't change, we might be stuck
+          if (newPc === pc) {
+            break;
+          }
+        }
+      }
 
       this.postMessage({
         type: 'execution-complete',
-        payload: 'Execution completed'
+        payload: {
+          message: `Execution completed. Instructions executed: ${executedInstructions}`,
+          executedInstructions
+        }
       });
     } catch (error) {
       this.postMessage({
