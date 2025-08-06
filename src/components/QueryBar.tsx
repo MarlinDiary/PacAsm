@@ -3,11 +3,26 @@ import { useState, useRef } from 'react'
 
 interface QueryBarProps {
   children?: React.ReactNode
+  onSearch?: (query: string) => void
+  onFilterToggle?: (isActive: boolean) => void
 }
 
-export default function QueryBar({ children }: QueryBarProps) {
+export default function QueryBar({ children, onSearch, onFilterToggle }: QueryBarProps) {
   const [isFilterActive, setIsFilterActive] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value
+    setSearchQuery(query)
+    onSearch?.(query)
+  }
+
+  const handleFilterToggle = () => {
+    const newState = !isFilterActive
+    setIsFilterActive(newState)
+    onFilterToggle?.(newState)
+  }
 
   return (
     <div 
@@ -36,6 +51,8 @@ export default function QueryBar({ children }: QueryBarProps) {
           type="text"
           placeholder="Search..."
           autoComplete="off"
+          value={searchQuery}
+          onChange={handleInputChange}
           className="w-full outline-none border-none bg-transparent focus:bg-transparent placeholder:text-[#c4c4c6] placeholder:font-medium ml-1 text-sm text-[#5c5c5c]"
           style={{
             lineHeight: '1rem'
@@ -45,7 +62,7 @@ export default function QueryBar({ children }: QueryBarProps) {
           size={16}
           color={isFilterActive ? "#737373" : "#a8a8a8"}
           className="cursor-pointer ml-1"
-          onClick={() => setIsFilterActive(!isFilterActive)}
+          onClick={handleFilterToggle}
         />
       </div>
       {children}

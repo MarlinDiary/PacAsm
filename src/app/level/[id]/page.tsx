@@ -36,6 +36,12 @@ export default function LevelPage() {
 
   // State for toggling between ExecutionBar and DebuggerBar
   const [isDebugMode, setIsDebugMode] = useState(false)
+  
+  // State for memory search
+  const [memorySearchQuery, setMemorySearchQuery] = useState('')
+  
+  // State for memory filter
+  const [hideZeroRows, setHideZeroRows] = useState(false)
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)
@@ -151,7 +157,10 @@ export default function LevelPage() {
                 </div>
               </div>,
               <div key="memory" className="h-full flex flex-col">
-                <QueryBar />
+                <QueryBar 
+                  onSearch={setMemorySearchQuery} 
+                  onFilterToggle={setHideZeroRows}
+                />
                 <div 
                   className="flex-1 overflow-y-auto"
                   style={{
@@ -159,7 +168,10 @@ export default function LevelPage() {
                     msOverflowStyle: 'none'
                   }}
                 >
-                  <MemoryPanel />
+                  <MemoryPanel 
+                    searchQuery={memorySearchQuery} 
+                    hideZeroRows={hideZeroRows}
+                  />
                 </div>
               </div>
             ]}

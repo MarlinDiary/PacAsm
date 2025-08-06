@@ -35,12 +35,41 @@ const generateMemoryRows = (): MemoryRow[] => {
 
 const memoryRows = generateMemoryRows()
 
-export default function MemoryPanel() {
+interface MemoryPanelProps {
+  searchQuery?: string
+  hideZeroRows?: boolean
+}
+
+export default function MemoryPanel({ searchQuery = '', hideZeroRows = false }: MemoryPanelProps) {
+  const filteredRows = memoryRows.filter(row => {
+    // Search filter
+    const matchesSearch = !searchQuery || 
+      row.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      row.hex.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Zero rows filter - check if all hex bytes are '00'
+    const isAllZeros = hideZeroRows && row.hex === '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+    
+    return matchesSearch && !isAllZeros
+  })
+  
+  if (filteredRows.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <img 
+          src="/res/null.png" 
+          alt="No results" 
+          style={{ width: '200px', flexShrink: 0 }}
+        />
+      </div>
+    )
+  }
+  
   return (
     <div className="w-full">
       <Table className="border-none">
         <TableBody>
-          {memoryRows.map((row, index) => (
+          {filteredRows.map((row, index) => (
             <TableRow key={row.address} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
               <TableCell className="h-12 w-1/4 text-left border-none font-mono text-xs pl-5" style={{ color: '#5a5a5a' }}>
                 {row.address}
