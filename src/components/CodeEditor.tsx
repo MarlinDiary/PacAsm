@@ -39,6 +39,11 @@ export default function CodeEditor({
       monaco.languages.setMonarchTokensProvider('assembly', {
         tokenizer: {
           root: [
+            // Numbers (before comments to catch #4, #1, etc.)
+            [/\b0x[0-9a-fA-F]+\b/, 'number.hex'],
+            [/#[0-9]+\b/, 'number'],
+            [/\b[0-9]+\b/, 'number'],
+            
             // Comments
             [/;.*$/, 'comment'],
             [/#.*$/, 'comment'],
@@ -48,15 +53,8 @@ export default function CodeEditor({
             // Labels
             [/^[a-zA-Z_][a-zA-Z0-9_]*:/, 'type'],
             
-            // ARM instructions
-            [/\b(mov|add|sub|mul|div|cmp|b|bl|bx|blx|beq|bne|blt|ble|bgt|bge|ldr|str|ldm|stm|push|pop|nop)\b/i, 'keyword'],
-            
-            // ARM registers
-            [/\b(r[0-9]|r1[0-5]|sp|lr|pc|cpsr)\b/i, 'variable.predefined'],
-            
-            // Numbers
-            [/\b0x[0-9a-fA-F]+\b/, 'number.hex'],
-            [/\b[0-9]+\b/, 'number'],
+            // Memory references
+            [/\[[^\]]+\]/, 'string.regexp'],
             
             // Strings
             [/"([^"\\]|\\.)*$/, 'string.invalid'],
@@ -64,10 +62,13 @@ export default function CodeEditor({
             [/'([^'\\]|\\.)*$/, 'string.invalid'],
             [/'/, 'string', '@string_single'],
             
-            // Memory references
-            [/\[[^\]]+\]/, 'string.regexp'],
+            // ARM registers (before instructions to be more specific)
+            [/\b([rR][0-9]|[rR]1[0-5]|[sS][pP]|[lL][rR]|[pP][cC]|[cC][pP][sS][rR])\b/, 'variable.predefined'],
             
-            // Identifiers
+            // ARM instructions (before general identifiers)
+            [/\b(?:MOV|ADD|SUB|MUL|DIV|CMP|B|BL|BX|BLX|BEQ|BNE|BLT|BLE|BGT|BGE|BCC|BCS|BHI|BLS|BMI|BPL|BVS|BVC|LDR|STR|LDM|STM|PUSH|POP|NOP|ADR|AND|ORR|EOR|BIC|MVN|LSL|LSR|ASR|ROR|RRX)\b/i, 'keyword'],
+            
+            // Identifiers (last to avoid conflicts)
             [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
           ],
           
