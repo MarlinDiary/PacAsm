@@ -15,6 +15,7 @@ import CodeEditor from '@/components/CodeEditor'
 import RegisterPanel from '@/components/RegisterPanel'
 import MemoryPanel from '@/components/MemoryPanel'
 import SubBar from '@/components/SubBar'
+import QueryBar from '@/components/QueryBar'
 import { getMapByLevel } from '@/data/maps'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
@@ -150,7 +151,7 @@ export default function LevelPage() {
                 </div>
               </div>,
               <div key="memory" className="h-full flex flex-col">
-                <SubBar />
+                <QueryBar />
                 <div 
                   className="flex-1 overflow-y-auto"
                   style={{
