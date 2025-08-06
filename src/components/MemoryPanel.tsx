@@ -59,7 +59,7 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false }: 
         <img 
           src="/res/null.png" 
           alt="No results" 
-          style={{ width: '200px', flexShrink: 0 }}
+          style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
       </div>
     )
