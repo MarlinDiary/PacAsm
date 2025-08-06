@@ -23,7 +23,7 @@ const generateMemoryRows = (): MemoryRow[] => {
       const address = region.start + (i * 4)
       const addressHex = `0x${address.toString(16).toUpperCase().padStart(8, '0')}`
       const hexBytes = '00 00 00 00'
-      const asciiBytes = '....'
+      const asciiBytes = '. . . .'
       
       rows.push({
         address: addressHex,
