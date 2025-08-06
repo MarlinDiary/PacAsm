@@ -138,7 +138,7 @@ export default function LevelPage() {
         {/* Second column */}
         <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
           <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]}>
-            <CodeEditor />
+            <CodeEditor value={levelMap.initialCode || ''} />
           </Card>
         </ResizablePanel>
         

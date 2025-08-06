@@ -37,6 +37,7 @@ export interface GameMap {
   playerPosition?: PlayerPosition;
   dots?: { row: number; col: number }[];
   waterBackground?: WaterBackground;
+  initialCode?: string;
 }
 
 export const MAPS: GameMap[] = [
@@ -50,7 +51,10 @@ export const MAPS: GameMap[] = [
     ],
     playerPosition: { row: 0, col: 0, direction: 'right' },
     dots: [{ row: 0, col: 2 }],
-    waterBackground: { tilesX: 35, tilesY: 35 }
+    waterBackground: { tilesX: 35, tilesY: 35 },
+    initialCode: `LDR   R0, =0x00030000
+MOV   R1, #4
+STR   R1, [R0]`
   }
 ];
 
