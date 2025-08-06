@@ -2,14 +2,20 @@ import { Square, ArrowDownToDot, ArrowUpFromDot, RefreshCcw } from 'lucide-react
 
 interface DebuggerBarProps {
   onReturnClick?: () => void
+  onStopClick?: () => void
 }
 
-export default function DebuggerBar({ onReturnClick }: DebuggerBarProps) {
+export default function DebuggerBar({ onReturnClick, onStopClick }: DebuggerBarProps) {
+  const handleStopClick = () => {
+    onStopClick?.()
+    onReturnClick?.()
+  }
+
   return (
     <div className="flex items-center h-8">
       {/* Square button */}
       <button 
-        onClick={onReturnClick}
+        onClick={handleStopClick}
         className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center"
       >
         <Square size={16} color="#e34940" fill="#e34940" />

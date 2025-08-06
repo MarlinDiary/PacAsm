@@ -4,14 +4,20 @@ import StatusBar from './StatusBar'
 
 interface ExecutionBarProps {
   onDebugClick?: () => void
+  onPlayClick?: () => void
   isDebugMode?: boolean
 }
 
-export default function ExecutionBar({ onDebugClick, isDebugMode }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode }: ExecutionBarProps) {
   const [showStatusBar, setShowStatusBar] = useState(false)
 
   const handlePlayClick = () => {
     setShowStatusBar(true)
+    onPlayClick?.()
+  }
+
+  const handleDebugClick = () => {
+    onDebugClick?.()
   }
 
   return (
@@ -22,7 +28,7 @@ export default function ExecutionBar({ onDebugClick, isDebugMode }: ExecutionBar
       <div className={`flex items-center h-8 transition-all duration-200 ${showStatusBar || isDebugMode ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${showStatusBar || isDebugMode ? '' : ''}`}>
         {/* Debug button */}
         <button 
-          onClick={onDebugClick}
+          onClick={handleDebugClick}
           className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center"
         >
           <Bug size={16} color="#f2a53f" />

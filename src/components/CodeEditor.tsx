@@ -8,7 +8,7 @@ interface CodeEditorProps {
   onChange?: (value: string | undefined) => void
   height?: string | number
   width?: string | number
-  readOnly?: boolean
+  disabled?: boolean
   className?: string
   highlightedLine?: number
 }
@@ -18,7 +18,7 @@ export default function CodeEditor({
   onChange,
   height = '100%',
   width = '100%',
-  readOnly = false,
+  disabled = false,
   className = '',
   highlightedLine
 }: CodeEditorProps) {
@@ -200,8 +200,17 @@ export default function CodeEditor({
     }
   }, [highlightedLine])
 
+  const handleEditorFocus = () => {
+    if (disabled && editorRef.current) {
+      editorRef.current.blur()
+    }
+  }
+
   return (
-    <div className={`h-full w-full ${className}`}>
+    <div 
+      className={`h-full w-full ${className} ${disabled ? 'pointer-events-none' : ''}`}
+      style={{ opacity: disabled ? 0.8 : 1 }}
+    >
       <style dangerouslySetInnerHTML={{
         __html: `
           .monaco-editor .view-overlays .current-line {
@@ -254,8 +263,12 @@ export default function CodeEditor({
         onMount={handleEditorDidMount}
         theme="custom-assembly-theme"
         loading=""
+        beforeMount={(monaco) => {
+          if (disabled) {
+            // Additional setup for disabled state if needed
+          }
+        }}
         options={{
-          readOnly,
           minimap: { enabled: false },
           fontSize: 14,
           fontFamily: 'Menlo, Monaco, "Courier New", monospace',

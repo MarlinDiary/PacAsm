@@ -39,6 +39,9 @@ export default function LevelPage() {
   // State for toggling between ExecutionBar and DebuggerBar
   const [isDebugMode, setIsDebugMode] = useState(false)
   
+  // State for code editor disabled
+  const [isCodeDisabled, setIsCodeDisabled] = useState(false)
+  
   // State for memory search
   const [memorySearchQuery, setMemorySearchQuery] = useState('')
   
@@ -63,6 +66,20 @@ export default function LevelPage() {
     panel4Ref.current?.resize(33)
   }
 
+  const handlePlayClick = () => {
+    setIsCodeDisabled(true)
+  }
+
+  const handleDebugClick = () => {
+    setIsDebugMode(true)
+    setIsCodeDisabled(true)
+  }
+
+  const handleStopClick = () => {
+    setIsCodeDisabled(false)
+    setIsDebugMode(false)
+  }
+
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
       <div className="p-2 h-full flex flex-col">
@@ -72,11 +89,15 @@ export default function LevelPage() {
           </div>
           <div className="relative">
             <ExecutionBar 
-              onDebugClick={() => setIsDebugMode(true)} 
+              onDebugClick={handleDebugClick}
+              onPlayClick={handlePlayClick}
               isDebugMode={isDebugMode}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-              <DebuggerBar onReturnClick={() => setIsDebugMode(false)} />
+              <DebuggerBar 
+                onReturnClick={() => setIsDebugMode(false)} 
+                onStopClick={handleStopClick}
+              />
             </div>
           </div>
           <div className="absolute right-0 top-0">
@@ -138,7 +159,10 @@ export default function LevelPage() {
         {/* Second column */}
         <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
           <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]}>
-            <CodeEditor value={levelMap.initialCode || ''} />
+            <CodeEditor 
+              value={levelMap.initialCode || ''} 
+              disabled={isCodeDisabled}
+            />
           </Card>
         </ResizablePanel>
         
