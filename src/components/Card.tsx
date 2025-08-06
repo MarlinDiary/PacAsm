@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import TabBar, { Tab } from './TabBar'
+import TabBar, { Tab } from './bar/TabBar'
 import { LucideIcon } from 'lucide-react'
 
 interface TabConfig {

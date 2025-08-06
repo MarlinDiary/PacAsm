@@ -1,4 +1,4 @@
-import { Hammer } from './ui/hammer'
+import { Hammer } from '../ui/hammer'
 
 export default function StatusBar() {
   return (
