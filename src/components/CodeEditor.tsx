@@ -200,12 +200,6 @@ export default function CodeEditor({
     }
   }, [highlightedLine])
 
-  const handleEditorFocus = () => {
-    if (disabled && editorRef.current) {
-      editorRef.current.blur()
-    }
-  }
-
   return (
     <div 
       className={`h-full w-full ${className} ${disabled ? 'pointer-events-none' : ''}`}
