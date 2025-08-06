@@ -40,7 +40,7 @@ export class LiteralPoolDetector {
 
   // Find next valid instruction address by skipping literal pool
   findNextInstruction(currentPc: number, unicorn: UnicornInstance): number {
-    let nextPc = currentPc + 4; // Start from next 4-byte aligned address
+    const nextPc = currentPc + 4; // Start from next 4-byte aligned address
     const maxSkip = 16; // Maximum bytes to skip (4 words)
     
     for (let offset = 0; offset <= maxSkip; offset += 4) {

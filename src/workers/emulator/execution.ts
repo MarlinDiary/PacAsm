@@ -1,6 +1,6 @@
 // Execution engine for ARM instructions
 
-import { UnicornInstance, UnicornGlobal, StepResult, RegisterInfo, EmulatorConfig } from './types';
+import { UnicornInstance, UnicornGlobal, StepResult, EmulatorConfig } from './types';
 import { LiteralPoolDetector } from './literal-pool';
 import { MemoryManager } from './memory-manager';
 

@@ -1,6 +1,6 @@
 // Unicorn.js loader and initialization
 
-import { WorkerSelf, UnicornGlobal } from './types';
+import { WorkerSelf, UnicornGlobal, EmulatorResponse } from './types';
 
 export class UnicornLoader {
   private workerSelf: WorkerSelf;
@@ -12,7 +12,7 @@ export class UnicornLoader {
   async loadUnicornScript(): Promise<void> {
     try {
       const baseUrl = this.workerSelf.location.origin;
-      (globalThis as any).importScripts(`${baseUrl}/arm/unicorn-arm.min.js`);
+      (globalThis as unknown as { importScripts: (url: string) => void }).importScripts(`${baseUrl}/arm/unicorn-arm.min.js`);
       
       await new Promise<void>((resolve) => {
         const checkUnicorn = () => {
@@ -45,7 +45,7 @@ export class UnicornLoader {
     return this.workerSelf.uc;
   }
 
-  private postMessage(response: any): void {
+  private postMessage(response: Pick<EmulatorResponse, 'type' | 'payload'>): void {
     this.workerSelf.postMessage(response);
   }
 }
