@@ -3,9 +3,11 @@ import { Square, ArrowDownToDot, ArrowUpFromDot, RefreshCcw } from 'lucide-react
 interface DebuggerBarProps {
   onReturnClick?: () => void
   onStopClick?: () => void
+  onStepDown?: () => void
+  onStepUp?: () => void
 }
 
-export default function DebuggerBar({ onReturnClick, onStopClick }: DebuggerBarProps) {
+export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, onStepUp }: DebuggerBarProps) {
   const handleStopClick = () => {
     onStopClick?.()
     onReturnClick?.()
@@ -26,13 +28,19 @@ export default function DebuggerBar({ onReturnClick, onStopClick }: DebuggerBarP
       
       {/* Long bar with three buttons */}
       <div className="h-8 bg-[#e7e7e7] rounded-r-sm flex">
-        {/* Arrow down to dot button */}
-        <button className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center">
+        {/* Arrow down to dot button - Step Down */}
+        <button 
+          onClick={onStepDown}
+          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center"
+        >
           <ArrowDownToDot size={16} color="#3679f5" />
         </button>
         
-        {/* Arrow up from dot button */}
-        <button className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center">
+        {/* Arrow up from dot button - Step Up */}
+        <button 
+          onClick={onStepUp}
+          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center"
+        >
           <ArrowUpFromDot size={16} color="#3679f5" />
         </button>
         

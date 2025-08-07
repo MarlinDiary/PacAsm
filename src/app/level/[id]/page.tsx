@@ -1,7 +1,7 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
@@ -19,6 +19,9 @@ import QueryBar from '@/components/bar/QueryBar'
 import ActuatorBar from '@/components/bar/ActuatorBar'
 import ActuatorPanel from '@/components/panel/ActuatorPanel'
 import { getMapByLevel } from '@/data/maps'
+import { useEmulator } from '@/hooks/useEmulator'
+import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
+import { ARMAssembler } from '@/lib/assembler'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
 export default function LevelPage() {
@@ -41,6 +44,11 @@ export default function LevelPage() {
   
   // State for code editor disabled
   const [isCodeDisabled, setIsCodeDisabled] = useState(false)
+  
+  // Debugging state
+  const emulator = useEmulator()
+  const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
+  const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
   
   // State for memory search
   const [memorySearchQuery, setMemorySearchQuery] = useState('')
@@ -66,18 +74,70 @@ export default function LevelPage() {
     panel4Ref.current?.resize(33)
   }
 
+  // Cleanup emulator on unmount
+  useEffect(() => {
+    return () => {
+      emulator.cleanup()
+    }
+  }, [emulator.cleanup])
+
   const handlePlayClick = () => {
     setIsCodeDisabled(true)
   }
 
-  const handleDebugClick = () => {
+  const handleDebugClick = async () => {
     setIsDebugMode(true)
     setIsCodeDisabled(true)
+    
+    try {
+      if (!emulator.state.isInitialized) {
+        await emulator.initializeEmulator()
+      }
+      
+      const sourceCode = levelMap.initialCode || ''
+      const codeHighlighter = await createHighlighter(sourceCode)
+      setHighlighter(codeHighlighter)
+      
+      const assembler = new ARMAssembler()
+      await assembler.initialize()
+      const result = await assembler.assemble(sourceCode)
+      await emulator.loadCode(Array.from(result.mc))
+      
+      setHighlightedLine(undefined)
+      assembler.destroy()
+    } catch (error) {
+      console.error('Debug initialization failed:', error)
+    }
   }
 
-  const handleStopClick = () => {
+  const handleStepDown = async () => {
+    if (!highlighter) return
+    
+    try {
+      const stepResult = await emulator.step()
+      if (stepResult) {
+        const highlight = getHighlightFromStepResult(stepResult, highlighter)
+        setHighlightedLine(highlight?.lineNumber)
+      }
+    } catch (error) {
+      console.error('Step down failed:', error)
+    }
+  }
+
+  const handleStepUp = async () => {
+    // TODO: Implement step up functionality
+  }
+
+  const handleStopClick = async () => {
     setIsCodeDisabled(false)
     setIsDebugMode(false)
+    setHighlightedLine(undefined)
+    
+    try {
+      await emulator.reset()
+    } catch (error) {
+      console.error('Stop failed:', error)
+    }
   }
 
   return (
@@ -97,6 +157,8 @@ export default function LevelPage() {
               <DebuggerBar 
                 onReturnClick={() => setIsDebugMode(false)} 
                 onStopClick={handleStopClick}
+                onStepDown={handleStepDown}
+                onStepUp={handleStepUp}
               />
             </div>
           </div>
@@ -162,6 +224,7 @@ export default function LevelPage() {
             <CodeEditor 
               value={levelMap.initialCode || ''} 
               disabled={isCodeDisabled}
+              highlightedLine={highlightedLine}
             />
           </Card>
         </ResizablePanel>

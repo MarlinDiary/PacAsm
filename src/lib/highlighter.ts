@@ -2,7 +2,7 @@
 // Maps memory addresses to source code lines for highlighting during debug execution
 
 import { ARMAssembler } from './assembler';
-import { createDisassembler } from './disassembler';
+import { disassembleCode } from './disassembler';
 
 interface SourceLine {
   lineNumber: number;
@@ -49,19 +49,15 @@ export class CodeHighlighter {
     try {
       const assemblyResult = await assembler.assemble(sourceCode);
       
-      // Disassemble to get instruction details with addresses
-      const disassembler = createDisassembler({ detail: true });
-      await disassembler.initialize();
-      
-      const disassemblyResult = await disassembler.disassemble(
+      // Use utility function that handles initialization and cleanup automatically
+      const disassemblyResult = await disassembleCode(
         assemblyResult.mc,
-        this.baseAddress
+        this.baseAddress,
+        { detail: true }
       );
       
       // Create address to source line mapping
       this.createAddressMapping(disassemblyResult);
-      
-      disassembler.destroy();
     } finally {
       assembler.destroy();
     }

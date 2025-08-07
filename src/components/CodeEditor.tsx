@@ -164,21 +164,18 @@ export default function CodeEditor({
 
     const editor = editorRef.current
 
-    // Clear previous decorations
-    if (decorationsRef.current.length > 0) {
-      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
-    }
-
     // Add new decoration for highlighted line
     // Import monaco dynamically to avoid SSR issues
     import('monaco-editor').then((monaco) => {
-      decorationsRef.current = editor.deltaDecorations([], [
+      // Clear previous decorations and add new one
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [
         {
-          range: new monaco.Range(highlightedLine, 1, highlightedLine, 1),
+          range: new monaco.Range(highlightedLine, 1, highlightedLine, Number.MAX_SAFE_INTEGER),
           options: {
             isWholeLine: true,
-            className: 'highlighted-line',
-            glyphMarginClassName: 'highlighted-line-glyph'
+            className: 'highlighted-line-full',
+            marginClassName: 'highlighted-line-margin',
+            linesDecorationsClassName: 'highlighted-line-glyph'
           }
         }
       ])
@@ -195,9 +192,8 @@ export default function CodeEditor({
     }
 
     const editor = editorRef.current
-    if (decorationsRef.current.length > 0) {
-      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
-    }
+    // Clear all decorations
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
   }, [highlightedLine])
 
   return (
@@ -245,6 +241,21 @@ export default function CodeEditor({
             background-color: #1b4184 !important;
             border-color: #1b4184 !important;
             transition: all 0.1s ease-out !important;
+          }
+          .monaco-editor .highlighted-line-full {
+            background-color: #f7f1da !important;
+          }
+          .monaco-editor .view-overlays .highlighted-line-full {
+            background-color: #f7f1da !important;
+            width: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+          }
+          .monaco-editor .highlighted-line-margin {
+            background-color: #f7f1da !important;
+          }
+          .monaco-editor .highlighted-line-glyph {
+            background-color: #f7f1da !important;
           }
         `
       }} />

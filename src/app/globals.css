@@ -121,23 +121,3 @@
   }
 }
 
-/* Monaco Editor line highlighting styles */
-.monaco-editor .highlighted-line {
-  background-color: rgba(255, 193, 7, 0.2) !important;
-  border-left: 3px solid #ffc107 !important;
-}
-
-.monaco-editor .highlighted-line-glyph {
-  background-color: #ffc107 !important;
-  width: 4px !important;
-}
-
-/* Fade in animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}

@@ -205,12 +205,11 @@ export class ARMDisassembler {
       try {
         this.capstone.close();
       } catch (error) {
-        // Ignore close errors
-        console.warn('Warning during capstone cleanup:', error);
+        // Silently ignore close errors - instance may already be closed
       }
       this.capstone = null;
+      this.isInitialized = false;
     }
-    this.isInitialized = false;
   }
 
   private async loadCapstoneScript(): Promise<void> {
