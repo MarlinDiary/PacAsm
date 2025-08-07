@@ -45,6 +45,9 @@ export default function LevelPage() {
   // State for code editor disabled
   const [isCodeDisabled, setIsCodeDisabled] = useState(false)
   
+  // State for current code content
+  const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
+  
   // Debugging state
   const emulator = useEmulator()
   const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
@@ -94,7 +97,7 @@ export default function LevelPage() {
         await emulator.initializeEmulator()
       }
       
-      const sourceCode = levelMap.initialCode || ''
+      const sourceCode = currentCode
       const codeHighlighter = await createHighlighter(sourceCode)
       setHighlighter(codeHighlighter)
       
@@ -222,7 +225,8 @@ export default function LevelPage() {
         <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
           <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]}>
             <CodeEditor 
-              value={levelMap.initialCode || ''} 
+              value={currentCode} 
+              onChange={(value) => setCurrentCode(value || '')}
               disabled={isCodeDisabled}
               highlightedLine={highlightedLine}
             />
