@@ -46,6 +46,7 @@ export default function LevelPage() {
   
   // State for play mode
   const [isPlayMode, setIsPlayMode] = useState(false)
+  const [playStatus, setPlayStatus] = useState<'pending' | 'running'>('pending')
   
   // State for current code content
   const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
@@ -92,11 +93,13 @@ export default function LevelPage() {
   const handlePlayClick = async () => {
     setIsCodeDisabled(true)
     setIsPlayMode(true)
+    setPlayStatus('pending') // Show "Pending..." during compilation
     
     const result = await debugPlayback.startPlay(currentCode, currentMap)
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
+      setPlayStatus('running') // Switch to "Running..." when playback starts
     }
   }
 
@@ -167,6 +170,7 @@ export default function LevelPage() {
         setIsCodeDisabled(false)
         setHighlightedLine(undefined)
         setCurrentMap(levelMap)
+        // Don't reset playStatus - let it stay as 'running' until next play starts
       }, 500) // Small delay to show final state briefly
     }
   }, [debugPlayback.isPlaying, isPlayMode, debugPlayback.executionHistory.length, levelMap, debugPlayback])
@@ -184,6 +188,7 @@ export default function LevelPage() {
               onPlayClick={handlePlayClick}
               isDebugMode={isDebugMode}
               isPlayMode={isPlayMode}
+              playStatus={playStatus}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 

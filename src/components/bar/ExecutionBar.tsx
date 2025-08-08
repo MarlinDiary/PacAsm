@@ -7,9 +7,10 @@ interface ExecutionBarProps {
   onPlayClick?: () => void
   isDebugMode?: boolean
   isPlayMode?: boolean
+  playStatus?: 'pending' | 'running'
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus }: ExecutionBarProps) {
   const [showStatusBar, setShowStatusBar] = useState(false)
 
   // Reset showStatusBar when play mode ends
@@ -31,7 +32,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
   return (
     <div className="relative">
       <div className={`absolute inset-0 transition-opacity duration-200 ${showStatusBar ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <StatusBar />
+        <StatusBar status={playStatus} />
       </div>
       <div className={`flex items-center h-8 transition-all duration-200 ${showStatusBar || isDebugMode ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${showStatusBar || isDebugMode ? '' : ''}`}>
         {/* Debug button */}
