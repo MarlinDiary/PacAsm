@@ -5,10 +5,10 @@ interface QueryBarProps {
   children?: React.ReactNode
   onSearch?: (query: string) => void
   onFilterToggle?: (isActive: boolean) => void
+  isFilterActive?: boolean
 }
 
-export default function QueryBar({ children, onSearch, onFilterToggle }: QueryBarProps) {
-  const [isFilterActive, setIsFilterActive] = useState(false)
+export default function QueryBar({ children, onSearch, onFilterToggle, isFilterActive = false }: QueryBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -20,7 +20,6 @@ export default function QueryBar({ children, onSearch, onFilterToggle }: QueryBa
 
   const handleFilterToggle = () => {
     const newState = !isFilterActive
-    setIsFilterActive(newState)
     onFilterToggle?.(newState)
   }
 

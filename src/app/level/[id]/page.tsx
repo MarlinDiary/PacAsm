@@ -340,6 +340,7 @@ export default function LevelPage() {
                 <QueryBar 
                   onSearch={setMemorySearchQuery} 
                   onFilterToggle={setHideZeroRows}
+                  isFilterActive={hideZeroRows}
                 />
                 <div 
                   className="flex-1 overflow-y-auto"
