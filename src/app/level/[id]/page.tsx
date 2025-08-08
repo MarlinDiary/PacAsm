@@ -243,6 +243,8 @@ export default function LevelPage() {
                       <Confetti
                         recycle={false}
                         numberOfPieces={500}
+                        wind={0.05}
+                        gravity={0.25}
                       />
                     </div>
                   )}
