@@ -33,24 +33,22 @@ export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, on
       <div className="h-8 bg-[#e7e7e7] rounded-r-sm flex">
         {/* Arrow down to dot button - Step Down */}
         <button 
-          onClick={onStepDown}
-          disabled={!canStepDown}
+          onClick={canStepDown ? onStepDown : undefined}
           className={`w-8 h-8 p-2 flex items-center justify-center ${
-            canStepDown ? 'hover:bg-[#e2e2e2]' : 'opacity-50 cursor-not-allowed'
+            canStepDown ? 'hover:bg-[#e2e2e2] cursor-pointer' : 'cursor-default'
           }`}
         >
-          <ArrowDownToDot size={16} color={canStepDown ? "#3679f5" : "#aaa"} />
+          <ArrowDownToDot size={16} color={canStepDown ? "#3679f5" : "#a7a7a7"} />
         </button>
         
         {/* Arrow up from dot button - Step Up */}
         <button 
-          onClick={onStepUp}
-          disabled={!canStepUp}
+          onClick={canStepUp ? onStepUp : undefined}
           className={`w-8 h-8 p-2 flex items-center justify-center ${
-            canStepUp ? 'hover:bg-[#e2e2e2]' : 'opacity-50 cursor-not-allowed'
+            canStepUp ? 'hover:bg-[#e2e2e2] cursor-pointer' : 'cursor-default'
           }`}
         >
-          <ArrowUpFromDot size={16} color={canStepUp ? "#3679f5" : "#aaa"} />
+          <ArrowUpFromDot size={16} color={canStepUp ? "#3679f5" : "#a7a7a7"} />
         </button>
         
         {/* Refresh ccw button - Replay */}

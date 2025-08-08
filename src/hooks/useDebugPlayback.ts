@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useEmulator } from './useEmulator'
 import { GameMap } from '@/data/maps'
 import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
@@ -20,9 +20,28 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
   const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
   const [executionHistory, setExecutionHistory] = useState<PlaybackState[]>([])
   const [currentPlaybackIndex, setCurrentPlaybackIndex] = useState(-1)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const startDebug = async (sourceCode: string, currentMap: GameMap) => {
+    // Abort any previous initialization
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    // Create new abort controller for this initialization
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+    
+    // Clear previous state immediately
+    setExecutionHistory([])
+    setCurrentPlaybackIndex(-1)
+    setHighlighter(null)
+    
     try {
+      if (abortController.signal.aborted) {
+        return { success: false, error: 'Aborted' }
+      }
+      
       if (!emulator.state.isInitialized) {
         await emulator.initializeEmulator()
       }
@@ -58,6 +77,10 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
       }
       
       while (true) {
+        if (abortController.signal.aborted) {
+          return { success: false, error: 'Aborted' }
+        }
+        
         const stepResult = await emulator.step()
         if (!stepResult || !stepResult.success || 
             stepResult.message?.includes('Execution completed') ||
@@ -148,6 +171,13 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
   }
 
   const reset = async () => {
+    // Abort any ongoing initialization
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    
+    // Clear all state immediately
     setExecutionHistory([])
     setCurrentPlaybackIndex(-1)
     setHighlighter(null)

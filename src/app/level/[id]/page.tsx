@@ -121,8 +121,6 @@ export default function LevelPage() {
     setIsCodeDisabled(false)
     setIsDebugMode(false)
     setHighlightedLine(undefined)
-    
-    // Reset map to initial state
     setCurrentMap(levelMap)
     
     await debugPlayback.reset()
