@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation'
 import { useRef, useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import Confetti from 'react-confetti'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
@@ -237,6 +238,14 @@ export default function LevelPage() {
             <ResizablePanel defaultSize={70} ref={panel1Ref} minSize={10}>
               <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
                 <div className="w-full h-full relative overflow-hidden">
+                  {currentPlayWon && (
+                    <div className="absolute inset-0 z-20">
+                      <Confetti
+                        recycle={false}
+                        numberOfPieces={500}
+                      />
+                    </div>
+                  )}
                   {levelMap.waterBackground && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="relative flex items-center justify-center">
