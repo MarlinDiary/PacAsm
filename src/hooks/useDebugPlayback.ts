@@ -3,18 +3,19 @@ import { useEmulator } from './useEmulator'
 import { GameMap } from '@/data/maps'
 import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
+import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 
 interface PlaybackState {
   mapState: GameMap
   highlightedLine: number | undefined
-  registers: any[]
+  registers: RegisterInfo[]
   codeMemory: number[]
   stackMemory: number[]
   dataMemory: number[]
-  stepResult: any
+  stepResult: StepResult | null
 }
 
-export const useDebugPlayback = (initialMap: GameMap) => {
+export const useDebugPlayback = (_initialMap: GameMap) => {
   const emulator = useEmulator()
   const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
   const [executionHistory, setExecutionHistory] = useState<PlaybackState[]>([])
@@ -88,7 +89,7 @@ export const useDebugPlayback = (initialMap: GameMap) => {
               case 4: newCol = Math.min(currentMapState.width - 1, newCol + 1); newDirection = 'right'; break
             }
             
-            let updatedDots = currentMapState.dots ? [...currentMapState.dots] : []
+            const updatedDots = currentMapState.dots ? [...currentMapState.dots] : []
             const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
             if (dotIndex !== -1) {
               updatedDots.splice(dotIndex, 1)

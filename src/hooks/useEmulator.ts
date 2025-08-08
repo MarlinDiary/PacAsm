@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { EmulatorMessage, EmulatorResponse, StepResult } from '@/workers/emulator/types';
+import { EmulatorMessage, EmulatorResponse, StepResult, RegisterInfo } from '@/workers/emulator/types';
 
 interface EmulatorState {
   isInitialized: boolean;
@@ -173,11 +173,11 @@ export const useEmulator = () => {
     }
   }, [sendMessage]);
 
-  const getAllRegisters = useCallback(async (): Promise<any[] | null> => {
+  const getAllRegisters = useCallback(async (): Promise<RegisterInfo[] | null> => {
     try {
       const response = await sendMessage({ type: 'get-all-registers' });
       if (response.type === 'registers-data' && response.payload) {
-        return response.payload as any[];
+        return response.payload as RegisterInfo[];
       }
       return null;
     } catch (error) {
@@ -189,7 +189,7 @@ export const useEmulator = () => {
     }
   }, [sendMessage]);
 
-  const restoreState = useCallback(async (registers: any[], memoryData: number[]): Promise<boolean> => {
+  const restoreState = useCallback(async (registers: RegisterInfo[], memoryData: number[]): Promise<boolean> => {
     try {
       // Restore registers
       for (const reg of registers) {

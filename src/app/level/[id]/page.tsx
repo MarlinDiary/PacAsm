@@ -18,10 +18,9 @@ import SubBar from '@/components/bar/SubBar'
 import QueryBar from '@/components/bar/QueryBar'
 import ActuatorBar from '@/components/bar/ActuatorBar'
 import ActuatorPanel from '@/components/panel/ActuatorPanel'
-import { getMapByLevel, GameMap } from '@/data/maps'
+import { getMapByLevel } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
 import { useDebugPlayback } from '@/hooks/useDebugPlayback'
-import { movePlayer, handleDotCollection } from '@/lib/game-logic'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
 export default function LevelPage() {
@@ -61,18 +60,6 @@ export default function LevelPage() {
   
   // Game map state for player movement
   const [currentMap, setCurrentMap] = useState(levelMap)
-  
-  
-  // Function to move player based on command value
-  const handlePlayerMove = async (command: number) => {
-    const movement = await movePlayer(currentMap, command, emulator.writeMemory)
-    if (movement) {
-      setCurrentMap(movement.updatedMap)
-      if (movement.collectedDot) {
-        handleDotCollection(setCurrentMap, movement.newRow, movement.newCol)
-      }
-    }
-  }
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)

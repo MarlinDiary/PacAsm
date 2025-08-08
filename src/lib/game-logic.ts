@@ -41,7 +41,7 @@ export const movePlayer = async (
   }
   
   // Check for dot collision
-  let updatedDots = currentMap.dots ? [...currentMap.dots] : []
+  const updatedDots = currentMap.dots ? [...currentMap.dots] : []
   const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
   let collectedDot = false
   
