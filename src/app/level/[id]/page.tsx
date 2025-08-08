@@ -15,6 +15,7 @@ import WaterRenderer from '@/components/WaterRenderer'
 import CodeEditor from '@/components/CodeEditor'
 import RegisterPanel from '@/components/panel/RegisterPanel'
 import MemoryPanel from '@/components/panel/MemoryPanel'
+import DiagnosticsPanel from '@/components/panel/DiagnosticsPanel'
 import SubBar from '@/components/bar/SubBar'
 import QueryBar from '@/components/bar/QueryBar'
 import ActuatorBar from '@/components/bar/ActuatorBar'
@@ -359,8 +360,8 @@ export default function LevelPage() {
                   />
                 </div>
               </div>,
-              <div key="diagnostics" className="h-full p-4">
-                <div className="text-sm text-gray-600">Diagnostics panel</div>
+              <div key="diagnostics" className="h-full">
+                <DiagnosticsPanel />
               </div>
             ]}
           />
