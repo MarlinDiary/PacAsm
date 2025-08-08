@@ -94,8 +94,15 @@ export const useCodeRunner = (_initialMap: GameMap) => {
         }
         
         const stepResult = await emulator.step()
-        if (!stepResult || !stepResult.success || 
-            stepResult.message?.includes('Execution completed') ||
+        if (!stepResult) {
+          return { success: false, error: 'Step execution failed: No result returned' }
+        }
+        
+        if (!stepResult.success) {
+          return { success: false, error: `Runtime error: ${stepResult.message || 'Unknown execution error'}` }
+        }
+        
+        if (stepResult.message?.includes('Execution completed') ||
             stepResult.message?.includes('reached end of code') ||
             stepResult.message?.includes('no more instructions')) {
           break
@@ -296,8 +303,15 @@ export const useCodeRunner = (_initialMap: GameMap) => {
         }
         
         const stepResult = await emulator.step()
-        if (!stepResult || !stepResult.success || 
-            stepResult.message?.includes('Execution completed') ||
+        if (!stepResult) {
+          return { success: false, error: 'Step execution failed: No result returned' }
+        }
+        
+        if (!stepResult.success) {
+          return { success: false, error: `Runtime error: ${stepResult.message || 'Unknown execution error'}` }
+        }
+        
+        if (stepResult.message?.includes('Execution completed') ||
             stepResult.message?.includes('reached end of code') ||
             stepResult.message?.includes('no more instructions')) {
           break

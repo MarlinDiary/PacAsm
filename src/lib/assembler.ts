@@ -78,6 +78,59 @@ export class ARMAssembler {
     });
   }
 
+  private validateInstructions(lines: string[]): void {
+    // Define valid ARM instruction mnemonics (basic set)
+    const validInstructions = [
+      // Data processing
+      'ADD', 'SUB', 'MUL', 'AND', 'ORR', 'EOR', 'BIC', 'MOV', 'MVN',
+      'TST', 'TEQ', 'CMP', 'CMN', 'LSL', 'LSR', 'ASR', 'ROR', 'RRX',
+      
+      // Memory instructions
+      'LDR', 'STR', 'LDM', 'STM', 'PUSH', 'POP',
+      'LDRB', 'STRB', 'LDRH', 'STRH',
+      'LDRSB', 'LDRSH',
+      
+      // Branch instructions
+      'B', 'BL', 'BX', 'BLX',
+      
+      // Conditional versions (add common suffixes)
+      'ADDEQ', 'ADDNE', 'ADDCS', 'ADDCC', 'ADDMI', 'ADDPL', 'ADDVS', 'ADDVC',
+      'ADDHI', 'ADDLS', 'ADDGE', 'ADDLT', 'ADDGT', 'ADDLE', 'ADDAL',
+      'SUBEQ', 'SUBNE', 'SUBCS', 'SUBCC', 'SUBMI', 'SUBPL', 'SUBVS', 'SUBVC',
+      'SUBHI', 'SUBLS', 'SUBGE', 'SUBLT', 'SUBGT', 'SUBLE', 'SUBAL',
+      'MOVEQ', 'MOVNE', 'MOVCS', 'MOVCC', 'MOVMI', 'MOVPL', 'MOVVS', 'MOVVC',
+      'MOVHI', 'MOVLS', 'MOVGE', 'MOVLT', 'MOVGT', 'MOVLE', 'MOVAL',
+      'LDREQ', 'LDRNE', 'LDRCS', 'LDRCC', 'LDRMI', 'LDRPL', 'LDRVS', 'LDRVC',
+      'LDRHI', 'LDRLS', 'LDRGE', 'LDRLT', 'LDRGT', 'LDRLE', 'LDRAL',
+      'STREQ', 'STRNE', 'STRCS', 'STRCC', 'STRMI', 'STRPL', 'STRVS', 'STRVC',
+      'STRHI', 'STRLS', 'STRGE', 'STRLT', 'STRGT', 'STRLE', 'STRAL',
+      'BEQ', 'BNE', 'BCS', 'BCC', 'BMI', 'BPL', 'BVS', 'BVC',
+      'BHI', 'BLS', 'BGE', 'BLT', 'BGT', 'BLE', 'BAL',
+      
+      // Other common instructions
+      'NOP', 'SWI', 'SVC', 'MSR', 'MRS', 'CLZ', 'REV', 'RBIT'
+    ];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.includes(':')) {
+        // Skip labels
+        continue;
+      }
+      
+      // Extract the instruction mnemonic (first word)
+      const parts = line.split(/\s+/);
+      if (parts.length === 0) continue;
+      
+      const instruction = parts[0].toUpperCase();
+      
+      // Check if it's a valid instruction
+      if (!validInstructions.includes(instruction)) {
+        throw new Error(`Invalid instruction '${instruction}' on line ${i + 1}: ${line}`);
+      }
+    }
+  }
+
   async assemble(assembly: string): Promise<AssemblyResult> {
     if (!this.isInitialized || !this.keystone) {
       throw new Error('Assembler not initialized');
@@ -88,11 +141,15 @@ export class ARMAssembler {
     }
 
     // Clean and normalize the assembly code
-    const cleanedAssembly = assembly
+    const lines = assembly
       .split('\n')
       .map(line => line.split('@')[0].trim()) // Remove comments
-      .filter(line => line.length > 0) // Remove empty lines
-      .join('\n');
+      .filter(line => line.length > 0); // Remove empty lines
+
+    // Validate each line before assembling to catch invalid instructions
+    this.validateInstructions(lines);
+
+    const cleanedAssembly = lines.join('\n');
 
     try {
       const baseAddress = this.options.baseAddress || 0x10000;

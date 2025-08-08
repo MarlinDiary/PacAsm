@@ -110,6 +110,10 @@ export default function LevelPage() {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
       setPlayStatus('running') // Switch to "Running..." when playback starts
+    } else {
+      // Handle error silently - just reset UI state
+      setIsCodeDisabled(false)
+      setIsPlayMode(false)
     }
   }
 
@@ -126,6 +130,10 @@ export default function LevelPage() {
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
+    } else {
+      // Handle error silently - just reset UI state
+      setIsDebugMode(false)
+      setIsCodeDisabled(false)
     }
   }
 
