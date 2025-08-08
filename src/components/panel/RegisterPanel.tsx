@@ -18,6 +18,7 @@ interface RegisterData {
 
 interface RegisterPanelProps {
   registers?: RegisterData[]
+  previousRegisters?: RegisterData[]
 }
 
 const formatRegisterName = (register: string) => {
@@ -32,13 +33,27 @@ const formatRegisterName = (register: string) => {
   return register
 }
 
-export default function RegisterPanel({ registers: registerData }: RegisterPanelProps) {
+export default function RegisterPanel({ registers: registerData, previousRegisters }: RegisterPanelProps) {
   const getRegisterValue = (registerName: string): number => {
     if (!registerData) return 0
     // Convert to lowercase to match the data from emulator (r0, r1, etc.)
     const normalizedName = registerName.toLowerCase()
     const found = registerData.find(reg => reg.register === normalizedName)
     return found ? found.value : 0
+  }
+
+  const getPreviousRegisterValue = (registerName: string): number => {
+    if (!previousRegisters) return 0
+    const normalizedName = registerName.toLowerCase()
+    const found = previousRegisters.find(reg => reg.register === normalizedName)
+    return found ? found.value : 0
+  }
+
+  const isRegisterChanged = (registerName: string): boolean => {
+    if (!previousRegisters) return false
+    const currentValue = getRegisterValue(registerName)
+    const previousValue = getPreviousRegisterValue(registerName)
+    return currentValue !== previousValue
   }
 
   return (
@@ -48,6 +63,7 @@ export default function RegisterPanel({ registers: registerData }: RegisterPanel
           {registers.map((register, index) => {
             const value = getRegisterValue(register)
             const hexValue = value.toString(16).toUpperCase().padStart(8, '0')
+            const hasChanged = isRegisterChanged(register)
             
             return (
               <TableRow key={register} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
@@ -55,7 +71,11 @@ export default function RegisterPanel({ registers: registerData }: RegisterPanel
                   <Badge 
                     variant="outline" 
                     className="font-mono text-xs"
-                    style={{ color: '#5a5a5a' }}
+                    style={{ 
+                      color: hasChanged ? 'white' : '#5a5a5a',
+                      backgroundColor: hasChanged ? '#1a1a1a' : 'transparent',
+                      border: hasChanged ? 'none' : undefined
+                    }}
                   >
                     {formatRegisterName(register)}
                   </Badge>

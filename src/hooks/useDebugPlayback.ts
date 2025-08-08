@@ -204,6 +204,13 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
     return null
   }
 
+  const getPreviousState = () => {
+    if (currentPlaybackIndex > 0 && currentPlaybackIndex < executionHistory.length) {
+      return executionHistory[currentPlaybackIndex - 1]
+    }
+    return null
+  }
+
   return {
     highlighter,
     executionHistory,
@@ -215,6 +222,7 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
     stepUp,
     replay,
     reset,
-    getCurrentState
+    getCurrentState,
+    getPreviousState
   }
 }

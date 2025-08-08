@@ -134,8 +134,9 @@ export default function LevelPage() {
     }
   }
 
-  // Get current debug state for panels
+  // Get current and previous debug states for panels
   const currentDebugState = debugPlayback.getCurrentState()
+  const previousDebugState = debugPlayback.getPreviousState()
 
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
@@ -256,7 +257,10 @@ export default function LevelPage() {
                     msOverflowStyle: 'none'
                   }}
                 >
-                  <RegisterPanel registers={currentDebugState?.registers} />
+                  <RegisterPanel 
+                    registers={currentDebugState?.registers} 
+                    previousRegisters={previousDebugState?.registers}
+                  />
                 </div>
               </div>,
               <div key="memory" className="h-full flex flex-col">
