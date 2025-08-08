@@ -24,6 +24,78 @@ export const useCodeRunner = (_initialMap: GameMap) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const playTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Pre-execution validation for player movement instructions
+  const validatePlayerMovementInstructions = async (sourceCode: string, _currentMap: GameMap) => {
+    try {
+      // Initialize temporary emulator for pre-check
+      if (!emulator.state.isInitialized) {
+        await emulator.initializeEmulator()
+      }
+      await emulator.reset()
+
+      const assembler = new ARMAssembler()
+      await assembler.initialize()
+      const result = await assembler.assemble(sourceCode)
+
+      // Clear and load code
+      const codeMemorySize = 1024
+      const zeroData = new Array(codeMemorySize).fill(0)
+      await emulator.writeMemory(0x10000, zeroData)
+      await emulator.loadCode(Array.from(result.mc))
+
+      // Run pre-check simulation with real-time validation
+      const playerMoveInstructions: number[] = []
+      let instructionCount = 0
+      const maxMoveInstructions = 300 // Stop after 300 move instructions
+      let lastMovePosition = 0
+
+      while (playerMoveInstructions.length < maxMoveInstructions) {
+        const stepResult = await emulator.step()
+        if (!stepResult || !stepResult.success) {
+          break
+        }
+
+        if (stepResult.message?.includes('Execution completed') ||
+            stepResult.message?.includes('reached end of code') ||
+            stepResult.message?.includes('no more instructions')) {
+          break
+        }
+
+        instructionCount++
+
+        // Check for player movement command (value 1-4 in data memory address 0x30000)
+        const dataMemory = await emulator.getMemory(0x30000, 1)
+        if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4) {
+          playerMoveInstructions.push(instructionCount)
+          lastMovePosition = instructionCount
+          // Clear the command after detection
+          await emulator.writeMemory(0x30000, [0])
+        }
+
+        // Real-time validation during collection (only if we're past 1000 instructions)
+        if (instructionCount >= 1000) {
+          // Check if first move happened within first 1000 instructions
+          if (playerMoveInstructions.length === 0 && instructionCount === 1000) {
+            assembler.destroy()
+            return { success: false, error: 'No player movement instructions found in the first 1000 instructions' }
+          }
+
+          // Check if gap since last move is too large
+          if (playerMoveInstructions.length > 0 && (instructionCount - lastMovePosition) > 1000) {
+            assembler.destroy()
+            return { success: false, error: `Gap between player movement instructions is too large: ${instructionCount - lastMovePosition} instructions since last move at position ${lastMovePosition}` }
+          }
+        }
+      }
+
+      assembler.destroy()
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: `Pre-execution validation failed: ${error}` }
+    }
+  }
+
   const startDebug = async (sourceCode: string, currentMap: GameMap) => {
     // Abort any previous initialization
     if (abortControllerRef.current) {
@@ -42,6 +114,12 @@ export const useCodeRunner = (_initialMap: GameMap) => {
     try {
       if (abortController.signal.aborted) {
         return { success: false, error: 'Aborted' }
+      }
+
+      // Pre-execution validation for player movement instructions
+      const validationResult = await validatePlayerMovementInstructions(sourceCode, currentMap)
+      if (!validationResult.success) {
+        return { success: false, error: validationResult.error }
       }
       
       if (!emulator.state.isInitialized) {
@@ -251,6 +329,12 @@ export const useCodeRunner = (_initialMap: GameMap) => {
     try {
       if (abortController.signal.aborted) {
         return { success: false, error: 'Aborted' }
+      }
+
+      // Pre-execution validation for player movement instructions
+      const validationResult = await validatePlayerMovementInstructions(sourceCode, currentMap)
+      if (!validationResult.success) {
+        return { success: false, error: validationResult.error }
       }
       
       if (!emulator.state.isInitialized) {
