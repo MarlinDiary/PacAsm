@@ -47,7 +47,8 @@ export default function LevelPage() {
   // State for play mode
   const [isPlayMode, setIsPlayMode] = useState(false)
   const [playStatus, setPlayStatus] = useState<'pending' | 'running'>('pending')
-  const [hasWon, setHasWon] = useState(false)
+  const [hasWon, setHasWon] = useState(false) // Ever won (permanent)
+  const [currentPlayWon, setCurrentPlayWon] = useState(false) // This play won (temporary)
   
   // State for current code content
   const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
@@ -92,11 +93,17 @@ export default function LevelPage() {
   }, [emulator.cleanup])
 
   const handlePlayClick = async () => {
+    // Reset map to initial state before starting play
+    setCurrentMap(levelMap)
+    setHighlightedLine(undefined)
+    setCurrentPlayWon(false) // Reset current play victory status
+    // Don't clear hasWon - keep Next button permanently after first victory
+    
     setIsCodeDisabled(true)
     setIsPlayMode(true)
     setPlayStatus('pending') // Show "Pending..." during compilation
     
-    const result = await debugPlayback.startPlay(currentCode, currentMap)
+    const result = await debugPlayback.startPlay(currentCode, levelMap) // Use levelMap instead of currentMap
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
@@ -105,10 +112,15 @@ export default function LevelPage() {
   }
 
   const handleDebugClick = async () => {
+    // Reset map to initial state before starting debug
+    setCurrentMap(levelMap)
+    setHighlightedLine(undefined)
+    // Don't clear hasWon - keep Next button permanently after first victory
+    
     setIsDebugMode(true)
     setIsCodeDisabled(true)
     
-    const result = await debugPlayback.startDebug(currentCode, currentMap)
+    const result = await debugPlayback.startDebug(currentCode, levelMap) // Use levelMap instead of currentMap
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
@@ -135,7 +147,7 @@ export default function LevelPage() {
     setIsCodeDisabled(false)
     setIsDebugMode(false)
     setHighlightedLine(undefined)
-    setCurrentMap(levelMap)
+    setCurrentMap(levelMap) // Reset map to initial state when stopping debug
     
     await debugPlayback.reset()
   }
@@ -161,7 +173,8 @@ export default function LevelPage() {
       
       // Check victory condition only during play mode
       if (isPlayMode && state.mapState.dots && state.mapState.dots.length === 0) {
-        setHasWon(true)
+        setHasWon(true) // Permanent victory status
+        setCurrentPlayWon(true) // This play victory status
       }
     }
   }, [debugPlayback.currentPlaybackIndex, debugPlayback.isPlaying, isPlayMode])
@@ -175,11 +188,14 @@ export default function LevelPage() {
         setIsPlayMode(false)
         setIsCodeDisabled(false)
         setHighlightedLine(undefined)
-        setCurrentMap(levelMap)
+        // Reset map if this play didn't win, keep victory state if this play won
+        if (!currentPlayWon) {
+          setCurrentMap(levelMap)
+        }
         // Don't reset playStatus - let it stay as 'running' until next play starts
       }, 500) // Small delay to show final state briefly
     }
-  }, [debugPlayback.isPlaying, isPlayMode, debugPlayback.executionHistory.length, levelMap, debugPlayback])
+  }, [debugPlayback.isPlaying, isPlayMode, debugPlayback.executionHistory.length, debugPlayback, currentPlayWon, levelMap])
 
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
