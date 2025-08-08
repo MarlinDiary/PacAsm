@@ -82,7 +82,7 @@ export class ARMAssembler {
     // Define valid ARM instruction mnemonics (basic set)
     const validInstructions = [
       // Data processing
-      'ADD', 'SUB', 'MUL', 'AND', 'ORR', 'EOR', 'BIC', 'MOV', 'MVN',
+      'ADD', 'ADDS', 'SUB', 'SUBS', 'MUL', 'AND', 'ORR', 'EOR', 'BIC', 'MOV', 'MOVS', 'MVN',
       'TST', 'TEQ', 'CMP', 'CMN', 'LSL', 'LSR', 'ASR', 'ROR', 'RRX',
       
       // Memory instructions
