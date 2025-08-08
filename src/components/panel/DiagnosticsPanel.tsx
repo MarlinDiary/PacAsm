@@ -1,6 +1,5 @@
-interface DiagnosticsPanelProps {
-  // Add props as needed in the future
-}
+// Props type will be added when needed
+type DiagnosticsPanelProps = Record<string, never>
 
 export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
   // Temporarily no data
