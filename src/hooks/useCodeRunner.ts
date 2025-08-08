@@ -15,7 +15,7 @@ interface PlaybackState {
   stepResult: StepResult | null
 }
 
-export const useDebugPlayback = (_initialMap: GameMap) => {
+export const useCodeRunner = (_initialMap: GameMap) => {
   const emulator = useEmulator()
   const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
   const [executionHistory, setExecutionHistory] = useState<PlaybackState[]>([])

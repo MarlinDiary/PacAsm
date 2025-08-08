@@ -22,7 +22,7 @@ import ActuatorBar from '@/components/bar/ActuatorBar'
 import ActuatorPanel from '@/components/panel/ActuatorPanel'
 import { getMapByLevel } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
-import { useDebugPlayback } from '@/hooks/useDebugPlayback'
+import { useCodeRunner } from '@/hooks/useCodeRunner'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope } from 'lucide-react'
 
 export default function LevelPage() {
@@ -57,7 +57,7 @@ export default function LevelPage() {
   
   // Debugging state
   const emulator = useEmulator()
-  const debugPlayback = useDebugPlayback(levelMap)
+  const codeRunner = useCodeRunner(levelMap)
   const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
   
   // State for memory search
@@ -105,7 +105,7 @@ export default function LevelPage() {
     setIsPlayMode(true)
     setPlayStatus('pending') // Show "Pending..." during compilation
     
-    const result = await debugPlayback.startPlay(currentCode, levelMap) // Use levelMap instead of currentMap
+    const result = await codeRunner.startPlay(currentCode, levelMap) // Use levelMap instead of currentMap
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
@@ -122,7 +122,7 @@ export default function LevelPage() {
     setIsDebugMode(true)
     setIsCodeDisabled(true)
     
-    const result = await debugPlayback.startDebug(currentCode, levelMap) // Use levelMap instead of currentMap
+    const result = await codeRunner.startDebug(currentCode, levelMap) // Use levelMap instead of currentMap
     if (result.success && result.initialState) {
       setCurrentMap(result.initialState.mapState)
       setHighlightedLine(result.initialState.highlightedLine)
@@ -130,7 +130,7 @@ export default function LevelPage() {
   }
 
   const handleStepDown = () => {
-    const nextState = debugPlayback.stepDown()
+    const nextState = codeRunner.stepDown()
     if (nextState) {
       setCurrentMap(nextState.mapState)
       setHighlightedLine(nextState.highlightedLine)
@@ -138,7 +138,7 @@ export default function LevelPage() {
   }
 
   const handleStepUp = () => {
-    const prevState = debugPlayback.stepUp()
+    const prevState = codeRunner.stepUp()
     if (prevState) {
       setCurrentMap(prevState.mapState)
       setHighlightedLine(prevState.highlightedLine)
@@ -151,11 +151,11 @@ export default function LevelPage() {
     setHighlightedLine(undefined)
     setCurrentMap(levelMap) // Reset map to initial state when stopping debug
     
-    await debugPlayback.reset()
+    await codeRunner.reset()
   }
 
   const handleReplay = () => {
-    const firstState = debugPlayback.replay()
+    const firstState = codeRunner.replay()
     if (firstState) {
       setCurrentMap(firstState.mapState)
       setHighlightedLine(firstState.highlightedLine)
@@ -163,13 +163,13 @@ export default function LevelPage() {
   }
 
   // Get current and previous debug states for panels
-  const currentDebugState = debugPlayback.getCurrentState()
-  const previousDebugState = debugPlayback.getPreviousState()
+  const currentDebugState = codeRunner.getCurrentState()
+  const previousDebugState = codeRunner.getPreviousState()
 
   // Listen for playback updates during play mode
   useEffect(() => {
-    const state = debugPlayback.getCurrentState()
-    if (state && debugPlayback.isPlaying) {
+    const state = codeRunner.getCurrentState()
+    if (state && codeRunner.isPlaying) {
       setCurrentMap(state.mapState)
       setHighlightedLine(state.highlightedLine)
       
@@ -179,14 +179,14 @@ export default function LevelPage() {
         setCurrentPlayWon(true) // This play victory status
       }
     }
-  }, [debugPlayback.currentPlaybackIndex, debugPlayback.isPlaying, isPlayMode])
+  }, [codeRunner.currentPlaybackIndex, codeRunner.isPlaying, isPlayMode])
 
   // Listen for play completion
   useEffect(() => {
-    if (isPlayMode && !debugPlayback.isPlaying && debugPlayback.executionHistory.length > 0) {
+    if (isPlayMode && !codeRunner.isPlaying && codeRunner.executionHistory.length > 0) {
       // Play has finished - reset everything
       setTimeout(() => {
-        debugPlayback.reset()
+        codeRunner.reset()
         setIsPlayMode(false)
         setIsCodeDisabled(false)
         setHighlightedLine(undefined)
@@ -197,7 +197,7 @@ export default function LevelPage() {
         // Don't reset playStatus - let it stay as 'running' until next play starts
       }, 500) // Small delay to show final state briefly
     }
-  }, [debugPlayback.isPlaying, isPlayMode, debugPlayback.executionHistory.length, debugPlayback, currentPlayWon, levelMap])
+  }, [codeRunner.isPlaying, isPlayMode, codeRunner.executionHistory.length, codeRunner, currentPlayWon, levelMap])
 
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
@@ -222,8 +222,8 @@ export default function LevelPage() {
                 onStepDown={handleStepDown}
                 onStepUp={handleStepUp}
                 onReplay={handleReplay}
-                canStepUp={debugPlayback.canStepUp}
-                canStepDown={debugPlayback.canStepDown}
+                canStepUp={codeRunner.canStepUp}
+                canStepDown={codeRunner.canStepDown}
               />
             </div>
           </div>
