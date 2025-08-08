@@ -1,4 +1,4 @@
-import { Bug, Play, Feather } from 'lucide-react'
+import { Bug, Play, Feather, BadgeCheck } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import StatusBar from './StatusBar'
 
@@ -8,9 +8,10 @@ interface ExecutionBarProps {
   isDebugMode?: boolean
   isPlayMode?: boolean
   playStatus?: 'pending' | 'running'
+  hasWon?: boolean
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon }: ExecutionBarProps) {
   const [showStatusBar, setShowStatusBar] = useState(false)
 
   // Reset showStatusBar when play mode ends
@@ -57,11 +58,15 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Second divider */}
         <div className="w-px h-8 bg-[#f0f0f0]"></div>
         
-        {/* Hint button */}
+        {/* Hint/Next button */}
         <button className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'}`}>
-          <Feather size={16} color="#50b040" />
+          {hasWon ? (
+            <BadgeCheck size={16} color="#50b040" />
+          ) : (
+            <Feather size={16} color="#50b040" />
+          )}
           <span className="text-sm font-medium" style={{ color: '#50b040' }}>
-            Hint
+            {hasWon ? 'Next' : 'Hint'}
           </span>
         </button>
       </div>

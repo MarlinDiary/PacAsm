@@ -47,6 +47,7 @@ export default function LevelPage() {
   // State for play mode
   const [isPlayMode, setIsPlayMode] = useState(false)
   const [playStatus, setPlayStatus] = useState<'pending' | 'running'>('pending')
+  const [hasWon, setHasWon] = useState(false)
   
   // State for current code content
   const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
@@ -157,8 +158,13 @@ export default function LevelPage() {
     if (state && debugPlayback.isPlaying) {
       setCurrentMap(state.mapState)
       setHighlightedLine(state.highlightedLine)
+      
+      // Check victory condition only during play mode
+      if (isPlayMode && state.mapState.dots && state.mapState.dots.length === 0) {
+        setHasWon(true)
+      }
     }
-  }, [debugPlayback.currentPlaybackIndex, debugPlayback.isPlaying])
+  }, [debugPlayback.currentPlaybackIndex, debugPlayback.isPlaying, isPlayMode])
 
   // Listen for play completion
   useEffect(() => {
@@ -189,6 +195,7 @@ export default function LevelPage() {
               isDebugMode={isDebugMode}
               isPlayMode={isPlayMode}
               playStatus={playStatus}
+              hasWon={hasWon}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 
