@@ -44,6 +44,9 @@ export default function LevelPage() {
   // State for code editor disabled
   const [isCodeDisabled, setIsCodeDisabled] = useState(false)
   
+  // State for play mode
+  const [isPlayMode, setIsPlayMode] = useState(false)
+  
   // State for current code content
   const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
   
@@ -86,8 +89,15 @@ export default function LevelPage() {
     }
   }, [emulator.cleanup])
 
-  const handlePlayClick = () => {
+  const handlePlayClick = async () => {
     setIsCodeDisabled(true)
+    setIsPlayMode(true)
+    
+    const result = await debugPlayback.startPlay(currentCode, currentMap)
+    if (result.success && result.initialState) {
+      setCurrentMap(result.initialState.mapState)
+      setHighlightedLine(result.initialState.highlightedLine)
+    }
   }
 
   const handleDebugClick = async () => {
@@ -138,6 +148,29 @@ export default function LevelPage() {
   const currentDebugState = debugPlayback.getCurrentState()
   const previousDebugState = debugPlayback.getPreviousState()
 
+  // Listen for playback updates during play mode
+  useEffect(() => {
+    const state = debugPlayback.getCurrentState()
+    if (state && debugPlayback.isPlaying) {
+      setCurrentMap(state.mapState)
+      setHighlightedLine(state.highlightedLine)
+    }
+  }, [debugPlayback.currentPlaybackIndex, debugPlayback.isPlaying])
+
+  // Listen for play completion
+  useEffect(() => {
+    if (isPlayMode && !debugPlayback.isPlaying && debugPlayback.executionHistory.length > 0) {
+      // Play has finished - reset everything
+      setTimeout(() => {
+        debugPlayback.reset()
+        setIsPlayMode(false)
+        setIsCodeDisabled(false)
+        setHighlightedLine(undefined)
+        setCurrentMap(levelMap)
+      }, 500) // Small delay to show final state briefly
+    }
+  }, [debugPlayback.isPlaying, isPlayMode, debugPlayback.executionHistory.length, levelMap, debugPlayback])
+
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
       <div className="p-2 h-full flex flex-col">
@@ -150,6 +183,7 @@ export default function LevelPage() {
               onDebugClick={handleDebugClick}
               onPlayClick={handlePlayClick}
               isDebugMode={isDebugMode}
+              isPlayMode={isPlayMode}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 

@@ -1,15 +1,23 @@
 import { Bug, Play, Feather } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StatusBar from './StatusBar'
 
 interface ExecutionBarProps {
   onDebugClick?: () => void
   onPlayClick?: () => void
   isDebugMode?: boolean
+  isPlayMode?: boolean
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode }: ExecutionBarProps) {
   const [showStatusBar, setShowStatusBar] = useState(false)
+
+  // Reset showStatusBar when play mode ends
+  useEffect(() => {
+    if (isPlayMode === false) {
+      setShowStatusBar(false)
+    }
+  }, [isPlayMode])
 
   const handlePlayClick = () => {
     setShowStatusBar(true)
