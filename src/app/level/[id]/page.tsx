@@ -22,7 +22,7 @@ import ActuatorPanel from '@/components/panel/ActuatorPanel'
 import { getMapByLevel } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
 import { useDebugPlayback } from '@/hooks/useDebugPlayback'
-import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
+import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope } from 'lucide-react'
 
 export default function LevelPage() {
   const params = useParams()
@@ -314,7 +314,8 @@ export default function LevelPage() {
           <Card 
             tabs={[
               { icon: CircuitBoard, text: "Register", color: "#633dbf" },
-              { icon: HardDrive, text: "Memory", color: "#01A2C2" }
+              { icon: HardDrive, text: "Memory", color: "#01A2C2" },
+              { icon: Stethoscope, text: "Diagnostics", color: "#70252e" }
             ]}
             tabContent={[
               <div key="register" className="h-full flex flex-col">
@@ -357,6 +358,9 @@ export default function LevelPage() {
                     dataMemory={currentDebugState?.dataMemory}
                   />
                 </div>
+              </div>,
+              <div key="diagnostics" className="h-full p-4">
+                <div className="text-sm text-gray-600">Diagnostics panel</div>
               </div>
             ]}
           />
