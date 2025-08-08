@@ -87,12 +87,15 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, co
   
   if (filteredRows.length === 0) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <img 
           src="/res/null.png" 
           alt="No results" 
           style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
+        <div style={{ color: '#c4c4c6', fontSize: '14px' }}>
+          No non-zero memory addresses found
+        </div>
       </div>
     )
   }
