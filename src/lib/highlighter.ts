@@ -64,6 +64,25 @@ export class CodeHighlighter {
   }
 
   /**
+   * Initialize the highlighter using pre-compiled machine code
+   * Creates mapping between addresses and source lines without recompiling
+   */
+  async initializeWithCompiledCode(sourceCode: string, machineCode: Uint8Array): Promise<void> {
+    // Parse source code into lines
+    this.sourceLines = this.parseSourceCode(sourceCode);
+    
+    // Use utility function that handles initialization and cleanup automatically
+    const disassemblyResult = await disassembleCode(
+      machineCode,
+      this.baseAddress,
+      { detail: true }
+    );
+    
+    // Create address to source line mapping
+    this.createAddressMapping(disassemblyResult);
+  }
+
+  /**
    * Get the line number that should be highlighted for a given PC address
    */
   getHighlightLine(pcAddress: number): HighlightInfo | null {
@@ -157,6 +176,17 @@ export const createHighlighter = async (
 ): Promise<CodeHighlighter> => {
   const highlighter = new CodeHighlighter(options);
   await highlighter.initialize(sourceCode);
+  return highlighter;
+};
+
+// Utility function to create highlighter with pre-compiled machine code
+export const createHighlighterWithCompiledCode = async (
+  sourceCode: string,
+  machineCode: Uint8Array,
+  options?: { baseAddress?: number }
+): Promise<CodeHighlighter> => {
+  const highlighter = new CodeHighlighter(options);
+  await highlighter.initializeWithCompiledCode(sourceCode, machineCode);
   return highlighter;
 };
 

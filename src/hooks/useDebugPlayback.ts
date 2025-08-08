@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useEmulator } from './useEmulator'
 import { GameMap } from '@/data/maps'
-import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
+import { CodeHighlighter, createHighlighterWithCompiledCode, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 
@@ -51,9 +51,6 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
       // Always reset emulator before loading new code
       await emulator.reset()
       
-      const codeHighlighter = await createHighlighter(sourceCode)
-      setHighlighter(codeHighlighter)
-      
       const assembler = new ARMAssembler()
       await assembler.initialize()
       const result = await assembler.assemble(sourceCode)
@@ -64,6 +61,10 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
       await emulator.writeMemory(0x10000, zeroData)
       
       await emulator.loadCode(Array.from(result.mc))
+      
+      // Create highlighter using the already compiled machine code
+      const codeHighlighter = await createHighlighterWithCompiledCode(sourceCode, result.mc)
+      setHighlighter(codeHighlighter)
       
       const history: PlaybackState[] = []
       let currentMapState = { ...currentMap }
@@ -252,9 +253,6 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
       // Always reset emulator before loading new code
       await emulator.reset()
       
-      const codeHighlighter = await createHighlighter(sourceCode)
-      setHighlighter(codeHighlighter)
-      
       const assembler = new ARMAssembler()
       await assembler.initialize()
       const result = await assembler.assemble(sourceCode)
@@ -265,6 +263,10 @@ export const useDebugPlayback = (_initialMap: GameMap) => {
       await emulator.writeMemory(0x10000, zeroData)
       
       await emulator.loadCode(Array.from(result.mc))
+      
+      // Create highlighter using the already compiled machine code
+      const codeHighlighter = await createHighlighterWithCompiledCode(sourceCode, result.mc)
+      setHighlighter(codeHighlighter)
       
       const history: PlaybackState[] = []
       let currentMapState = { ...currentMap }
