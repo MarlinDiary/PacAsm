@@ -1,0 +1,189 @@
+import { useState } from 'react'
+import { useEmulator } from './useEmulator'
+import { GameMap } from '@/data/maps'
+import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
+import { ARMAssembler } from '@/lib/assembler'
+
+interface PlaybackState {
+  mapState: GameMap
+  highlightedLine: number | undefined
+  registers: any[]
+  codeMemory: number[]
+  stackMemory: number[]
+  dataMemory: number[]
+  stepResult: any
+}
+
+export const useDebugPlayback = (initialMap: GameMap) => {
+  const emulator = useEmulator()
+  const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
+  const [executionHistory, setExecutionHistory] = useState<PlaybackState[]>([])
+  const [currentPlaybackIndex, setCurrentPlaybackIndex] = useState(-1)
+
+  const startDebug = async (sourceCode: string, currentMap: GameMap) => {
+    try {
+      if (!emulator.state.isInitialized) {
+        await emulator.initializeEmulator()
+      }
+      
+      const codeHighlighter = await createHighlighter(sourceCode)
+      setHighlighter(codeHighlighter)
+      
+      const assembler = new ARMAssembler()
+      await assembler.initialize()
+      const result = await assembler.assemble(sourceCode)
+      await emulator.loadCode(Array.from(result.mc))
+      
+      const history: PlaybackState[] = []
+      let currentMapState = { ...currentMap }
+      let currentHighlight: number | undefined = undefined
+      
+      // Record initial state before any execution
+      const initialRegisters = await emulator.getAllRegisters()
+      const initialCodeMemory = await emulator.getMemory(0x10000, 1024)
+      const initialStackMemory = await emulator.getMemory(0x20000, 1024)
+      const initialDataMemory = await emulator.getMemory(0x30000, 1024)
+      
+      if (initialRegisters && initialCodeMemory && initialStackMemory && initialDataMemory) {
+        history.push({
+          mapState: currentMapState,
+          highlightedLine: currentHighlight,
+          registers: initialRegisters,
+          codeMemory: initialCodeMemory.data,
+          stackMemory: initialStackMemory.data,
+          dataMemory: initialDataMemory.data,
+          stepResult: null
+        })
+      }
+      
+      while (true) {
+        const stepResult = await emulator.step()
+        if (!stepResult || !stepResult.success || 
+            stepResult.message?.includes('Execution completed') ||
+            stepResult.message?.includes('reached end of code') ||
+            stepResult.message?.includes('no more instructions')) {
+          break
+        }
+        
+        const highlight = getHighlightFromStepResult(stepResult, codeHighlighter)
+        currentHighlight = highlight?.lineNumber
+        
+        const registers = await emulator.getAllRegisters()
+        const codeMemory = await emulator.getMemory(0x10000, 1024)
+        const stackMemory = await emulator.getMemory(0x20000, 1024)
+        const dataMemory = await emulator.getMemory(0x30000, 1024)
+        
+        // Handle game commands using data memory
+        if (dataMemory) {
+          const commandValue = dataMemory.data[0]
+          if (commandValue >= 1 && commandValue <= 4 && currentMapState.playerPosition) {
+            let newRow = currentMapState.playerPosition.row
+            let newCol = currentMapState.playerPosition.col
+            let newDirection = currentMapState.playerPosition.direction
+            
+            switch (commandValue) {
+              case 1: newRow = Math.max(0, newRow - 1); newDirection = 'up'; break
+              case 2: newRow = Math.min(currentMapState.height - 1, newRow + 1); newDirection = 'down'; break
+              case 3: newCol = Math.max(0, newCol - 1); newDirection = 'left'; break
+              case 4: newCol = Math.min(currentMapState.width - 1, newCol + 1); newDirection = 'right'; break
+            }
+            
+            let updatedDots = currentMapState.dots ? [...currentMapState.dots] : []
+            const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
+            if (dotIndex !== -1) {
+              updatedDots.splice(dotIndex, 1)
+            }
+            
+            currentMapState = {
+              ...currentMapState,
+              playerPosition: { ...currentMapState.playerPosition, row: newRow, col: newCol, direction: newDirection },
+              dots: updatedDots
+            }
+            
+            await emulator.writeMemory(0x30000, [0])
+          }
+        }
+        
+        if (registers && codeMemory && stackMemory && dataMemory) {
+          history.push({
+            mapState: { ...currentMapState },
+            highlightedLine: currentHighlight,
+            registers,
+            codeMemory: codeMemory.data,
+            stackMemory: stackMemory.data,
+            dataMemory: dataMemory.data,
+            stepResult
+          })
+        }
+      }
+      
+      setExecutionHistory(history)
+      setCurrentPlaybackIndex(0)
+      assembler.destroy()
+      
+      return { success: true, initialState: history[0] }
+    } catch (error) {
+      console.error('Debug initialization failed:', error)
+      return { success: false, error }
+    }
+  }
+
+  const stepDown = () => {
+    if (currentPlaybackIndex < executionHistory.length - 1) {
+      const nextIndex = currentPlaybackIndex + 1
+      setCurrentPlaybackIndex(nextIndex)
+      return executionHistory[nextIndex]
+    }
+    return null
+  }
+
+  const stepUp = () => {
+    if (currentPlaybackIndex > 0) {
+      const prevIndex = currentPlaybackIndex - 1
+      setCurrentPlaybackIndex(prevIndex)
+      return executionHistory[prevIndex]
+    }
+    return null
+  }
+
+  const reset = async () => {
+    setExecutionHistory([])
+    setCurrentPlaybackIndex(-1)
+    setHighlighter(null)
+    
+    try {
+      await emulator.reset()
+    } catch (error) {
+      console.error('Reset failed:', error)
+    }
+  }
+
+  const replay = () => {
+    if (executionHistory.length > 0) {
+      setCurrentPlaybackIndex(0)
+      return executionHistory[0]
+    }
+    return null
+  }
+
+  const getCurrentState = () => {
+    if (currentPlaybackIndex >= 0 && currentPlaybackIndex < executionHistory.length) {
+      return executionHistory[currentPlaybackIndex]
+    }
+    return null
+  }
+
+  return {
+    highlighter,
+    executionHistory,
+    currentPlaybackIndex,
+    canStepUp: currentPlaybackIndex > 0,
+    canStepDown: currentPlaybackIndex < executionHistory.length - 1,
+    startDebug,
+    stepDown,
+    stepUp,
+    replay,
+    reset,
+    getCurrentState
+  }
+}

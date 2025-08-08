@@ -18,10 +18,6 @@ export class MemoryManager {
     this.unicorn.mem_map(this.config.codeAddress, 4096, this.uc.PROT_ALL);
     this.unicorn.mem_map(this.config.stackAddress, this.config.stackSize, this.uc.PROT_READ | this.uc.PROT_WRITE);
     this.unicorn.mem_map(this.config.dataAddress, this.config.dataSize, this.uc.PROT_READ | this.uc.PROT_WRITE);
-    
-    // Initialize test data in data memory
-    const testData = new Array(32).fill(0).map((_, i) => i * 4);
-    this.unicorn.mem_write(this.config.dataAddress, testData);
   }
 
   initializeRegisters(): void {
@@ -113,6 +109,10 @@ export class MemoryManager {
       data: Array.from(data),
       hex: Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ')
     };
+  }
+
+  writeMemory(address: number, data: number[]): void {
+    this.unicorn.mem_write(address, data);
   }
 
   resetRegisters(): void {

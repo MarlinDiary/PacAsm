@@ -136,6 +136,26 @@ export class EmulatorWorker {
     }
   }
 
+  private getAllRegisters(): void {
+    try {
+      if (!this.memoryManager || !this.isInitialized) {
+        throw new Error('Emulator not initialized');
+      }
+
+      const allRegisters = this.memoryManager.getAllRegisters();
+
+      this.postMessage({
+        type: 'registers-data',
+        payload: allRegisters
+      });
+    } catch (error) {
+      this.postMessage({
+        type: 'error',
+        payload: `Failed to get all registers: ${error}`
+      });
+    }
+  }
+
   private stepExecution(): void {
     try {
       if (!this.executionEngine || !this.isInitialized) {
@@ -220,6 +240,26 @@ export class EmulatorWorker {
     }
   }
 
+  private writeMemory(address: number, data: number[]): void {
+    try {
+      if (!this.memoryManager || !this.isInitialized) {
+        throw new Error('Emulator not initialized');
+      }
+
+      this.memoryManager.writeMemory(address, data);
+
+      this.postMessage({
+        type: 'success',
+        payload: `Wrote ${data.length} bytes to address 0x${address.toString(16).padStart(8, '0')}`
+      });
+    } catch (error) {
+      this.postMessage({
+        type: 'error',
+        payload: `Failed to write memory: ${error}`
+      });
+    }
+  }
+
   private reset(): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
@@ -265,6 +305,9 @@ export class EmulatorWorker {
       case 'get-register':
         this.getRegister(message.payload as string);
         break;
+      case 'get-all-registers':
+        this.getAllRegisters();
+        break;
       case 'step':
         this.stepExecution();
         break;
@@ -281,6 +324,11 @@ export class EmulatorWorker {
       case 'get-memory':
         if (typeof message.payload === 'object' && message.payload && 'address' in message.payload && 'size' in message.payload) {
           this.getMemory(message.payload.address!, message.payload.size!);
+        }
+        break;
+      case 'write-memory':
+        if (typeof message.payload === 'object' && message.payload && 'address' in message.payload && 'data' in message.payload) {
+          this.writeMemory(message.payload.address!, message.payload.data!);
         }
         break;
       case 'reset':

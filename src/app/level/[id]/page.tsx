@@ -18,10 +18,10 @@ import SubBar from '@/components/bar/SubBar'
 import QueryBar from '@/components/bar/QueryBar'
 import ActuatorBar from '@/components/bar/ActuatorBar'
 import ActuatorPanel from '@/components/panel/ActuatorPanel'
-import { getMapByLevel } from '@/data/maps'
+import { getMapByLevel, GameMap } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
-import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
-import { ARMAssembler } from '@/lib/assembler'
+import { useDebugPlayback } from '@/hooks/useDebugPlayback'
+import { movePlayer, handleDotCollection } from '@/lib/game-logic'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft } from 'lucide-react'
 
 export default function LevelPage() {
@@ -50,7 +50,7 @@ export default function LevelPage() {
   
   // Debugging state
   const emulator = useEmulator()
-  const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
+  const debugPlayback = useDebugPlayback(levelMap)
   const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
   
   // State for memory search
@@ -58,6 +58,21 @@ export default function LevelPage() {
   
   // State for memory filter
   const [hideZeroRows, setHideZeroRows] = useState(false)
+  
+  // Game map state for player movement
+  const [currentMap, setCurrentMap] = useState(levelMap)
+  
+  
+  // Function to move player based on command value
+  const handlePlayerMove = async (command: number) => {
+    const movement = await movePlayer(currentMap, command, emulator.writeMemory)
+    if (movement) {
+      setCurrentMap(movement.updatedMap)
+      if (movement.collectedDot) {
+        handleDotCollection(setCurrentMap, movement.newRow, movement.newCol)
+      }
+    }
+  }
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)
@@ -92,43 +107,27 @@ export default function LevelPage() {
     setIsDebugMode(true)
     setIsCodeDisabled(true)
     
-    try {
-      if (!emulator.state.isInitialized) {
-        await emulator.initializeEmulator()
-      }
-      
-      const sourceCode = currentCode
-      const codeHighlighter = await createHighlighter(sourceCode)
-      setHighlighter(codeHighlighter)
-      
-      const assembler = new ARMAssembler()
-      await assembler.initialize()
-      const result = await assembler.assemble(sourceCode)
-      await emulator.loadCode(Array.from(result.mc))
-      
-      setHighlightedLine(undefined)
-      assembler.destroy()
-    } catch (error) {
-      console.error('Debug initialization failed:', error)
+    const result = await debugPlayback.startDebug(currentCode, currentMap)
+    if (result.success && result.initialState) {
+      setCurrentMap(result.initialState.mapState)
+      setHighlightedLine(result.initialState.highlightedLine)
     }
   }
 
-  const handleStepDown = async () => {
-    if (!highlighter) return
-    
-    try {
-      const stepResult = await emulator.step()
-      if (stepResult) {
-        const highlight = getHighlightFromStepResult(stepResult, highlighter)
-        setHighlightedLine(highlight?.lineNumber)
-      }
-    } catch (error) {
-      console.error('Step down failed:', error)
+  const handleStepDown = () => {
+    const nextState = debugPlayback.stepDown()
+    if (nextState) {
+      setCurrentMap(nextState.mapState)
+      setHighlightedLine(nextState.highlightedLine)
     }
   }
 
-  const handleStepUp = async () => {
-    // TODO: Implement step up functionality
+  const handleStepUp = () => {
+    const prevState = debugPlayback.stepUp()
+    if (prevState) {
+      setCurrentMap(prevState.mapState)
+      setHighlightedLine(prevState.highlightedLine)
+    }
   }
 
   const handleStopClick = async () => {
@@ -136,12 +135,22 @@ export default function LevelPage() {
     setIsDebugMode(false)
     setHighlightedLine(undefined)
     
-    try {
-      await emulator.reset()
-    } catch (error) {
-      console.error('Stop failed:', error)
+    // Reset map to initial state
+    setCurrentMap(levelMap)
+    
+    await debugPlayback.reset()
+  }
+
+  const handleReplay = () => {
+    const firstState = debugPlayback.replay()
+    if (firstState) {
+      setCurrentMap(firstState.mapState)
+      setHighlightedLine(firstState.highlightedLine)
     }
   }
+
+  // Get current debug state for panels
+  const currentDebugState = debugPlayback.getCurrentState()
 
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
@@ -162,6 +171,9 @@ export default function LevelPage() {
                 onStopClick={handleStopClick}
                 onStepDown={handleStepDown}
                 onStepUp={handleStepUp}
+                onReplay={handleReplay}
+                canStepUp={debugPlayback.canStepUp}
+                canStepDown={debugPlayback.canStepDown}
               />
             </div>
           </div>
@@ -185,7 +197,7 @@ export default function LevelPage() {
                           tilesY={levelMap.waterBackground.tilesY}
                         />
                         <div className="absolute inset-0 flex items-center justify-center z-10">
-                          <MapRenderer map={levelMap} />
+                          <MapRenderer map={currentMap} />
                         </div>
                       </div>
                     </div>
@@ -259,7 +271,7 @@ export default function LevelPage() {
                     msOverflowStyle: 'none'
                   }}
                 >
-                  <RegisterPanel />
+                  <RegisterPanel registers={currentDebugState?.registers} />
                 </div>
               </div>,
               <div key="memory" className="h-full flex flex-col">
@@ -277,6 +289,9 @@ export default function LevelPage() {
                   <MemoryPanel 
                     searchQuery={memorySearchQuery} 
                     hideZeroRows={hideZeroRows}
+                    codeMemory={currentDebugState?.codeMemory}
+                    stackMemory={currentDebugState?.stackMemory}
+                    dataMemory={currentDebugState?.dataMemory}
                   />
                 </div>
               </div>

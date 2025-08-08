@@ -38,13 +38,14 @@ export interface UnicornInstance {
 }
 
 export interface EmulatorMessage {
-  type: 'init' | 'load-code' | 'set-register' | 'get-register' | 'step' | 'step-debug' | 'run' | 'stop' | 'reset' | 'get-memory';
+  type: 'init' | 'load-code' | 'set-register' | 'get-register' | 'get-all-registers' | 'step' | 'step-debug' | 'run' | 'stop' | 'reset' | 'get-memory' | 'write-memory';
   payload?: {
     register?: string;
     value?: number;
     address?: number;
     size?: number;
     instructionCount?: number;
+    data?: number[];
   } | number[] | string;
   messageId?: string;
 }
@@ -68,8 +69,8 @@ export interface StepResult {
 }
 
 export interface EmulatorResponse {
-  type: 'success' | 'error' | 'register-value' | 'memory-data' | 'execution-complete' | 'step-result';
-  payload?: string | RegisterInfo | { address: number; size: number; data: number[]; hex: string } | StepResult | { message: string; executedInstructions: number };
+  type: 'success' | 'error' | 'register-value' | 'registers-data' | 'memory-data' | 'execution-complete' | 'step-result';
+  payload?: string | RegisterInfo | RegisterInfo[] | { address: number; size: number; data: number[]; hex: string } | StepResult | { message: string; executedInstructions: number };
   messageId?: string;
 }
 

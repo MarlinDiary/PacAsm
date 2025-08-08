@@ -50,6 +50,7 @@ export class ExecutionEngine {
       instructionHex = 'INVALID';
     }
     
+    
     let pcAfter: number;
     let stepMessage = 'Step executed successfully';
     

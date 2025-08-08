@@ -11,19 +11,45 @@ interface MemoryRow {
   ascii: string;
 }
 
-const generateMemoryRows = (): MemoryRow[] => {
+const generateMemoryRows = (
+  codeMemory?: number[], 
+  stackMemory?: number[], 
+  dataMemory?: number[]
+): MemoryRow[] => {
   const rows: MemoryRow[] = []
   const memoryRegions = [
-    { start: 0x10000, name: 'Code' },
-    { start: 0x20000, name: 'Stack' },
-    { start: 0x30000, name: 'Data' }
+    { start: 0x10000, name: 'Code', data: codeMemory },
+    { start: 0x20000, name: 'Stack', data: stackMemory },
+    { start: 0x30000, name: 'Data', data: dataMemory }
   ]
+  
   memoryRegions.forEach(region => {
     for (let i = 0; i < 256; i++) {
       const address = region.start + (i * 4)
       const addressHex = `0x${address.toString(16).toUpperCase().padStart(8, '0')}`
-      const hexBytes = '00 00 00 00'
-      const asciiBytes = '. . . .'
+      
+      let hexBytes = '00 00 00 00'
+      let asciiBytes = '. . . .'
+      
+      // Use actual memory data if available
+      if (region.data) {
+        const byteOffset = i * 4
+        if (byteOffset < region.data.length) {
+          // Read 4 bytes (or less if at end of data)
+          const byte0 = region.data[byteOffset] || 0
+          const byte1 = region.data[byteOffset + 1] || 0
+          const byte2 = region.data[byteOffset + 2] || 0
+          const byte3 = region.data[byteOffset + 3] || 0
+          
+          hexBytes = [byte0, byte1, byte2, byte3]
+            .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+            .join(' ')
+          
+          asciiBytes = [byte0, byte1, byte2, byte3]
+            .map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.')
+            .join(' ')
+        }
+      }
       
       rows.push({
         address: addressHex,
@@ -36,14 +62,16 @@ const generateMemoryRows = (): MemoryRow[] => {
   return rows
 }
 
-const memoryRows = generateMemoryRows()
-
 interface MemoryPanelProps {
   searchQuery?: string
   hideZeroRows?: boolean
+  codeMemory?: number[]
+  stackMemory?: number[]
+  dataMemory?: number[]
 }
 
-export default function MemoryPanel({ searchQuery = '', hideZeroRows = false }: MemoryPanelProps) {
+export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, codeMemory, stackMemory, dataMemory }: MemoryPanelProps) {
+  const memoryRows = generateMemoryRows(codeMemory, stackMemory, dataMemory)
   const filteredRows = memoryRows.filter(row => {
     // Search filter
     const matchesSearch = !searchQuery || 

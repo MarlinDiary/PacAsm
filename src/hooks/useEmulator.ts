@@ -125,6 +125,25 @@ export const useEmulator = () => {
     }
   }, [sendMessage]);
 
+  const getMemory = useCallback(async (address: number, size: number): Promise<{ address: number; size: number; data: number[]; hex: string } | null> => {
+    try {
+      const response = await sendMessage({ 
+        type: 'get-memory', 
+        payload: { address, size } 
+      });
+      if (response.type === 'memory-data' && response.payload) {
+        return response.payload as { address: number; size: number; data: number[]; hex: string };
+      }
+      return null;
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'Memory read failed' 
+      }));
+      return null;
+    }
+  }, [sendMessage]);
+
   const cleanup = useCallback(() => {
     if (workerRef.current) {
       workerRef.current.terminate();
@@ -138,6 +157,64 @@ export const useEmulator = () => {
     pendingMessages.current.clear();
   }, []);
 
+  const writeMemory = useCallback(async (address: number, data: number[]): Promise<boolean> => {
+    try {
+      const response = await sendMessage({ 
+        type: 'write-memory', 
+        payload: { address, data } 
+      });
+      return response.type === 'success';
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'Memory write failed' 
+      }));
+      return false;
+    }
+  }, [sendMessage]);
+
+  const getAllRegisters = useCallback(async (): Promise<any[] | null> => {
+    try {
+      const response = await sendMessage({ type: 'get-all-registers' });
+      if (response.type === 'registers-data' && response.payload) {
+        return response.payload as any[];
+      }
+      return null;
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'Get registers failed' 
+      }));
+      return null;
+    }
+  }, [sendMessage]);
+
+  const restoreState = useCallback(async (registers: any[], memoryData: number[]): Promise<boolean> => {
+    try {
+      // Restore registers
+      for (const reg of registers) {
+        await sendMessage({
+          type: 'set-register',
+          payload: { register: reg.register, value: reg.value }
+        });
+      }
+      
+      // Restore memory
+      await sendMessage({
+        type: 'write-memory',
+        payload: { address: 0x30000, data: memoryData }
+      });
+      
+      return true;
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'State restore failed' 
+      }));
+      return false;
+    }
+  }, [sendMessage]);
+
   return {
     state,
     initializeEmulator,
@@ -145,5 +222,9 @@ export const useEmulator = () => {
     step,
     reset,
     cleanup,
+    getMemory,
+    writeMemory,
+    getAllRegisters,
+    restoreState,
   };
 };

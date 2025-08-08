@@ -5,9 +5,12 @@ interface DebuggerBarProps {
   onStopClick?: () => void
   onStepDown?: () => void
   onStepUp?: () => void
+  onReplay?: () => void
+  canStepUp?: boolean
+  canStepDown?: boolean
 }
 
-export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, onStepUp }: DebuggerBarProps) {
+export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, onStepUp, onReplay, canStepUp = false, canStepDown = true }: DebuggerBarProps) {
   const handleStopClick = () => {
     onStopClick?.()
     onReturnClick?.()
@@ -31,21 +34,30 @@ export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, on
         {/* Arrow down to dot button - Step Down */}
         <button 
           onClick={onStepDown}
-          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center"
+          disabled={!canStepDown}
+          className={`w-8 h-8 p-2 flex items-center justify-center ${
+            canStepDown ? 'hover:bg-[#e2e2e2]' : 'opacity-50 cursor-not-allowed'
+          }`}
         >
-          <ArrowDownToDot size={16} color="#3679f5" />
+          <ArrowDownToDot size={16} color={canStepDown ? "#3679f5" : "#aaa"} />
         </button>
         
         {/* Arrow up from dot button - Step Up */}
         <button 
           onClick={onStepUp}
-          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] flex items-center justify-center"
+          disabled={!canStepUp}
+          className={`w-8 h-8 p-2 flex items-center justify-center ${
+            canStepUp ? 'hover:bg-[#e2e2e2]' : 'opacity-50 cursor-not-allowed'
+          }`}
         >
-          <ArrowUpFromDot size={16} color="#3679f5" />
+          <ArrowUpFromDot size={16} color={canStepUp ? "#3679f5" : "#aaa"} />
         </button>
         
-        {/* Refresh ccw button */}
-        <button className="w-8 h-8 p-2 hover:bg-[#e2e2e2] rounded-r-sm flex items-center justify-center">
+        {/* Refresh ccw button - Replay */}
+        <button 
+          onClick={onReplay}
+          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] rounded-r-sm flex items-center justify-center"
+        >
           <RefreshCcw size={16} color="#50b040" />
         </button>
       </div>
