@@ -60,14 +60,14 @@ export class ARMDisassembler {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       if (!window.cs || !window.cs.Capstone) {
-        throw new Error('Capstone library not properly loaded');
+        throw new Error('INIT_ERROR: Capstone library not loaded');
       }
 
       // Create capstone instance for ARM 32-bit
       this.capstone = new window.cs.Capstone(window.cs.ARCH_ARM, window.cs.MODE_ARM);
       
       if (!this.capstone) {
-        throw new Error('Failed to create Capstone instance');
+        throw new Error('INIT_ERROR: Failed to create Capstone instance');
       }
 
       // Enable detailed instruction information if requested
@@ -81,7 +81,7 @@ export class ARMDisassembler {
 
       this.isInitialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize ARM disassembler: ${error}`);
+      throw new Error('INIT_ERROR: Failed to initialize disassembler');
     }
   }
 
@@ -98,7 +98,7 @@ export class ARMDisassembler {
     }
 
     if (!this.capstone) {
-      throw new Error('Disassembler not properly initialized');
+      throw new Error('INIT_ERROR: Disassembler not initialized');
     }
 
     try {
@@ -106,18 +106,18 @@ export class ARMDisassembler {
       const byteArray = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
       
       if (byteArray.length === 0) {
-        throw new Error('No bytes provided for disassembly');
+        throw new Error('INPUT_ERROR: No bytes provided');
       }
 
       const results = this.capstone.disasm(byteArray, address, count);
       
       if (!results || results.length === 0) {
-        throw new Error('Disassembly failed: No instructions found or invalid machine code');
+        throw new Error('DISASSEMBLY_ERROR: No instructions found');
       }
 
       return results;
     } catch (error) {
-      throw new Error(`Disassembly error: ${error}`);
+      throw new Error('DISASSEMBLY_ERROR: Disassembly failed');
     }
   }
 
@@ -128,11 +128,11 @@ export class ARMDisassembler {
     // Remove spaces and ensure even length
     const cleanHex = hex.replace(/\s+/g, '');
     if (cleanHex.length % 2 !== 0) {
-      throw new Error('Invalid hex string: must have even length');
+      throw new Error('INPUT_ERROR: Hex string must have even length');
     }
 
     if (!/^[0-9a-fA-F]*$/.test(cleanHex)) {
-      throw new Error('Invalid hex string: contains non-hex characters');
+      throw new Error('INPUT_ERROR: Invalid hex characters');
     }
 
     const bytes = new Uint8Array(cleanHex.length / 2);
@@ -222,14 +222,14 @@ export class ARMDisassembler {
           return;
         }
         existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', () => reject(new Error('Failed to load capstone.js')));
+        existingScript.addEventListener('error', () => reject(new Error('LOAD_ERROR: Failed to load capstone.js')));
         return;
       }
 
       const script = document.createElement('script');
       script.src = '/arm/capstone-arm.min.js';
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load capstone.js'));
+      script.onerror = () => reject(new Error('LOAD_ERROR: Failed to load capstone.js'));
       document.head.appendChild(script);
     });
   }

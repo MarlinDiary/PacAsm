@@ -4,6 +4,7 @@ import { GameMap } from '@/data/maps'
 import { CodeHighlighter, createHighlighterWithCompiledCode, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo } from '@/workers/emulator/types'
+import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 
 interface MovementAction {
   instructionCount: number
@@ -13,6 +14,7 @@ interface MovementAction {
 
 export const usePlayRunner = () => {
   const emulator = useEmulator()
+  const addError = useDiagnosticsStore((state) => state.addError)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentMap, setCurrentMap] = useState<GameMap | null>(null)
   const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
@@ -24,8 +26,12 @@ export const usePlayRunner = () => {
     dataMemory: [] 
   })
   const abortControllerRef = useRef<AbortController | null>(null)
+  const currentCodeRef = useRef<string>('')
 
   const startPlay = async (sourceCode: string, initialMap: GameMap) => {
+    // Store the source code for error reporting
+    currentCodeRef.current = sourceCode
+    
     // Abort any previous execution
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -43,7 +49,7 @@ export const usePlayRunner = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'Aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -72,7 +78,7 @@ export const usePlayRunner = () => {
       // Check abort before starting execution
       if (abortController.signal.aborted) {
         setIsPlaying(false)
-        return { success: false, error: 'Aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation aborted' }
       }
       
       // Get initial panel data
@@ -95,7 +101,8 @@ export const usePlayRunner = () => {
       
       return { success: true }
     } catch (error) {
-      console.error('Play execution failed:', error)
+      // Silently handle - error already added to diagnostics
+      addError('INIT_ERROR: Failed to initialize play mode', currentCodeRef.current)
       setIsPlaying(false)
       return { success: false, error }
     }
@@ -119,7 +126,8 @@ export const usePlayRunner = () => {
       }
       
       if (!stepResult.success) {
-        console.error('Step execution failed:', stepResult.message)
+        // Silently handle - error already added to diagnostics
+        addError('RUNTIME_ERROR: Execution failed', currentCodeRef.current)
         break
       }
       
@@ -221,12 +229,13 @@ export const usePlayRunner = () => {
       // Check for timeout
       if (instructionCount >= 1000) {
         setIsPlaying(false)
-        throw new Error(`执行超时：自上次移动指令后已执行 ${instructionCount} 条指令`)
+        addError('TIMEOUT_ERROR: Execution timeout - too many instructions without movement', currentCodeRef.current)
+        return { success: false, error: 'TIMEOUT_ERROR: Execution timeout - too many instructions without movement' }
       }
     }
     
     if (movementCount >= 300) {
-      console.warn('达到最大移动指令数限制 (300)')
+      console.warn('WARNING: Maximum movement instructions reached (300)')
     }
     
     // Clear all data when execution ends
@@ -260,7 +269,7 @@ export const usePlayRunner = () => {
     try {
       await emulator.reset()
     } catch (error) {
-      console.error('Reset failed:', error)
+      // Silently handle reset failure
     }
   }, [emulator, stopPlay])
 

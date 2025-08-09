@@ -24,6 +24,7 @@ import { getMapByLevel } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
 import { useDebugger } from '@/hooks/useDebugger'
 import { usePlayRunner } from '@/hooks/usePlayRunner'
+import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope } from 'lucide-react'
 
 export default function LevelPage() {
@@ -60,6 +61,7 @@ export default function LevelPage() {
   const emulator = useEmulator()
   const debugState = useDebugger()
   const playState = usePlayRunner()
+  const errors = useDiagnosticsStore((state) => state.errors)
   const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
   
   // State for memory search
@@ -70,6 +72,9 @@ export default function LevelPage() {
   
   // Game map state for player movement
   const [currentMap, setCurrentMap] = useState(levelMap)
+  
+  // State for right panel tab (0: Register, 1: Memory, 2: Diagnostics)
+  const [rightPanelTab, setRightPanelTab] = useState(0)
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)
@@ -95,6 +100,13 @@ export default function LevelPage() {
       emulator.cleanup()
     }
   }, [emulator.cleanup])
+  
+  // Switch to Diagnostics tab when new error appears
+  useEffect(() => {
+    if (errors.length > 0) {
+      setRightPanelTab(2) // Switch to Diagnostics tab (index 2)
+    }
+  }, [errors.length])
 
   const handlePlayClick = async () => {
     // Reset map to initial state before starting play
@@ -113,7 +125,7 @@ export default function LevelPage() {
       setIsCodeDisabled(false)
       setIsPlayMode(false)
       setPlayStatus(undefined)
-      console.error('Play failed:', result.error)
+      // Play failure already handled by diagnostics
     }
   }
 
@@ -342,6 +354,8 @@ export default function LevelPage() {
               { icon: HardDrive, text: "Memory", color: "#01A2C2" },
               { icon: Stethoscope, text: "Diagnostics", color: "#70252e" }
             ]}
+            selectedTab={rightPanelTab}
+            onTabChange={setRightPanelTab}
             tabContent={[
               <div key="register" className="h-full flex flex-col">
                 <SubBar>

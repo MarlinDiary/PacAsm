@@ -45,13 +45,13 @@ export class ARMAssembler {
       await this.loadKeystoneScript();
       
       if (typeof window.ks === 'undefined') {
-        throw new Error('Keystone.js not loaded');
+        throw new Error('INIT_ERROR: Keystone.js not loaded');
       }
 
       this.keystone = new window.ks.Keystone(window.ks.ARCH_ARM, window.ks.MODE_ARM);
       this.isInitialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize ARM assembler: ${error}`);
+      throw new Error('INIT_ERROR: Failed to initialize assembler');
     }
   }
 
@@ -69,11 +69,11 @@ export class ARMAssembler {
           if (typeof window.ks !== 'undefined') {
             resolve();
           } else {
-            reject(new Error('Keystone.js failed to load properly'));
+            reject(new Error('LOAD_ERROR: Keystone.js failed to load'));
           }
         }, 100);
       };
-      script.onerror = () => reject(new Error('Failed to load keystone-arm.min.js'));
+      script.onerror = () => reject(new Error('LOAD_ERROR: Failed to load keystone-arm.min.js'));
       document.head.appendChild(script);
     });
   }
@@ -126,18 +126,18 @@ export class ARMAssembler {
       
       // Check if it's a valid instruction
       if (!validInstructions.includes(instruction)) {
-        throw new Error(`Invalid instruction '${instruction}' on line ${i + 1}: ${line}`);
+        throw new Error(`SYNTAX_ERROR: Invalid instruction at line ${i + 1}`);
       }
     }
   }
 
   async assemble(assembly: string): Promise<AssemblyResult> {
     if (!this.isInitialized || !this.keystone) {
-      throw new Error('Assembler not initialized');
+      throw new Error('INIT_ERROR: Assembler not initialized');
     }
 
     if (!assembly || typeof assembly !== 'string') {
-      throw new Error('Invalid assembly input');
+      throw new Error('INPUT_ERROR: Invalid assembly input');
     }
 
     // Clean and normalize the assembly code
@@ -156,15 +156,15 @@ export class ARMAssembler {
       const result = this.keystone.asm(cleanedAssembly, baseAddress);
       
       if (!result) {
-        throw new Error('Assembly result is null or undefined');
+        throw new Error('ASSEMBLY_ERROR: Result is null or undefined');
       }
 
       if (!(result instanceof Uint8Array)) {
-        throw new Error(`Expected Uint8Array, got ${typeof result}`);
+        throw new Error('ASSEMBLY_ERROR: Invalid result type');
       }
 
       if (result.length === 0) {
-        throw new Error('Assembly produced no machine code');
+        throw new Error('ASSEMBLY_ERROR: No machine code generated');
       }
 
       return {
@@ -175,7 +175,7 @@ export class ARMAssembler {
 
     } catch (error) {
       // Provide helpful error information for common issues
-      let errorMessage = `Assembly error: ${error}`;
+      let errorMessage = 'ASSEMBLY_ERROR: Assembly failed';
       
       if ((error as Error).message.includes('KS_ERR_ASM_INVALIDOPERAND')) {
         errorMessage += '\n\nPossible causes:';

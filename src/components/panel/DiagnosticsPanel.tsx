@@ -1,9 +1,14 @@
+'use client'
+
+import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
+import ErrorCard from '../ErrorCard'
+
 // Props type will be added when needed
 type DiagnosticsPanelProps = Record<string, never>
 
 export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
-  // Temporarily no data
-  const hasData = false
+  const errors = useDiagnosticsStore((state) => state.errors)
+  const hasData = errors.length > 0
   
   if (!hasData) {
     return (
@@ -21,8 +26,23 @@ export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
   }
   
   return (
-    <div className="w-full h-full p-4">
-      {/* Future diagnostics content */}
+    <div 
+      className="w-full h-full p-4 overflow-y-auto"
+      style={{
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}
+    >
+      {errors.map((error) => (
+        <ErrorCard
+          key={error.id}
+          error={error.error}
+          code={error.code}
+          timestamp={error.timestamp}
+          diagnosis={error.diagnosis}
+          isLoading={error.isLoading}
+        />
+      ))}
     </div>
   )
 }

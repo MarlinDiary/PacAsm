@@ -4,6 +4,7 @@ import { GameMap } from '@/data/maps'
 import { CodeHighlighter, createHighlighterWithCompiledCode, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
+import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 
 export interface PlaybackState {
   mapState: GameMap
@@ -17,6 +18,7 @@ export interface PlaybackState {
 
 export const useDebugger = () => {
   const emulator = useEmulator()
+  const addError = useDiagnosticsStore((state) => state.addError)
   const [highlighter, setHighlighter] = useState<CodeHighlighter | null>(null)
   const [executionHistory, setExecutionHistory] = useState<PlaybackState[]>([])
   const [currentPlaybackIndex, setCurrentPlaybackIndex] = useState(-1)
@@ -24,9 +26,13 @@ export const useDebugger = () => {
   const [isLazyDebugMode, setIsLazyDebugMode] = useState(false)
   const [hasShownEnd, setHasShownEnd] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const currentCodeRef = useRef<string>('')
 
   // Standard debug mode - pre-execute all steps
   const startDebug = async (sourceCode: string, currentMap: GameMap) => {
+    // Store the source code for error reporting
+    currentCodeRef.current = sourceCode
+    
     // Abort any previous initialization
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -43,7 +49,7 @@ export const useDebugger = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'Aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -92,16 +98,16 @@ export const useDebugger = () => {
       
       while (true) {
         if (abortController.signal.aborted) {
-          return { success: false, error: 'Aborted' }
+          return { success: false, error: 'INIT_ERROR: Operation aborted' }
         }
         
         const stepResult = await emulator.step()
         if (!stepResult) {
-          return { success: false, error: 'Step execution failed: No result returned' }
+          return { success: false, error: 'RUNTIME_ERROR: Step execution failed' }
         }
         
         if (!stepResult.success) {
-          return { success: false, error: `Runtime error: ${stepResult.message || 'Unknown execution error'}` }
+          return { success: false, error: 'RUNTIME_ERROR: Execution failed' }
         }
         
         if (stepResult.message?.includes('Execution completed') ||
@@ -168,13 +174,16 @@ export const useDebugger = () => {
       
       return { success: true, initialState: history[0] }
     } catch (error) {
-      console.error('Debug initialization failed:', error)
+      // Silently handle - error already added to diagnostics
+      addError('INIT_ERROR: Failed to initialize debugger', currentCodeRef.current)
       return { success: false, error }
     }
   }
 
   // Lazy initialization for debug mode - only prepare emulator without pre-execution
   const startDebugLazy = async (sourceCode: string, currentMap: GameMap) => {
+    // Store the source code for error reporting
+    currentCodeRef.current = sourceCode
     // Abort any previous initialization
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -193,7 +202,7 @@ export const useDebugger = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'Aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -227,7 +236,7 @@ export const useDebugger = () => {
       
       // Only check abort signal right before updating state
       if (abortController.signal.aborted) {
-        return { success: false, error: 'Aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation aborted' }
       }
       
       const history: PlaybackState[] = []
@@ -249,7 +258,8 @@ export const useDebugger = () => {
       
       return { success: true, initialState: history[0] }
     } catch (error) {
-      console.error('Debug lazy initialization failed:', error)
+      // Silently handle - error already added to diagnostics
+      addError('INIT_ERROR: Failed to initialize debugger', currentCodeRef.current)
       return { success: false, error }
     }
   }
@@ -281,8 +291,9 @@ export const useDebugger = () => {
         }
         
         if (!stepResult.success) {
-          console.error('Step execution failed:', stepResult.message)
+          // Silently handle - error already added to diagnostics
           setHasError(true)
+          addError('RUNTIME_ERROR: Step execution failed', currentCodeRef.current)
           return null
         }
         
@@ -375,8 +386,9 @@ export const useDebugger = () => {
           return newState
         }
       } catch (error) {
-        console.error('Step execution failed:', error)
+        // Silently handle - error already added to diagnostics
         setHasError(true)
+        addError('RUNTIME_ERROR: Step execution failed', currentCodeRef.current)
         return null
       }
     }
@@ -430,7 +442,7 @@ export const useDebugger = () => {
     try {
       await emulator.reset()
     } catch (error) {
-      console.error('Reset failed:', error)
+      // Silently handle reset failure
     }
   }, [emulator])
 
