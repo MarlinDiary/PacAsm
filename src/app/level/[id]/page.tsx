@@ -216,6 +216,13 @@ export default function LevelPage() {
     }
   }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap])
 
+  // Auto-stop debug mode when error occurs
+  useEffect(() => {
+    if (debugState.hasError && isDebugMode) {
+      handleStopClick()
+    }
+  }, [debugState.hasError, isDebugMode])
+
   return (
     <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
       <div className="p-2 h-full flex flex-col">

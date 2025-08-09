@@ -23,6 +23,7 @@ export const useDebugger = () => {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [isLazyDebugMode, setIsLazyDebugMode] = useState(false)
   const [hasShownEnd, setHasShownEnd] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   // Standard debug mode - pre-execute all steps
   const startDebug = async (sourceCode: string, currentMap: GameMap) => {
@@ -281,6 +282,7 @@ export const useDebugger = () => {
         
         if (!stepResult.success) {
           console.error('Step execution failed:', stepResult.message)
+          setHasError(true)
           return null
         }
         
@@ -374,6 +376,7 @@ export const useDebugger = () => {
         }
       } catch (error) {
         console.error('Step execution failed:', error)
+        setHasError(true)
         return null
       }
     }
@@ -422,6 +425,7 @@ export const useDebugger = () => {
     setHighlighter(null)
     setIsLazyDebugMode(false)
     setHasShownEnd(false)
+    setHasError(false)
     
     try {
       await emulator.reset()
@@ -456,6 +460,7 @@ export const useDebugger = () => {
     highlighter,
     executionHistory,
     currentPlaybackIndex,
+    hasError,
     canStepUp: currentPlaybackIndex > 0,
     canStepDown: isLazyDebugMode ? 
       (currentPlaybackIndex < executionHistory.length - 1 || !hasShownEnd) : 
