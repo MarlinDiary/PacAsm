@@ -54,7 +54,10 @@ export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProp
     >
       <div ref={contentRef} className="p-4">
         <div className={isLoading ? '' : 'mb-2'}>
-          <p className="text-sm font-semibold" style={{ color: '#dd544b' }}>
+          <p 
+            className={`text-sm font-semibold ${isLoading && !diagnosis ? 'animate-pulse' : ''}`} 
+            style={{ color: '#dd544b' }}
+          >
             {error}
           </p>
         </div>
