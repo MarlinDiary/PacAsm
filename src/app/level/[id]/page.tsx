@@ -49,7 +49,7 @@ export default function LevelPage() {
   
   // State for play mode
   const [isPlayMode, setIsPlayMode] = useState(false)
-  const [playStatus, setPlayStatus] = useState<'pending' | 'running'>('pending')
+  const [playStatus, setPlayStatus] = useState<'running' | undefined>(undefined)
   const [hasWon, setHasWon] = useState(false) // Ever won (permanent)
   const [currentPlayWon, setCurrentPlayWon] = useState(false) // This play won (temporary)
   
@@ -112,7 +112,7 @@ export default function LevelPage() {
       // Handle error - reset UI state
       setIsCodeDisabled(false)
       setIsPlayMode(false)
-      setPlayStatus('pending')
+      setPlayStatus(undefined)
       console.error('Play failed:', result.error)
     }
   }
@@ -207,7 +207,7 @@ export default function LevelPage() {
         setIsPlayMode(false)
         setIsCodeDisabled(false)
         setHighlightedLine(undefined)
-        setPlayStatus('pending') // Always reset play status
+        setPlayStatus(undefined) // Always reset play status
         // Reset map if this play didn't win, keep victory state if this play won
         if (!currentPlayWon) {
           setCurrentMap(levelMap)
