@@ -20,6 +20,8 @@ export const usePlayRunner = () => {
   const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
   const [movementActions, setMovementActions] = useState<MovementAction[]>([])
   const [currentRegisters, setCurrentRegisters] = useState<RegisterInfo[]>([])
+  const [previousRegisters, setPreviousRegisters] = useState<RegisterInfo[]>([])
+  const currentRegistersRef = useRef<RegisterInfo[]>([])
   const [currentMemory, setCurrentMemory] = useState<{ codeMemory: number[], stackMemory: number[], dataMemory: number[] }>({ 
     codeMemory: [], 
     stackMemory: [], 
@@ -29,19 +31,15 @@ export const usePlayRunner = () => {
   const currentCodeRef = useRef<string>('')
 
   const startPlay = async (sourceCode: string, initialMap: GameMap) => {
-    // Store the source code for error reporting
     currentCodeRef.current = sourceCode
     
-    // Abort any previous execution
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
     
-    // Create new abort controller
     const abortController = new AbortController()
     abortControllerRef.current = abortController
     
-    // Clear previous state
     setMovementActions([])
     setCurrentMap(initialMap)
     setHighlightedLine(undefined)
@@ -56,38 +54,37 @@ export const usePlayRunner = () => {
         await emulator.initializeEmulator()
       }
       
-      // Always reset emulator before loading new code
       await emulator.reset()
       
       const assembler = new ARMAssembler()
       await assembler.initialize()
       const result = await assembler.assemble(sourceCode)
       
-      // Clear code memory region before loading new code
       const codeMemorySize = 1024
       const zeroData = new Array(codeMemorySize).fill(0)
       await emulator.writeMemory(0x10000, zeroData)
       
       await emulator.loadCode(Array.from(result.mc))
       
-      // Create highlighter using the already compiled machine code
       const codeHighlighter = await createHighlighterWithCompiledCode(sourceCode, result.mc)
       
       assembler.destroy()
       
-      // Check abort before starting execution
       if (abortController.signal.aborted) {
         setIsPlaying(false)
         return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
-      // Get initial panel data
       const initialRegisters = await emulator.getAllRegisters()
       const initialCodeMemory = await emulator.getMemory(0x10000, 1024)
       const initialStackMemory = await emulator.getMemory(0x20000, 1024)
       const initialDataMemory = await emulator.getMemory(0x30000, 1024)
       
-      if (initialRegisters) setCurrentRegisters(initialRegisters)
+      if (initialRegisters) {
+        setPreviousRegisters(initialRegisters)
+        setCurrentRegisters(initialRegisters)
+        currentRegistersRef.current = initialRegisters
+      }
       if (initialCodeMemory && initialStackMemory && initialDataMemory) {
         setCurrentMemory({
           codeMemory: initialCodeMemory.data,
@@ -96,12 +93,10 @@ export const usePlayRunner = () => {
         })
       }
       
-      // Start fast execution
       await executeWithDelays(initialMap, codeHighlighter, abortController)
       
       return { success: true }
     } catch (error) {
-      // Silently handle - error already added to diagnostics
       addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
       setIsPlaying(false)
       return { success: false, error }
@@ -126,7 +121,6 @@ export const usePlayRunner = () => {
       }
       
       if (!stepResult.success) {
-        // Silently handle - error already added to diagnostics
         addError('RUNTIME_ERROR: Execution Failed', currentCodeRef.current)
         break
       }
@@ -139,17 +133,15 @@ export const usePlayRunner = () => {
       
       instructionCount++
       
-      // Update highlighted line for visual feedback
       const highlight = getHighlightFromStepResult(stepResult, codeHighlighter)
       const currentHighlight = highlight?.lineNumber
       setHighlightedLine(currentHighlight)
       
-      // Check for player movement command
       const dataMemory = await emulator.getMemory(0x30000, 1)
       
       if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4 && currentMapState.playerPosition) {
         movementCount++
-        instructionCount = 0 // Reset instruction counter on movement
+        instructionCount = 0
         
         let newRow = currentMapState.playerPosition.row
         let newCol = currentMapState.playerPosition.col
@@ -174,23 +166,24 @@ export const usePlayRunner = () => {
           dots: updatedDots
         }
         
-        // Record this movement action
         actions.push({
           instructionCount: movementCount,
           mapState: { ...currentMapState },
           highlightedLine: currentHighlight
         })
         
-        // Update UI immediately
         setCurrentMap({ ...currentMapState })
         
-        // Update panel data during movement (before clearing memory)
         const registers = await emulator.getAllRegisters()
         const codeMemory = await emulator.getMemory(0x10000, 1024)
         const stackMemory = await emulator.getMemory(0x20000, 1024)
         const updatedDataMemory = await emulator.getMemory(0x30000, 1024)
         
-        if (registers) setCurrentRegisters(registers)
+        if (registers) {
+          setPreviousRegisters(currentRegistersRef.current)
+          setCurrentRegisters(registers)
+          currentRegistersRef.current = registers
+        }
         if (codeMemory && stackMemory && updatedDataMemory) {
           setCurrentMemory({
             codeMemory: codeMemory.data,
@@ -199,34 +192,31 @@ export const usePlayRunner = () => {
           })
         }
         
-        // Clear the movement command after updating panel data
         await emulator.writeMemory(0x30000, [0])
         
-        // Delay for movement command
         await new Promise(resolve => setTimeout(resolve, 300))
       } else {
-        // Update panel data occasionally for non-movement instructions
-        if (instructionCount % 10 === 0) { // Every 10 instructions
-          const registers = await emulator.getAllRegisters()
-          const codeMemory = await emulator.getMemory(0x10000, 1024)
-          const stackMemory = await emulator.getMemory(0x20000, 1024)
-          const currentDataMemory = await emulator.getMemory(0x30000, 1024)
-          
-          if (registers) setCurrentRegisters(registers)
-          if (codeMemory && stackMemory && currentDataMemory) {
-            setCurrentMemory({
-              codeMemory: codeMemory.data,
-              stackMemory: stackMemory.data,
-              dataMemory: currentDataMemory.data
-            })
-          }
+        const registers = await emulator.getAllRegisters()
+        const codeMemory = await emulator.getMemory(0x10000, 1024)
+        const stackMemory = await emulator.getMemory(0x20000, 1024)
+        const currentDataMemory = await emulator.getMemory(0x30000, 1024)
+        
+        if (registers) {
+          setPreviousRegisters(currentRegistersRef.current)
+          setCurrentRegisters(registers)
+          currentRegistersRef.current = registers
+        }
+        if (codeMemory && stackMemory && currentDataMemory) {
+          setCurrentMemory({
+            codeMemory: codeMemory.data,
+            stackMemory: stackMemory.data,
+            dataMemory: currentDataMemory.data
+          })
         }
         
-        // Regular instruction delay
         await new Promise(resolve => setTimeout(resolve, 100))
       }
       
-      // Check for timeout
       if (instructionCount >= 1000) {
         setIsPlaying(false)
         addError('TIMEOUT_ERROR: Execution Timeout - Too Many Instructions without Movement', currentCodeRef.current)
@@ -238,13 +228,14 @@ export const usePlayRunner = () => {
       console.warn('WARNING: Maximum Movement Instructions Reached (300)')
     }
     
-    // Clear all data when execution ends
+    setPreviousRegisters([])
     setCurrentRegisters([])
+    currentRegistersRef.current = []
     setCurrentMemory({ codeMemory: [], stackMemory: [], dataMemory: [] })
-    setCurrentMap(null) // Clear map to prevent conflicts
+    setCurrentMap(null)
     
     setMovementActions(actions)
-    setHighlightedLine(undefined) // Clear highlight when execution ends
+    setHighlightedLine(undefined)
     setIsPlaying(false)
   }
 
@@ -256,24 +247,21 @@ export const usePlayRunner = () => {
   }, [])
 
   const reset = useCallback(async () => {
-    // Stop any ongoing execution
     stopPlay()
     
-    // Clear all state
     setMovementActions([])
     setCurrentMap(null)
     setHighlightedLine(undefined)
+    setPreviousRegisters([])
     setCurrentRegisters([])
+    currentRegistersRef.current = []
     setCurrentMemory({ codeMemory: [], stackMemory: [], dataMemory: [] })
     
     try {
       await emulator.reset()
-    } catch (error) {
-      // Silently handle reset failure
-    }
+    } catch (error) {}
   }, [emulator, stopPlay])
 
-  // For compatibility - return current state with panel data
   const getCurrentState = () => {
     if (!currentMap) return null
     
@@ -288,16 +276,31 @@ export const usePlayRunner = () => {
     }
   }
 
+  const getPreviousState = () => {
+    if (!currentMap) return null
+    
+    return {
+      mapState: currentMap,
+      highlightedLine,
+      registers: previousRegisters,
+      codeMemory: currentMemory.codeMemory,
+      stackMemory: currentMemory.stackMemory,
+      dataMemory: currentMemory.dataMemory,
+      stepResult: null
+    }
+  }
+
   return {
     isPlaying,
     currentMap,
     highlightedLine,
     movementActions,
-    executionHistory: [], // Empty for compatibility
-    currentPlaybackIndex: -1, // Not used in play mode
+    executionHistory: [],
+    currentPlaybackIndex: -1,
     startPlay,
     stopPlay,
     reset,
-    getCurrentState
+    getCurrentState,
+    getPreviousState
   }
 }

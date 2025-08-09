@@ -195,7 +195,7 @@ export default function LevelPage() {
   }, [playState.isPlaying, playState, debugState])
   
   const currentDebugState = getCurrentState()
-  const previousDebugState = debugState.getPreviousState()
+  const previousDebugState = playState.isPlaying ? playState.getPreviousState() : debugState.getPreviousState()
 
   // Listen for play state updates (only when actively playing)
   useEffect(() => {
