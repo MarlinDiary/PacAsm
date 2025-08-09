@@ -41,7 +41,7 @@ export default function CodeEditor({
           root: [
             // Numbers (before comments to catch #4, #1, etc.)
             [/\b0x[0-9a-fA-F]+\b/, 'number.hex'],
-            [/#[0-9]+\b/, 'number'],
+            [/#-?[0-9]+\b/, 'number'],
             [/\b[0-9]+\b/, 'number'],
             
             // Comments
@@ -66,7 +66,7 @@ export default function CodeEditor({
             [/\b([rR][0-9]|[rR]1[0-5]|[sS][pP]|[lL][rR]|[pP][cC]|[cC][pP][sS][rR])\b/, 'variable.predefined'],
             
             // ARM instructions (before general identifiers) - case insensitive
-            [/\b(?:mov|add|sub|mul|div|cmp|b|bl|bx|blx|beq|bne|blt|ble|bgt|bge|bcc|bcs|bhi|bls|bmi|bpl|bvs|bvc|ldr|str|ldm|stm|push|pop|nop|adr|and|orr|eor|bic|mvn|lsl|lsr|asr|ror|rrx|MOV|ADD|SUB|MUL|DIV|CMP|B|BL|BX|BLX|BEQ|BNE|BLT|BLE|BGT|BGE|BCC|BCS|BHI|BLS|BMI|BPL|BVS|BVC|LDR|STR|LDM|STM|PUSH|POP|NOP|ADR|AND|ORR|EOR|BIC|MVN|LSL|LSR|ASR|ROR|RRX)\b/, 'keyword'],
+            [/\b(?:mov|movs|add|adds|sub|subs|mul|div|cmp|cmps|b|bl|bx|blx|beq|bne|blt|ble|bgt|bge|bcc|bcs|bhi|bls|bmi|bpl|bvs|bvc|ldr|ldrb|ldrh|str|strb|strh|ldm|ldmia|ldmdb|ldmib|ldmda|stm|stmia|stmdb|stmib|stmda|push|pop|nop|adr|and|ands|orr|orrs|eor|eors|bic|bics|mvn|mvns|lsl|lsls|lsr|lsrs|asr|asrs|ror|rors|rrx|rrxs|MOV|MOVS|ADD|ADDS|SUB|SUBS|MUL|DIV|CMP|CMPS|B|BL|BX|BLX|BEQ|BNE|BLT|BLE|BGT|BGE|BCC|BCS|BHI|BLS|BMI|BPL|BVS|BVC|LDR|LDRB|LDRH|STR|STRB|STRH|LDM|LDMIA|LDMDB|LDMIB|LDMDA|STM|STMIA|STMDB|STMIB|STMDA|PUSH|POP|NOP|ADR|AND|ANDS|ORR|ORRS|EOR|EORS|BIC|BICS|MVN|MVNS|LSL|LSLS|LSR|LSRS|ASR|ASRS|ROR|RORS|RRX|RRXS)\b/, 'keyword'],
             
             // Identifiers (last to avoid conflicts)
             [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
