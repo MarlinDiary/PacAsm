@@ -60,9 +60,11 @@ export const usePlayRunner = () => {
       await assembler.initialize()
       const result = await assembler.assemble(sourceCode)
       
-      const codeMemorySize = 1024
-      const zeroData = new Array(codeMemorySize).fill(0)
+      const memorySize = 1024
+      const zeroData = new Array(memorySize).fill(0)
       await emulator.writeMemory(0x10000, zeroData)
+      await emulator.writeMemory(0x20000, zeroData)
+      await emulator.writeMemory(0x30000, zeroData)
       
       await emulator.loadCode(Array.from(result.mc))
       
