@@ -32,7 +32,7 @@ export class UnicornLoader {
     } catch (error) {
       this.postMessage({
         type: 'error',
-        payload: 'LOAD_ERROR: Failed to load Unicorn.js'
+        payload: 'LOAD_ERROR: Failed to Load Unicorn.js'
       });
       throw error;
     }
@@ -40,7 +40,7 @@ export class UnicornLoader {
 
   getUnicorn(): UnicornGlobal {
     if (typeof this.workerSelf.uc === 'undefined') {
-      throw new Error('INIT_ERROR: Unicorn.js not loaded');
+      throw new Error('INIT_ERROR: Unicorn.js Not Loaded');
     }
     return this.workerSelf.uc;
   }

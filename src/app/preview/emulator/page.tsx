@@ -81,7 +81,7 @@ mov r2, r1        @ Store final sum in r2`)
 
              assembler.destroy()
      } catch (error) {
-       setAssemblyOutput('ASSEMBLY_ERROR: Assembly failed')
+       setAssemblyOutput('ASSEMBLY_ERROR: Assembly Failed')
      } finally {
        setIsAssembling(false)
      }
@@ -124,7 +124,7 @@ mov r2, r1        @ Store final sum in r2`)
 
       disassembler.destroy()
     } catch (error) {
-      setDisassemblyOutput('DISASSEMBLY_ERROR: Disassembly failed')
+      setDisassemblyOutput('DISASSEMBLY_ERROR: Disassembly Failed')
     } finally {
        setIsDisassembling(false)
      }
@@ -185,7 +185,7 @@ mov r2, r1        @ Store final sum in r2`)
        emulator.destroy()
        assembler.destroy()
          } catch (error) {
-      setEmulationOutput('EMULATION_ERROR: Emulation failed')
+      setEmulationOutput('EMULATION_ERROR: Emulation Failed')
     } finally {
        setIsEmulating(false)
      }
@@ -229,7 +229,7 @@ mov r2, r1        @ Store final sum in r2`)
       // Cleanup assembler
       assembler.destroy()
     } catch (error) {
-      setStepOutput('INIT_ERROR: Debugger initialization failed')
+      setStepOutput('INIT_ERROR: Debugger Initialization Failed')
     } finally {
       setIsStepping(false)
     }
@@ -265,7 +265,7 @@ mov r2, r1        @ Store final sum in r2`)
         setStepOutput(formattedResult)
       }
     } catch (error) {
-      setStepOutput('RUNTIME_ERROR: Step execution failed')
+      setStepOutput('RUNTIME_ERROR: Step Execution Failed')
       setHighlightedLine(undefined)
     } finally {
       setIsStepping(false)
@@ -288,7 +288,7 @@ mov r2, r1        @ Store final sum in r2`)
       
       setStepOutput('Debugger reset successfully!\n\nPC reset to start of code. Ready for stepping.')
     } catch (error) {
-      setStepOutput('RESET_ERROR: Reset failed')
+      setStepOutput('RESET_ERROR: Reset Failed')
     } finally {
       setIsStepping(false)
     }

@@ -49,7 +49,7 @@ export const useDebugger = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'INIT_ERROR: Operation aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -98,16 +98,16 @@ export const useDebugger = () => {
       
       while (true) {
         if (abortController.signal.aborted) {
-          return { success: false, error: 'INIT_ERROR: Operation aborted' }
+          return { success: false, error: 'INIT_ERROR: Operation Aborted' }
         }
         
         const stepResult = await emulator.step()
         if (!stepResult) {
-          return { success: false, error: 'RUNTIME_ERROR: Step execution failed' }
+          return { success: false, error: 'RUNTIME_ERROR: Step Execution Failed' }
         }
         
         if (!stepResult.success) {
-          return { success: false, error: 'RUNTIME_ERROR: Execution failed' }
+          return { success: false, error: 'RUNTIME_ERROR: Execution Failed' }
         }
         
         if (stepResult.message?.includes('Execution completed') ||
@@ -175,7 +175,7 @@ export const useDebugger = () => {
       return { success: true, initialState: history[0] }
     } catch (error) {
       // Silently handle - error already added to diagnostics
-      addError('INIT_ERROR: Failed to initialize debugger', currentCodeRef.current)
+      addError('INIT_ERROR: Failed to Initialize Debugger', currentCodeRef.current)
       return { success: false, error }
     }
   }
@@ -202,7 +202,7 @@ export const useDebugger = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'INIT_ERROR: Operation aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -236,7 +236,7 @@ export const useDebugger = () => {
       
       // Only check abort signal right before updating state
       if (abortController.signal.aborted) {
-        return { success: false, error: 'INIT_ERROR: Operation aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       const history: PlaybackState[] = []
@@ -259,7 +259,7 @@ export const useDebugger = () => {
       return { success: true, initialState: history[0] }
     } catch (error) {
       // Silently handle - error already added to diagnostics
-      addError('INIT_ERROR: Failed to initialize debugger', currentCodeRef.current)
+      addError('INIT_ERROR: Failed to Initialize Debugger', currentCodeRef.current)
       return { success: false, error }
     }
   }
@@ -293,7 +293,7 @@ export const useDebugger = () => {
         if (!stepResult.success) {
           // Silently handle - error already added to diagnostics
           setHasError(true)
-          addError('RUNTIME_ERROR: Step execution failed', currentCodeRef.current)
+          addError('RUNTIME_ERROR: Step Execution Failed', currentCodeRef.current)
           return null
         }
         

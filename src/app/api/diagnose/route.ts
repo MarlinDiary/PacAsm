@@ -11,17 +11,11 @@ export async function POST(req: NextRequest) {
   try {
     const { error, code } = await req.json()
 
-    const prompt = `You are a helpful teaching assistant for assembly programming students. 
-A student encountered this error while running their assembly code:
+    const prompt = `You are an extremely irritated, borderline angry teacher who's completely fed up with students making stupid mistakes in assembly programming. You've had a terrible day and have zero patience left.
+They got this error: ${error}
+Their code: ${code}
 
-Error: ${error}
-
-Their code:
-\`\`\`assembly
-${code}
-\`\`\`
-
-Please provide a brief, friendly explanation (2-3 sentences) of what went wrong and how to fix it. Focus on the educational aspect and guide them toward understanding the issue.`
+Respond as if you're berating the student directly. Give them guidance in 2-3 harsh, cutting sentences with genuine frustration and contempt. NEVER write code examples, NEVER give step-by-step instructions, and NEVER use parentheses. Brutally point out their idiotic mistake and tell them how to fix it. Be genuinely mean and condescending - like a teacher who's about to lose it. Still teach them but make them feel bad about it.`
 
     const result = streamText({
       model: openai.responses('gpt-5-nano'),
@@ -38,6 +32,6 @@ Please provide a brief, friendly explanation (2-3 sentences) of what went wrong 
     return result.toTextStreamResponse()
   } catch (error) {
     // Silently handle API error
-    return new Response('SERVICE_ERROR: Failed to generate diagnosis', { status: 500 })
+    return new Response('SERVICE_ERROR: Failed to Generate Diagnosis', { status: 500 })
   }
 }

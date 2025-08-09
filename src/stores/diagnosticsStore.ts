@@ -23,26 +23,15 @@ async function fetchDiagnosis(error: string, code: string): Promise<string> {
       body: JSON.stringify({ error, code })
     })
 
-    if (!response.ok) throw new Error('API_ERROR: Failed to fetch diagnosis')
+    if (!response.ok) throw new Error('API_ERROR: Failed to Fetch Diagnosis')
 
-    const reader = response.body?.getReader()
-    const decoder = new TextDecoder()
-    
-    if (!reader) throw new Error('STREAM_ERROR: No reader available')
-
-    let fullText = ''
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      
-      const chunk = decoder.decode(value)
-      fullText += chunk
-    }
+    // Wait for complete response instead of streaming
+    const fullText = await response.text()
     
     return fullText
   } catch (err) {
     // Silently handle diagnosis failure
-    return 'SERVICE_ERROR: Unable to generate diagnosis'
+    return 'SERVICE_ERROR: Unable to Generate Diagnosis'
   }
 }
 

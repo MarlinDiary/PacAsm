@@ -93,7 +93,7 @@ export class ARMEmulator {
       await this.sendMessage('init');
       this.isInitialized = true;
     } catch (error) {
-      throw new Error('INIT_ERROR: Failed to initialize emulator');
+      throw new Error('INIT_ERROR: Failed to Initialize Emulator');
     }
   }
 
@@ -108,7 +108,7 @@ export class ARMEmulator {
 
   async setRegister(register: string, value: number): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     await this.sendMessage('set-register', { register, value });
@@ -116,18 +116,18 @@ export class ARMEmulator {
 
   async getRegister(register: string): Promise<RegisterState> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     const response = await this.sendMessage('get-register', register);
     
     if (response.type !== 'register-value') {
-      throw new Error('SYSTEM_ERROR: Unexpected response type');
+      throw new Error('SYSTEM_ERROR: Unexpected Response Type');
     }
     
     const payload = response.payload as RegisterState;
     if (!payload || typeof payload.register !== 'string') {
-      throw new Error('DATA_ERROR: Invalid register data');
+      throw new Error('DATA_ERROR: Invalid Register Data');
     }
     
     return payload;
@@ -155,7 +155,7 @@ export class ARMEmulator {
 
   async step(): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     await this.sendMessage('step');
@@ -163,13 +163,13 @@ export class ARMEmulator {
 
   async stepDebug(): Promise<StepResult> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     const response = await this.sendMessage('step-debug');
     
     if (response.type !== 'step-result') {
-      throw new Error('SYSTEM_ERROR: Unexpected response type');
+      throw new Error('SYSTEM_ERROR: Unexpected Response Type');
     }
     
     return response.payload as StepResult;
@@ -177,7 +177,7 @@ export class ARMEmulator {
 
   async run(instructionCount?: number): Promise<{ executedInstructions: number }> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     const response = await this.sendMessage('run', { instructionCount });
@@ -192,7 +192,7 @@ export class ARMEmulator {
 
   async readMemory(address: number, size: number): Promise<MemoryData> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     const response = await this.sendMessage('get-memory', { address, size });
@@ -201,7 +201,7 @@ export class ARMEmulator {
 
   async reset(): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error('INIT_ERROR: Emulator not initialized');
+      throw new Error('INIT_ERROR: Emulator Not Initialized');
     }
 
     await this.sendMessage('reset');
@@ -238,7 +238,7 @@ export class ARMEmulator {
   private sendMessage(type: WorkerMessage['type'], payload?: WorkerMessage['payload']): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {
-        reject(new Error('INIT_ERROR: Worker not initialized'));
+        reject(new Error('INIT_ERROR: Worker Not Initialized'));
         return;
       }
 
@@ -246,7 +246,7 @@ export class ARMEmulator {
       
       const timeout = setTimeout(() => {
         this.messageHandlers.delete(messageId);
-        reject(new Error('TIMEOUT_ERROR: Worker message timeout'));
+        reject(new Error('TIMEOUT_ERROR: Worker Message Timeout'));
       }, 10000);
 
       this.messageHandlers.set(messageId, (response: WorkerResponse) => {
@@ -254,7 +254,7 @@ export class ARMEmulator {
         this.messageHandlers.delete(messageId);
         
         if (response.type === 'error') {
-          reject(new Error('SYSTEM_ERROR: Worker error'));
+          reject(new Error('SYSTEM_ERROR: Worker Error'));
         } else {
           resolve(response);
         }

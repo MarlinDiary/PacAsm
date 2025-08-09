@@ -1,6 +1,6 @@
 'use client'
 
-import { format } from 'timeago.js'
+import { useRef, useEffect, useState } from 'react'
 
 interface ErrorCardProps {
   error: string
@@ -10,39 +10,62 @@ interface ErrorCardProps {
   isLoading: boolean
 }
 
-export default function ErrorCard({ error, code, timestamp, diagnosis, isLoading }: ErrorCardProps) {
+export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProps) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | 'auto'>('auto')
+  const [enableTransition, setEnableTransition] = useState(false)
+  const prevLoadingRef = useRef(isLoading)
+
+  useEffect(() => {
+    // Only enable transition when loading state changes
+    if (prevLoadingRef.current !== isLoading) {
+      setEnableTransition(true)
+      prevLoadingRef.current = isLoading
+      
+      // Disable transition after animation completes
+      const timer = setTimeout(() => {
+        setEnableTransition(false)
+      }, 400)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading])
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const resizeObserver = new ResizeObserver(() => {
+        if (contentRef.current) {
+          setHeight(contentRef.current.scrollHeight)
+        }
+      })
+      resizeObserver.observe(contentRef.current)
+      return () => resizeObserver.disconnect()
+    }
+  }, [])
 
   return (
     <div 
-      className="rounded-lg p-4 mb-3"
-      style={{ backgroundColor: '#f7f7f8' }}
+      className="rounded-lg overflow-hidden"
+      style={{ 
+        backgroundColor: '#fdf1f0',
+        transition: enableTransition ? 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+        height: height
+      }}
     >
-      <div className="flex justify-between items-start mb-3">
-        <div 
-          className="px-2 py-1 rounded text-xs font-medium"
-          style={{ backgroundColor: '#fcf1f0', color: '#ba3a37' }}
-        >
-          Error
+      <div ref={contentRef} className="p-4">
+        <div className={isLoading ? '' : 'mb-2'}>
+          <p className="text-sm font-semibold" style={{ color: '#dd544b' }}>
+            {error}
+          </p>
         </div>
-        <span className="text-xs" style={{ color: '#949494' }}>
-          {format(timestamp)}
-        </span>
-      </div>
-      
-      <div className="mb-3">
-        <p className="text-sm font-mono" style={{ color: '#ba3a37' }}>
-          {error}
-        </p>
-      </div>
 
-      <div className="border-t pt-3" style={{ borderColor: '#e8e8e8' }}>
-        <p className="text-sm" style={{ color: '#5a5a5a' }}>
-          {isLoading ? (
-            <span className="animate-pulse">Analyzing error...</span>
-          ) : (
-            diagnosis
-          )}
-        </p>
+        {!isLoading && (
+          <div>
+            <p className="text-sm" style={{ color: '#e34940' }}>
+              {diagnosis}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

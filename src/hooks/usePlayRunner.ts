@@ -49,7 +49,7 @@ export const usePlayRunner = () => {
     
     try {
       if (abortController.signal.aborted) {
-        return { success: false, error: 'INIT_ERROR: Operation aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       if (!emulator.state.isInitialized) {
@@ -78,7 +78,7 @@ export const usePlayRunner = () => {
       // Check abort before starting execution
       if (abortController.signal.aborted) {
         setIsPlaying(false)
-        return { success: false, error: 'INIT_ERROR: Operation aborted' }
+        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       // Get initial panel data
@@ -102,7 +102,7 @@ export const usePlayRunner = () => {
       return { success: true }
     } catch (error) {
       // Silently handle - error already added to diagnostics
-      addError('INIT_ERROR: Failed to initialize play mode', currentCodeRef.current)
+      addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
       setIsPlaying(false)
       return { success: false, error }
     }
@@ -127,7 +127,7 @@ export const usePlayRunner = () => {
       
       if (!stepResult.success) {
         // Silently handle - error already added to diagnostics
-        addError('RUNTIME_ERROR: Execution failed', currentCodeRef.current)
+        addError('RUNTIME_ERROR: Execution Failed', currentCodeRef.current)
         break
       }
       
@@ -229,13 +229,13 @@ export const usePlayRunner = () => {
       // Check for timeout
       if (instructionCount >= 1000) {
         setIsPlaying(false)
-        addError('TIMEOUT_ERROR: Execution timeout - too many instructions without movement', currentCodeRef.current)
-        return { success: false, error: 'TIMEOUT_ERROR: Execution timeout - too many instructions without movement' }
+        addError('TIMEOUT_ERROR: Execution Timeout - Too Many Instructions without Movement', currentCodeRef.current)
+        return { success: false, error: 'TIMEOUT_ERROR: Execution Timeout - Too Many Instructions without Movement' }
       }
     }
     
     if (movementCount >= 300) {
-      console.warn('WARNING: Maximum movement instructions reached (300)')
+      console.warn('WARNING: Maximum Movement Instructions Reached (300)')
     }
     
     // Clear all data when execution ends

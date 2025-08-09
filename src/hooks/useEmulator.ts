@@ -22,7 +22,7 @@ export const useEmulator = () => {
   const sendMessage = useCallback((message: EmulatorMessage): Promise<EmulatorResponse> => {
     return new Promise((resolve, reject) => {
       if (!workerRef.current) {
-        reject(new Error('INIT_ERROR: Emulator not initialized'));
+        reject(new Error('INIT_ERROR: Emulator Not Initialized'));
         return;
       }
 
@@ -35,7 +35,7 @@ export const useEmulator = () => {
       setTimeout(() => {
         if (pendingMessages.current.has(messageId)) {
           pendingMessages.current.delete(messageId);
-          reject(new Error('TIMEOUT_ERROR: Message timeout'));
+          reject(new Error('TIMEOUT_ERROR: Message Timeout'));
         }
       }, 5000);
 
@@ -67,7 +67,7 @@ export const useEmulator = () => {
       setState(prev => ({ 
         ...prev, 
         isInitialized: false, 
-        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Unknown error' 
+        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Unknown Error' 
       }));
     }
   }, [sendMessage]);
@@ -81,7 +81,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'LOAD_ERROR: Failed to load code' 
+        error: error instanceof Error ? error.message : 'LOAD_ERROR: Failed to Load Code' 
       }));
     }
   }, [sendMessage]);
@@ -102,7 +102,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'RUNTIME_ERROR: Step failed' 
+        error: error instanceof Error ? error.message : 'RUNTIME_ERROR: Step Failed' 
       }));
       return null;
     }
@@ -120,7 +120,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Reset failed' 
+        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Reset Failed' 
       }));
     }
   }, [sendMessage]);
@@ -138,7 +138,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'MEMORY_ERROR: Read failed' 
+        error: error instanceof Error ? error.message : 'MEMORY_ERROR: Read Failed' 
       }));
       return null;
     }
@@ -167,7 +167,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'MEMORY_ERROR: Write failed' 
+        error: error instanceof Error ? error.message : 'MEMORY_ERROR: Write Failed' 
       }));
       return false;
     }
@@ -183,7 +183,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Failed to get registers' 
+        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: Failed to Get Registers' 
       }));
       return null;
     }
@@ -209,7 +209,7 @@ export const useEmulator = () => {
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
-        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: State restore failed' 
+        error: error instanceof Error ? error.message : 'SYSTEM_ERROR: State Restore Failed' 
       }));
       return false;
     }

@@ -33,15 +33,16 @@ export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
         msOverflowStyle: 'none'
       }}
     >
-      {errors.map((error) => (
-        <ErrorCard
-          key={error.id}
-          error={error.error}
-          code={error.code}
-          timestamp={error.timestamp}
-          diagnosis={error.diagnosis}
-          isLoading={error.isLoading}
-        />
+      {errors.map((error, index) => (
+        <div key={error.id} className={index < errors.length - 1 ? 'mb-4' : ''}>
+          <ErrorCard
+            error={error.error}
+            code={error.code}
+            timestamp={error.timestamp}
+            diagnosis={error.diagnosis}
+            isLoading={error.isLoading}
+          />
+        </div>
       ))}
     </div>
   )
