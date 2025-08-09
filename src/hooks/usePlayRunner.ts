@@ -221,8 +221,8 @@ export const usePlayRunner = () => {
       
       if (instructionCount >= 1000) {
         setIsPlaying(false)
-        addError('TIMEOUT_ERROR: Execution Timeout - Too Many Instructions without Movement', currentCodeRef.current)
-        return { success: false, error: 'TIMEOUT_ERROR: Execution Timeout - Too Many Instructions without Movement' }
+        addError('TIMEOUT_ERROR: Too Many Instructions without Movement', currentCodeRef.current)
+        return { success: false, error: 'TIMEOUT_ERROR: Too Many Instructions without Movement' }
       }
     }
     
