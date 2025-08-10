@@ -121,3 +121,33 @@
   }
 }
 
+@keyframes teleport-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(var(--rotation, 0deg));
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(var(--rotation, 0deg));
+  }
+}
+
+@keyframes teleport-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(var(--rotation, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(var(--rotation, 0deg));
+  }
+}
+
+.animate-teleport-fade-out {
+  animation: teleport-fade-out 0.15s ease-out forwards;
+}
+
+.animate-teleport-fade-in {
+  animation: teleport-fade-in 0.15s ease-out;
+}
+

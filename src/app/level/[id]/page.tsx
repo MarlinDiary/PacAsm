@@ -107,6 +107,54 @@ export default function LevelPage() {
     }
   }
 
+  // Helper function to teleport player with animation
+  const teleportPlayer = (targetMap: typeof levelMap, currentPlayerPosition?: typeof levelMap.playerPosition) => {
+    if (!targetMap.playerPosition) {
+      setCurrentMap(targetMap)
+      return
+    }
+
+    // Check if position is actually changing
+    const isPositionChanging = currentPlayerPosition && (
+      currentPlayerPosition.row !== targetMap.playerPosition.row ||
+      currentPlayerPosition.col !== targetMap.playerPosition.col
+    )
+
+    if (!isPositionChanging) {
+      setCurrentMap(targetMap)
+      return
+    }
+
+    // Start fade out at current position
+    if (currentPlayerPosition) {
+      setCurrentMap({
+        ...currentMap,
+        playerPosition: {
+          ...currentPlayerPosition,
+          teleportAnimation: 'fade-out'
+        }
+      })
+
+      // After fade out, move to new position and fade in
+      setTimeout(() => {
+        setCurrentMap({
+          ...targetMap,
+          playerPosition: {
+            ...targetMap.playerPosition!,
+            teleportAnimation: 'fade-in'
+          }
+        })
+
+        // Remove animation after fade in
+        setTimeout(() => {
+          setCurrentMap(targetMap)
+        }, 150)
+      }, 150)
+    } else {
+      setCurrentMap(targetMap)
+    }
+  }
+
   // Cleanup emulator on unmount
   useEffect(() => {
     return () => {
@@ -132,8 +180,8 @@ export default function LevelPage() {
   }, [errors.length])
 
   const handlePlayClick = async () => {
-    // Reset map to initial state before starting play
-    setCurrentMap(levelMap)
+    // Reset map to initial state before starting play with teleport animation
+    teleportPlayer(levelMap, currentMap.playerPosition)
     setHighlightedLine(undefined)
     setCurrentPlayWon(false) // Reset current play victory status
     // Don't clear hasWon - keep Next button permanently after first victory
@@ -153,8 +201,8 @@ export default function LevelPage() {
   }
 
   const handleDebugClick = async () => {
-    // Reset map to initial state before starting debug
-    setCurrentMap(levelMap)
+    // Reset map to initial state before starting debug with teleport animation
+    teleportPlayer(levelMap, currentMap.playerPosition)
     setHighlightedLine(undefined)
     // Don't clear hasWon - keep Next button permanently after first victory
     
@@ -208,7 +256,7 @@ export default function LevelPage() {
     setIsCodeDisabled(false)
     setIsDebugMode(false)
     setHighlightedLine(undefined)
-    setCurrentMap(levelMap) // Reset map to initial state when stopping debug
+    teleportPlayer(levelMap, currentMap.playerPosition) // Reset map with teleport animation
     
     await Promise.all([
       debugState.reset(),
@@ -219,8 +267,8 @@ export default function LevelPage() {
   const handleReplay = () => {
     const firstState = debugState.replay()
     if (firstState) {
-      // No animation for replay (jumping back to start)
-      setCurrentMap(firstState.mapState)
+      // Teleport animation for replay
+      teleportPlayer(firstState.mapState, currentMap.playerPosition)
       setHighlightedLine(firstState.highlightedLine)
     }
   }
@@ -262,11 +310,11 @@ export default function LevelPage() {
         setPlayStatus(undefined) // Always reset play status
         // Reset map if this play didn't win, keep victory state if this play won
         if (!currentPlayWon) {
-          setCurrentMap(levelMap)
+          teleportPlayer(levelMap, currentMap.playerPosition)
         }
       }, 500) // Small delay to show final state briefly
     }
-  }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap])
+  }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap, currentMap.playerPosition])
 
   // Auto-stop debug mode when error occurs
   useEffect(() => {

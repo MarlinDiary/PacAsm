@@ -112,12 +112,22 @@ export default function MapRenderer({ map }: MapRendererProps) {
           }}
         >
           <div
+            className={
+              map.playerPosition.teleportAnimation === 'fade-out' 
+                ? 'animate-teleport-fade-out' 
+                : map.playerPosition.teleportAnimation === 'fade-in'
+                ? 'animate-teleport-fade-in'
+                : ''
+            }
             style={{
-              transform: `rotate(${getPlayerRotation(map.playerPosition.direction)}deg)`,
+              transform: !map.playerPosition.teleportAnimation 
+                ? `rotate(${getPlayerRotation(map.playerPosition.direction)}deg)`
+                : undefined,
+              '--rotation': `${getPlayerRotation(map.playerPosition.direction)}deg`,
               width: tileSize,
               height: tileSize,
               transformOrigin: 'center'
-            }}
+            } as React.CSSProperties}
           >
             <Image
               src="/res/player.gif"

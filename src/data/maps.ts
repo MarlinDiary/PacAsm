@@ -22,6 +22,7 @@ export interface PlayerPosition {
     y: number;
   };
   shouldAnimate?: boolean;
+  teleportAnimation?: 'fade-out' | 'fade-in';
 }
 
 export interface WaterBackground {
