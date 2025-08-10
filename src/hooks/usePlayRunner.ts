@@ -41,9 +41,14 @@ export const usePlayRunner = () => {
     abortControllerRef.current = abortController
     
     setMovementActions([])
-    setCurrentMap(initialMap)
+    // Don't set the map immediately - let the teleport animation complete first
     setHighlightedLine(undefined)
     setIsPlaying(true)
+    
+    // Wait for teleport animation to complete (300ms total)
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    setCurrentMap(initialMap)
     
     try {
       if (abortController.signal.aborted) {
