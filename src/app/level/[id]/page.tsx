@@ -312,7 +312,7 @@ export default function LevelPage() {
         if (!currentPlayWon) {
           teleportPlayer(levelMap, currentMap.playerPosition)
         }
-      }, 500) // Small delay to show final state briefly
+      }, 300) // Small delay to show final state briefly
     }
   }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap, currentMap.playerPosition])
 
