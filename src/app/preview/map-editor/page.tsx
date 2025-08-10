@@ -58,7 +58,7 @@ export default function MapEditor() {
   const [height, setHeight] = useState(5)
   const [tileSize, setTileSize] = useState(64)
   const [tiles, setTiles] = useState<TileSymbol[][]>(() => 
-    Array(height).fill(null).map(() => Array(width).fill('.'))
+    Array(height).fill(null).map(() => Array(width).fill(' '))
   )
   
   // Game elements
@@ -225,7 +225,7 @@ STR   R1, [R0]`)
   }
 
   const clearMap = () => {
-    setTiles(Array(height).fill(null).map(() => Array(width).fill('.')))
+    setTiles(Array(height).fill(null).map(() => Array(width).fill(' ')))
     setDots([])
     setPlayerPos({ row: 0, col: 0 })
     saveToHistory()
@@ -279,7 +279,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
   return (
     <div className="h-screen bg-black text-white flex flex-col" onMouseUp={handleMouseUp}>
       {/* Header Bar - Apple Style */}
-      <div className="bg-zinc-900/90 backdrop-blur-xl border-b border-white/10 px-6 py-3">
+      <div className="bg-zinc-900/50 backdrop-blur-xl border-b border-white/10 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-1.5 border border-white/5">
@@ -433,7 +433,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                       onMouseDown={(e) => handleMouseDown(r, c, e)}
                       onMouseEnter={(e) => handleMouseEnter(r, c, e)}
                       className={`relative ${
-                        showGrid ? 'border border-gray-700 border-opacity-30' : ''
+                        showGrid && tile !== ' ' ? 'border border-gray-700 border-opacity-30' : ''
                       }`}
                       style={{
                         width: tileSize,
