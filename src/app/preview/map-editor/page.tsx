@@ -566,34 +566,54 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                     <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Background</h3>
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs text-zinc-500 font-medium flex items-center justify-between">
-                          Water Tiles X
-                          <span className="text-zinc-300 font-mono text-xs">{waterTilesX}</span>
-                        </label>
-                        <input 
-                          type="range" 
-                          value={waterTilesX} 
-                          onChange={(e) => setWaterTilesX(parseInt(e.target.value))}
-                          className="w-full mt-2 accent-white/50"
-                          min="10"
-                          max="50"
-                          step="1"
-                        />
+                        <label className="text-xs text-zinc-500 font-medium">Water Tiles X</label>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <button 
+                            onClick={() => setWaterTilesX(Math.max(10, waterTilesX - 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Minus size={12} className="text-zinc-400" />
+                          </button>
+                          <input 
+                            type="number" 
+                            value={waterTilesX} 
+                            onChange={(e) => setWaterTilesX(parseInt(e.target.value) || 10)}
+                            className="flex-1 bg-zinc-800/30 text-center border border-white/5 rounded-lg px-2 py-1.5 text-sm font-medium focus:border-white/20 focus:outline-none focus:bg-zinc-800/50"
+                            min="10"
+                            max="50"
+                          />
+                          <button 
+                            onClick={() => setWaterTilesX(Math.min(50, waterTilesX + 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Plus size={12} className="text-zinc-400" />
+                          </button>
+                        </div>
                       </div>
                       <div>
-                        <label className="text-xs text-zinc-500 font-medium flex items-center justify-between">
-                          Water Tiles Y
-                          <span className="text-zinc-300 font-mono text-xs">{waterTilesY}</span>
-                        </label>
-                        <input 
-                          type="range" 
-                          value={waterTilesY} 
-                          onChange={(e) => setWaterTilesY(parseInt(e.target.value))}
-                          className="w-full mt-2 accent-white/50"
-                          min="10"
-                          max="50"
-                          step="1"
-                        />
+                        <label className="text-xs text-zinc-500 font-medium">Water Tiles Y</label>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <button 
+                            onClick={() => setWaterTilesY(Math.max(10, waterTilesY - 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Minus size={12} className="text-zinc-400" />
+                          </button>
+                          <input 
+                            type="number" 
+                            value={waterTilesY} 
+                            onChange={(e) => setWaterTilesY(parseInt(e.target.value) || 10)}
+                            className="flex-1 bg-zinc-800/30 text-center border border-white/5 rounded-lg px-2 py-1.5 text-sm font-medium focus:border-white/20 focus:outline-none focus:bg-zinc-800/50"
+                            min="10"
+                            max="50"
+                          />
+                          <button 
+                            onClick={() => setWaterTilesY(Math.min(50, waterTilesY + 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Plus size={12} className="text-zinc-400" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
