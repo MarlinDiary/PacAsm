@@ -25,7 +25,7 @@ import { useEmulator } from '@/hooks/useEmulator'
 import { useDebugger } from '@/hooks/useDebugger'
 import { usePlayRunner } from '@/hooks/usePlayRunner'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
-import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope } from 'lucide-react'
+import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope, Maximize2, Minimize2 } from 'lucide-react'
 
 export default function LevelPage() {
   const params = useParams()
@@ -75,6 +75,9 @@ export default function LevelPage() {
   
   // State for right panel tab (0: Register, 1: Memory, 2: Diagnostics)
   const [rightPanelTab, setRightPanelTab] = useState(0)
+  
+  // State for fullscreen
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Panel refs for resetting
   const firstColumnRef = useRef<ImperativePanelHandle>(null)
@@ -94,12 +97,32 @@ export default function LevelPage() {
     panel4Ref.current?.resize(33)
   }
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullscreen(false)
+    }
+  }
+
   // Cleanup emulator on unmount
   useEffect(() => {
     return () => {
       emulator.cleanup()
     }
   }, [emulator.cleanup])
+  
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
   
   // Switch to Diagnostics tab when new error appears
   useEffect(() => {
@@ -263,7 +286,12 @@ export default function LevelPage() {
               />
             </div>
           </div>
-          <div className="absolute right-0 top-0">
+          <div className="absolute right-0 top-0 flex gap-2">
+            <IconButton 
+              icon={isFullscreen ? Minimize2 : Maximize2} 
+              onClick={toggleFullscreen}
+              size={15}
+            />
             <IconButton icon={Settings2} />
           </div>
         </div>
