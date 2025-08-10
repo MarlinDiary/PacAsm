@@ -175,7 +175,15 @@ export default function LevelPage() {
   const handleStepDown = async () => {
     const nextState = await debugState.stepDownLazy()
     if (nextState) {
-      setCurrentMap(nextState.mapState)
+      // Enable animation for stepping
+      const mapWithAnimation = {
+        ...nextState.mapState,
+        playerPosition: nextState.mapState.playerPosition ? {
+          ...nextState.mapState.playerPosition,
+          shouldAnimate: true
+        } : undefined
+      }
+      setCurrentMap(mapWithAnimation)
       setHighlightedLine(nextState.highlightedLine)
     }
   }
@@ -183,7 +191,15 @@ export default function LevelPage() {
   const handleStepUp = () => {
     const prevState = debugState.stepUp()
     if (prevState) {
-      setCurrentMap(prevState.mapState)
+      // Enable animation for stepping
+      const mapWithAnimation = {
+        ...prevState.mapState,
+        playerPosition: prevState.mapState.playerPosition ? {
+          ...prevState.mapState.playerPosition,
+          shouldAnimate: true
+        } : undefined
+      }
+      setCurrentMap(mapWithAnimation)
       setHighlightedLine(prevState.highlightedLine)
     }
   }
@@ -203,6 +219,7 @@ export default function LevelPage() {
   const handleReplay = () => {
     const firstState = debugState.replay()
     if (firstState) {
+      // No animation for replay (jumping back to start)
       setCurrentMap(firstState.mapState)
       setHighlightedLine(firstState.highlightedLine)
     }

@@ -21,6 +21,7 @@ export interface PlayerPosition {
     x: number;
     y: number;
   };
+  shouldAnimate?: boolean;
 }
 
 export interface WaterBackground {

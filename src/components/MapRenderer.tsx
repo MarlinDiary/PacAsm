@@ -100,7 +100,9 @@ export default function MapRenderer({ map }: MapRendererProps) {
       {/* Player overlay */}
       {map.playerPosition && (
         <div
-          className="absolute top-0 left-0 pointer-events-none z-10 transition-transform duration-300 ease-out"
+          className={`absolute top-0 left-0 pointer-events-none z-10 ${
+            map.playerPosition.shouldAnimate ? 'transition-transform duration-300 ease-out' : ''
+          }`}
           style={{
             transform: map.playerPosition.animationPosition 
               ? `translate(${map.playerPosition.animationPosition.x}px, ${map.playerPosition.animationPosition.y}px)`

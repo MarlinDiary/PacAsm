@@ -150,7 +150,7 @@ export const useDebugger = () => {
             
             currentMapState = {
               ...currentMapState,
-              playerPosition: { ...currentMapState.playerPosition, row: newRow, col: newCol, direction: newDirection },
+              playerPosition: { ...currentMapState.playerPosition, row: newRow, col: newCol, direction: newDirection, shouldAnimate: true },
               dots: updatedDots
             }
             
