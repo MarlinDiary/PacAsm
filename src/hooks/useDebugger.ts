@@ -26,6 +26,7 @@ export const useDebugger = () => {
   const [isLazyDebugMode, setIsLazyDebugMode] = useState(false)
   const [hasShownEnd, setHasShownEnd] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [isFirstStepReady, setIsFirstStepReady] = useState(false)
   const currentCodeRef = useRef<string>('')
 
   // Standard debug mode - pre-execute all steps
@@ -201,6 +202,7 @@ export const useDebugger = () => {
     setHighlighter(null)
     setIsLazyDebugMode(true)
     setHasShownEnd(false)
+    setIsFirstStepReady(false)
     
     try {
       if (abortController.signal.aborted) {
@@ -259,6 +261,7 @@ export const useDebugger = () => {
       setHighlighter(codeHighlighter)
       setExecutionHistory(history)
       setCurrentPlaybackIndex(0)
+      setIsFirstStepReady(true)
       
       return { success: true, initialState: history[0] }
     } catch (error) {
@@ -442,6 +445,7 @@ export const useDebugger = () => {
     setIsLazyDebugMode(false)
     setHasShownEnd(false)
     setHasError(false)
+    setIsFirstStepReady(false)
     
     try {
       await emulator.reset()
@@ -479,7 +483,7 @@ export const useDebugger = () => {
     hasError,
     canStepUp: currentPlaybackIndex > 0,
     canStepDown: emulator.state.isInitialized && (isLazyDebugMode ? 
-      (currentPlaybackIndex < executionHistory.length - 1 || !hasShownEnd) : 
+      (isFirstStepReady && (currentPlaybackIndex < executionHistory.length - 1 || !hasShownEnd)) : 
       (currentPlaybackIndex < executionHistory.length - 1)),
     startDebug,
     startDebugLazy,
