@@ -33,6 +33,7 @@ export interface GameMap {
   name: string;
   width: number;
   height: number;
+  tileSize?: number;
   tiles: TileSymbol[][];
   playerPosition?: PlayerPosition;
   dots?: { row: number; col: number }[];
@@ -47,6 +48,7 @@ export const MAPS: GameMap[] = [
     name: 'Level 1',
     width: 3,
     height: 1,
+    tileSize: 64,
     tiles: [
       ['.', '.', '.']
     ],

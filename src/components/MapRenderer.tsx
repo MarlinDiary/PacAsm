@@ -7,7 +7,7 @@ interface MapRendererProps {
   map: GameMap;
 }
 
-const TILE_SIZE = 64;
+const DEFAULT_TILE_SIZE = 64;
 
 const getTileImage = (tileType: TileType): string => {
   switch (tileType) {
@@ -37,13 +37,15 @@ const getPlayerRotation = (direction: PlayerDirection): number => {
 };
 
 export default function MapRenderer({ map }: MapRendererProps) {
+  const tileSize = map.tileSize || DEFAULT_TILE_SIZE;
+  
   return (
     <div className="inline-block relative">
       <div 
         className="grid"
         style={{
-          gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
-          gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
+          gridTemplateColumns: `repeat(${map.width}, ${tileSize}px)`,
+          gridTemplateRows: `repeat(${map.height}, ${tileSize}px)`,
           gap: 0
         }}
       >
@@ -56,15 +58,15 @@ export default function MapRenderer({ map }: MapRendererProps) {
               key={index}
               className="relative"
               style={{
-                width: TILE_SIZE,
-                height: TILE_SIZE
+                width: tileSize,
+                height: tileSize
               }}
             >
               <Image
                 src={imageSrc}
                 alt={`${tileType} tile`}
-                width={TILE_SIZE}
-                height={TILE_SIZE}
+                width={tileSize}
+                height={tileSize}
                 className="object-cover pointer-events-none select-none"
                 priority
               />
@@ -79,16 +81,16 @@ export default function MapRenderer({ map }: MapRendererProps) {
           key={`dot-${index}`}
           className="absolute top-0 left-0 pointer-events-none z-5"
           style={{
-            transform: `translate(${dot.col * TILE_SIZE}px, ${dot.row * TILE_SIZE}px)`,
-            width: TILE_SIZE,
-            height: TILE_SIZE
+            transform: `translate(${dot.col * tileSize}px, ${dot.row * tileSize}px)`,
+            width: tileSize,
+            height: tileSize
           }}
         >
           <Image
             src="/res/dot.gif"
             alt="Dot"
-            width={TILE_SIZE}
-            height={TILE_SIZE}
+            width={tileSize}
+            height={tileSize}
             className="object-cover"
             priority
           />
@@ -102,24 +104,24 @@ export default function MapRenderer({ map }: MapRendererProps) {
           style={{
             transform: map.playerPosition.animationPosition 
               ? `translate(${map.playerPosition.animationPosition.x}px, ${map.playerPosition.animationPosition.y}px)`
-              : `translate(${map.playerPosition.col * TILE_SIZE}px, ${map.playerPosition.row * TILE_SIZE}px)`,
-            width: TILE_SIZE,
-            height: TILE_SIZE
+              : `translate(${map.playerPosition.col * tileSize}px, ${map.playerPosition.row * tileSize}px)`,
+            width: tileSize,
+            height: tileSize
           }}
         >
           <div
             style={{
               transform: `rotate(${getPlayerRotation(map.playerPosition.direction)}deg)`,
-              width: TILE_SIZE,
-              height: TILE_SIZE,
+              width: tileSize,
+              height: tileSize,
               transformOrigin: 'center'
             }}
           >
             <Image
               src="/res/player.gif"
               alt="Player"
-              width={TILE_SIZE}
-              height={TILE_SIZE}
+              width={tileSize}
+              height={tileSize}
               className="object-cover"
               priority
             />

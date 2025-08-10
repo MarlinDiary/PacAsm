@@ -60,7 +60,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Hint/Next button */}
         <div className="relative">
           <button 
-            className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'}`}
+            className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'} ${hasWon ? 'cursor-pointer' : ''}`}
             onMouseEnter={() => !hasWon && setShowHintCard(true)}
             onMouseLeave={() => setShowHintCard(false)}
           >

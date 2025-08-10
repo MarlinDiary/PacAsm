@@ -320,6 +320,7 @@ export default function LevelPage() {
                         <WaterRenderer 
                           tilesX={levelMap.waterBackground.tilesX} 
                           tilesY={levelMap.waterBackground.tilesY}
+                          tileSize={levelMap.tileSize || 64}
                         />
                         <div className="absolute inset-0 flex items-center justify-center z-10">
                           <MapRenderer map={currentMap} />
