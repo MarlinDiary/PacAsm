@@ -81,9 +81,14 @@ STR   R1, [R0]`,
     dots: [{ row: 4, col: 5 }],
     waterBackground: { tilesX: 36, tilesY: 35 },
     initialCode: `LDR   R0, =0x00030000
-MOV   R1, #4
-STR   R1, [R0]`,
-    hint: 'Complete the level'
+MOV   R2, #4
+loop:
+
+
+
+   SUBS  R2, R2, #1
+   BNE   loop`,
+    hint: 'Use the loop'
   }
 ];
 
