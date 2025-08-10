@@ -9,12 +9,14 @@ interface MapRendererProps {
 
 const DEFAULT_TILE_SIZE = 64;
 
-const getTileImage = (tileType: TileType): string => {
+const getTileImage = (tileType: TileType): string | null => {
   switch (tileType) {
     case 'grass':
       return '/res/grass.png';
     case 'campfire':
       return '/res/campfire.png';
+    case 'air':
+      return null; // No image for air tiles
     default:
       return '/res/grass.png';
   }
@@ -62,14 +64,16 @@ export default function MapRenderer({ map }: MapRendererProps) {
                 height: tileSize
               }}
             >
-              <Image
-                src={imageSrc}
-                alt={`${tileType} tile`}
-                width={tileSize}
-                height={tileSize}
-                className="object-cover pointer-events-none select-none"
-                priority
-              />
+              {imageSrc && (
+                <Image
+                  src={imageSrc}
+                  alt={`${tileType} tile`}
+                  width={tileSize}
+                  height={tileSize}
+                  className="object-cover pointer-events-none select-none"
+                  priority
+                />
+              )}
             </div>
           );
         })}

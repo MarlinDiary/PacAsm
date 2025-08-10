@@ -1,14 +1,16 @@
 export interface TileMapping {
   '.': 'grass';
   '*': 'campfire';
+  ' ': 'air';
 }
 
-export type TileType = 'grass' | 'campfire';
+export type TileType = 'grass' | 'campfire' | 'air';
 export type TileSymbol = keyof TileMapping;
 
 export const TILE_MAPPING: Record<TileSymbol, TileType> = {
   '.': 'grass', 
-  '*': 'campfire'
+  '*': 'campfire',
+  ' ': 'air'
 };
 
 export type PlayerDirection = 'right' | 'up' | 'left' | 'down';
