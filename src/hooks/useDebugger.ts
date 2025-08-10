@@ -478,9 +478,9 @@ export const useDebugger = () => {
     currentPlaybackIndex,
     hasError,
     canStepUp: currentPlaybackIndex > 0,
-    canStepDown: isLazyDebugMode ? 
+    canStepDown: emulator.state.isInitialized && (isLazyDebugMode ? 
       (currentPlaybackIndex < executionHistory.length - 1 || !hasShownEnd) : 
-      (currentPlaybackIndex < executionHistory.length - 1),
+      (currentPlaybackIndex < executionHistory.length - 1)),
     startDebug,
     startDebugLazy,
     stepDown,
