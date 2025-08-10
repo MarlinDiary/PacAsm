@@ -143,7 +143,12 @@ export class ARMAssembler {
     // Clean and normalize the assembly code
     const lines = assembly
       .split('\n')
-      .map(line => line.split('@')[0].trim()) // Remove comments
+      .map(line => {
+        // Remove comments (both @ and ; style)
+        let cleanLine = line.split('@')[0];
+        cleanLine = cleanLine.split(';')[0];
+        return cleanLine.trim();
+      })
       .filter(line => line.length > 0); // Remove empty lines
 
     // Validate each line before assembling to catch invalid instructions
