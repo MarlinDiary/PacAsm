@@ -597,7 +597,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                           className="w-full mt-2 accent-white/50"
                           min="32"
                           max="128"
-                          step="8"
+                          step="4"
                         />
                       </div>
                     </div>

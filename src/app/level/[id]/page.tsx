@@ -30,11 +30,6 @@ import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft,
 export default function LevelPage() {
   const params = useParams()
   const id = params.id as string
-  
-  // Only allow level 1
-  if (id !== '1') {
-    notFound()
-  }
 
   // Load the map for this level
   const levelMap = getMapByLevel(id)
