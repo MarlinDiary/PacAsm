@@ -82,7 +82,10 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
               }`}
               style={{ 
                 backgroundColor: 'white',
-                padding: '16px'
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                paddingTop: '8px',
+                paddingBottom: '8px'
               }}
             >
               <p style={{ 
