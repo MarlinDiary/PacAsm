@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation'
 import { 
   Plus, Minus, RotateCcw,
   User, Circle, Trees, Flame, Wind,
-  Undo, Redo,
   Paintbrush,
   Settings, Code, 
   Clipboard, ClipboardCheck,
@@ -117,6 +116,25 @@ STR   R1, [R0]`)
       saveToHistory()
     }
   }, [history.length, saveToHistory])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Z for undo
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      // Cmd+Shift+Z for redo
+      else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') {
+        e.preventDefault()
+        redo()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [historyIndex, history.length])
 
   // Undo
   const undo = () => {
@@ -278,23 +296,6 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
           </div>
           
           <div className="flex items-center gap-1">
-            <button
-              onClick={undo}
-              disabled={historyIndex <= 0}
-              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title="Undo"
-            >
-              <Undo size={16} className="text-zinc-300" />
-            </button>
-            <button
-              onClick={redo}
-              disabled={historyIndex >= history.length - 1}
-              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title="Redo"
-            >
-              <Redo size={16} className="text-zinc-300" />
-            </button>
-            <div className="w-px h-5 bg-white/10 mx-2" />
             <button
               onClick={copyMapData}
               className="px-4 py-1.5 bg-white/10 hover:bg-white/15 rounded-lg flex items-center gap-2 transition-all text-sm font-medium border border-white/10"
