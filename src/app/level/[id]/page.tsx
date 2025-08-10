@@ -273,6 +273,7 @@ export default function LevelPage() {
               isPlayMode={isPlayMode}
               playStatus={playStatus}
               hasWon={hasWon}
+              hint={levelMap.hint}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 

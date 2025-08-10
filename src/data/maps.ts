@@ -38,6 +38,7 @@ export interface GameMap {
   dots?: { row: number; col: number }[];
   waterBackground?: WaterBackground;
   initialCode?: string;
+  hint?: string;
 }
 
 export const MAPS: GameMap[] = [
@@ -54,7 +55,8 @@ export const MAPS: GameMap[] = [
     waterBackground: { tilesX: 35, tilesY: 35 },
     initialCode: `LDR   R0, =0x00030000
 MOV   R1, #4
-STR   R1, [R0]`
+STR   R1, [R0]`,
+    hint: 'Move right twice'
   }
 ];
 

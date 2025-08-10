@@ -9,10 +9,12 @@ interface ExecutionBarProps {
   isPlayMode?: boolean
   playStatus?: 'running'
   hasWon?: boolean
+  hint?: string
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, hint }: ExecutionBarProps) {
   const [showStatusBar, setShowStatusBar] = useState(false)
+  const [showHintCard, setShowHintCard] = useState(false)
 
   // Show status bar only when running
   useEffect(() => {
@@ -56,16 +58,45 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         <div className="w-px h-8 bg-[#f0f0f0]"></div>
         
         {/* Hint/Next button */}
-        <button className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'}`}>
-          {hasWon ? (
-            <Award size={16} color="#50b040" />
-          ) : (
-            <Feather size={16} color="#50b040" />
+        <div className="relative">
+          <button 
+            className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'}`}
+            onMouseEnter={() => !hasWon && setShowHintCard(true)}
+            onMouseLeave={() => setShowHintCard(false)}
+          >
+            {hasWon ? (
+              <Award size={16} color="#50b040" />
+            ) : (
+              <Feather size={16} color="#50b040" />
+            )}
+            <span className="text-sm font-medium" style={{ color: '#50b040' }}>
+              {hasWon ? 'Next' : 'Hint'}
+            </span>
+          </button>
+          
+          {/* Hint Card */}
+          {!hasWon && (
+            <div 
+              className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 rounded-lg shadow-lg z-50 pointer-events-none transition-opacity duration-150 ${
+                showHintCard ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ 
+                backgroundColor: 'white',
+                padding: '16px'
+              }}
+            >
+              <p style={{ 
+                fontSize: '14px', 
+                color: '#5a5a5a',
+                margin: 0,
+                lineHeight: '1.5',
+                whiteSpace: 'nowrap'
+              }}>
+                {hint || 'No hint available for this level'}
+              </p>
+            </div>
           )}
-          <span className="text-sm font-medium" style={{ color: '#50b040' }}>
-            {hasWon ? 'Next' : 'Hint'}
-          </span>
-        </button>
+        </div>
       </div>
     </div>
   )
