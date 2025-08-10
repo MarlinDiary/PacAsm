@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { notFound } from 'next/navigation'
 import { 
   Plus, Minus, RotateCcw,
@@ -9,6 +9,7 @@ import {
   Settings, Code, 
   Clipboard, ClipboardCheck,
   ArrowRight, ArrowUp, ArrowLeft, ArrowDown,
+  Crosshair,
   type LucideIcon
 } from 'lucide-react'
 import MapRenderer from '@/components/MapRenderer'
@@ -89,6 +90,9 @@ STR   R1, [R0]`)
   
   // Panel states
   const [activeTab, setActiveTab] = useState<'settings' | 'code'>('settings')
+  
+  // Canvas scroll ref
+  const canvasRef = useRef<HTMLDivElement>(null)
 
 
   // Save state to history
@@ -135,6 +139,27 @@ STR   R1, [R0]`)
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [historyIndex, history.length])
+
+  // Center view function
+  const centerView = useCallback(() => {
+    if (canvasRef.current) {
+      const canvas = canvasRef.current
+      const scrollWidth = canvas.scrollWidth
+      const scrollHeight = canvas.scrollHeight
+      const clientWidth = canvas.clientWidth
+      const clientHeight = canvas.clientHeight
+      
+      canvas.scrollLeft = (scrollWidth - clientWidth) / 2
+      canvas.scrollTop = (scrollHeight - clientHeight) / 2
+    }
+  }, [])
+
+  // Auto-center on mount and when dimensions change
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(centerView, 100)
+    return () => clearTimeout(timer)
+  }, [waterTilesX, waterTilesY, width, height, tileSize, centerView])
 
   // Undo
   const undo = () => {
@@ -295,7 +320,14 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
             </div>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={centerView}
+              className="p-2 bg-white/10 hover:bg-white/15 rounded-lg transition-all border border-white/10"
+              title="Center View"
+            >
+              <Crosshair size={16} className="text-zinc-300" />
+            </button>
             <button
               onClick={copyMapData}
               className="px-4 py-1.5 bg-white/10 hover:bg-white/15 rounded-lg flex items-center gap-2 transition-all text-sm font-medium border border-white/10"
@@ -396,59 +428,69 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 bg-zinc-950 relative overflow-hidden">
+        <div 
+          ref={canvasRef}
+          className="flex-1 bg-zinc-950 relative overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        >
 
           {/* Map Canvas */}
-          <div className="absolute inset-0 flex items-center justify-center overflow-auto p-8">
-            <div className="inline-block relative" style={{
-              width: width * tileSize,
-              height: height * tileSize
+          <div className="min-h-full flex items-center justify-center p-8" style={{
+            minWidth: Math.max(waterTilesX * tileSize, width * tileSize) + 64,
+            minHeight: Math.max(waterTilesY * tileSize, height * tileSize) + 64
+          }}>
+            <div className="relative" style={{
+              width: Math.max(waterTilesX * tileSize, width * tileSize),
+              height: Math.max(waterTilesY * tileSize, height * tileSize)
             }}>
-              {/* Water Background - centered behind map */}
-              <div className="absolute" style={{ 
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)'
-              }}>
+              {/* Water Background */}
+              <div className="absolute inset-0">
                 <WaterRenderer tilesX={waterTilesX} tilesY={waterTilesY} tileSize={tileSize} />
               </div>
               
-              {/* Render the actual map */}
-              <MapRenderer map={currentMap} />
+              {/* Render the actual map - centered */}
+              <div className="absolute" style={{
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: width * tileSize,
+                height: height * tileSize
+              }}>
+                <MapRenderer map={currentMap} />
               
-              
-              {/* Clickable overlay grid */}
-              <div 
-                className="absolute top-0 left-0 inline-grid z-20"
-                style={{
-                  gridTemplateColumns: `repeat(${width}, ${tileSize}px)`,
-                  gridTemplateRows: `repeat(${height}, ${tileSize}px)`,
-                  gap: 0
-                }}
-              >
-                {tiles.map((row, r) => 
-                  row.map((tile, c) => (
-                    <button
-                      key={`${r}-${c}`}
-                      onMouseDown={(e) => handleMouseDown(r, c, e)}
-                      onMouseEnter={(e) => handleMouseEnter(r, c, e)}
-                      className={`relative ${
-                        showGrid && tile !== ' ' ? 'border border-gray-700 border-opacity-30' : ''
-                      }`}
-                      style={{
-                        width: tileSize,
-                        height: tileSize
-                      }}
-                    >
-                      {/* Air tile indicator */}
-                      {tile === ' ' && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <Wind className="text-gray-400 opacity-30" size={Math.min(tileSize * 0.5, 24)} />
-                        </div>
-                      )}
-                    </button>
-                  ))
-                )}
+                
+                {/* Clickable overlay grid */}
+                <div 
+                  className="absolute top-0 left-0 inline-grid z-20"
+                  style={{
+                    gridTemplateColumns: `repeat(${width}, ${tileSize}px)`,
+                    gridTemplateRows: `repeat(${height}, ${tileSize}px)`,
+                    gap: 0
+                  }}
+                >
+                  {tiles.map((row, r) => 
+                    row.map((tile, c) => (
+                      <button
+                        key={`${r}-${c}`}
+                        onMouseDown={(e) => handleMouseDown(r, c, e)}
+                        onMouseEnter={(e) => handleMouseEnter(r, c, e)}
+                        className={`relative ${
+                          showGrid && tile !== ' ' ? 'border border-gray-700 border-opacity-30' : ''
+                        }`}
+                        style={{
+                          width: tileSize,
+                          height: tileSize
+                        }}
+                      >
+                        {/* Air tile indicator */}
+                        {tile === ' ' && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <Wind className="text-gray-400 opacity-30" size={Math.min(tileSize * 0.5, 24)} />
+                          </div>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
