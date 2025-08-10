@@ -1,28 +1,139 @@
 'use client'
 
-import { useState } from 'react'
-import { Copy, Plus, Minus, RotateCcw, Check } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { notFound } from 'next/navigation'
+import { 
+  Plus, Minus, RotateCcw,
+  User, Circle, Trees, Flame, Wind,
+  Undo, Redo,
+  Paintbrush,
+  Settings, Code, 
+  Clipboard, ClipboardCheck,
+  ArrowRight, ArrowUp, ArrowLeft, ArrowDown
+} from 'lucide-react'
 import MapRenderer from '@/components/MapRenderer'
-import { GameMap, TileSymbol } from '@/data/maps'
+import WaterRenderer from '@/components/WaterRenderer'
+import { GameMap, TileSymbol, PlayerDirection } from '@/data/maps'
 
-const TILE_TYPES: { symbol: TileSymbol; name: string; color: string }[] = [
-  { symbol: '.', name: 'Grass', color: '#4ade80' },
-  { symbol: '*', name: 'Campfire', color: '#f97316' },
-  { symbol: ' ', name: 'Air', color: '#e5e5e5' }
+const TILE_TYPES: { symbol: TileSymbol; name: string; icon: any; color: string; bgColor: string }[] = [
+  { symbol: '.', name: 'Grass', icon: Trees, color: '#22c55e', bgColor: '#dcfce7' },
+  { symbol: '*', name: 'Fire', icon: Flame, color: '#f97316', bgColor: '#fed7aa' },
+  { symbol: ' ', name: 'Air', icon: Wind, color: '#94a3b8', bgColor: '#f1f5f9' }
 ]
 
+const TOOLS = [
+  { id: 'tile', name: 'Paint Tile', icon: Paintbrush },
+  { id: 'player', name: 'Set Player', icon: User },
+  { id: 'dot', name: 'Place Dots', icon: Circle }
+]
+
+const PLAYER_DIRECTIONS: { dir: PlayerDirection; icon: any; name: string }[] = [
+  { dir: 'right', icon: ArrowRight, name: 'Right' },
+  { dir: 'up', icon: ArrowUp, name: 'Up' },
+  { dir: 'left', icon: ArrowLeft, name: 'Left' },
+  { dir: 'down', icon: ArrowDown, name: 'Down' }
+]
+
+type Tool = 'tile' | 'player' | 'dot'
+
 export default function MapEditor() {
+  // Only allow access in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    notFound()
+  }
+
+  // Map properties
+  const [levelNumber, setLevelNumber] = useState(1)
   const [width, setWidth] = useState(5)
   const [height, setHeight] = useState(5)
   const [tileSize, setTileSize] = useState(64)
-  const [selectedTile, setSelectedTile] = useState<TileSymbol>('.')
   const [tiles, setTiles] = useState<TileSymbol[][]>(() => 
     Array(height).fill(null).map(() => Array(width).fill('.'))
   )
+  
+  // Game elements
   const [playerPos, setPlayerPos] = useState({ row: 0, col: 0 })
+  const [playerDirection, setPlayerDirection] = useState<PlayerDirection>('right')
   const [dots, setDots] = useState<{ row: number; col: number }[]>([])
-  const [placingMode, setPlacingMode] = useState<'tile' | 'player' | 'dot'>('tile')
+  
+  // Water background
+  const [waterTilesX, setWaterTilesX] = useState(35)
+  const [waterTilesY, setWaterTilesY] = useState(35)
+  
+  // Code and hint
+  const [initialCode, setInitialCode] = useState(`LDR   R0, =0x00030000
+MOV   R1, #4
+STR   R1, [R0]`)
+  const [hint, setHint] = useState('Complete the level')
+  
+  // Editor state
+  const [selectedTool, setSelectedTool] = useState<Tool>('tile')
+  const [selectedTile, setSelectedTile] = useState<TileSymbol>('.')
   const [copied, setCopied] = useState(false)
+  const [showGrid] = useState(true)
+  
+  // History
+  const [history, setHistory] = useState<any[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const [isDragging, setIsDragging] = useState(false)
+  
+  // Panel states
+  const [activeTab, setActiveTab] = useState<'settings' | 'code'>('settings')
+
+
+  // Save state to history
+  const saveToHistory = useCallback(() => {
+    const newState = { 
+      tiles: JSON.parse(JSON.stringify(tiles)), 
+      playerPos: {...playerPos}, 
+      playerDirection,
+      dots: [...dots],
+      levelNumber,
+      width,
+      height
+    }
+    const newHistory = history.slice(0, historyIndex + 1)
+    newHistory.push(newState)
+    // Limit history to 50 states
+    if (newHistory.length > 50) newHistory.shift()
+    setHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
+  }, [tiles, playerPos, playerDirection, dots, levelNumber, width, height, history, historyIndex])
+
+  // Initialize first history state
+  useEffect(() => {
+    if (history.length === 0) {
+      saveToHistory()
+    }
+  }, [])
+
+  // Undo
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prevState = history[historyIndex - 1]
+      applyHistoryState(prevState)
+      setHistoryIndex(historyIndex - 1)
+    }
+  }
+
+  // Redo
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1]
+      applyHistoryState(nextState)
+      setHistoryIndex(historyIndex + 1)
+    }
+  }
+  
+  const applyHistoryState = (state: any) => {
+    setTiles(JSON.parse(JSON.stringify(state.tiles)))
+    setPlayerPos({...state.playerPos})
+    setPlayerDirection(state.playerDirection)
+    setDots([...state.dots])
+    setLevelNumber(state.levelNumber)
+    setWidth(state.width)
+    setHeight(state.height)
+  }
 
   const resizeMap = (newWidth: number, newHeight: number) => {
     const newTiles: TileSymbol[][] = Array(newHeight).fill(null).map(() => Array(newWidth).fill(' '))
@@ -36,16 +147,22 @@ export default function MapEditor() {
     setTiles(newTiles)
     setWidth(newWidth)
     setHeight(newHeight)
+    saveToHistory()
   }
 
-  const handleTileClick = (row: number, col: number) => {
-    if (placingMode === 'tile') {
+
+  const handleMouseDown = (row: number, col: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+    
+    // Handle the initial click
+    if (selectedTool === 'tile') {
       const newTiles = [...tiles]
       newTiles[row][col] = selectedTile
       setTiles(newTiles)
-    } else if (placingMode === 'player') {
+    } else if (selectedTool === 'player') {
       setPlayerPos({ row, col })
-    } else if (placingMode === 'dot') {
+    } else if (selectedTool === 'dot') {
       const existingDotIndex = dots.findIndex(d => d.row === row && d.col === col)
       if (existingDotIndex >= 0) {
         setDots(dots.filter((_, i) => i !== existingDotIndex))
@@ -55,16 +172,40 @@ export default function MapEditor() {
     }
   }
 
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false)
+      saveToHistory()
+    }
+  }
+
+  const handleMouseEnter = (row: number, col: number, e: React.MouseEvent) => {
+    if (isDragging) {
+      if (selectedTool === 'tile') {
+        const newTiles = [...tiles]
+        newTiles[row][col] = selectedTile
+        setTiles(newTiles)
+      } else if (selectedTool === 'dot') {
+        // Add dots while dragging
+        const existingDotIndex = dots.findIndex(d => d.row === row && d.col === col)
+        if (existingDotIndex < 0) {
+          setDots([...dots, { row, col }])
+        }
+      }
+    }
+  }
+
   const clearMap = () => {
     setTiles(Array(height).fill(null).map(() => Array(width).fill('.')))
     setDots([])
     setPlayerPos({ row: 0, col: 0 })
+    saveToHistory()
   }
 
   const generateMapData = (): GameMap => {
     return {
-      id: 'custom',
-      name: 'Custom Map',
+      id: `level${levelNumber}`,
+      name: `Level ${levelNumber}`,
       width,
       height,
       tileSize,
@@ -72,33 +213,31 @@ export default function MapEditor() {
       playerPosition: {
         row: playerPos.row,
         col: playerPos.col,
-        direction: 'right'
+        direction: playerDirection
       },
       dots: dots.length > 0 ? dots : undefined,
-      waterBackground: { tilesX: 35, tilesY: 35 },
-      initialCode: `LDR   R0, =0x00030000\nMOV   R1, #4\nSTR   R1, [R0]`,
-      hint: 'Custom level hint'
+      waterBackground: { tilesX: waterTilesX, tilesY: waterTilesY },
+      initialCode,
+      hint
     }
   }
 
   const copyMapData = () => {
     const mapData = generateMapData()
     const mapString = `{
-  id: 'custom',
-  name: 'Custom Map',
+  id: '${mapData.id}',
+  name: '${mapData.name}',
   width: ${mapData.width},
   height: ${mapData.height},
   tileSize: ${mapData.tileSize},
   tiles: [
 ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
   ],
-  playerPosition: { row: ${mapData.playerPosition?.row}, col: ${mapData.playerPosition?.col}, direction: 'right' },
+  playerPosition: { row: ${mapData.playerPosition?.row}, col: ${mapData.playerPosition?.col}, direction: '${mapData.playerPosition?.direction}' },
   dots: [${mapData.dots?.map(d => `{ row: ${d.row}, col: ${d.col} }`).join(', ') || ''}],
-  waterBackground: { tilesX: 35, tilesY: 35 },
-  initialCode: \`LDR   R0, =0x00030000
-MOV   R1, #4
-STR   R1, [R0]\`,
-  hint: 'Custom level hint'
+  waterBackground: { tilesX: ${waterTilesX}, tilesY: ${waterTilesY} },
+  initialCode: \`${initialCode}\`,
+  hint: '${hint}'
 }`
     
     navigator.clipboard.writeText(mapString)
@@ -109,184 +248,369 @@ STR   R1, [R0]\`,
   const currentMap = generateMapData()
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Map Editor</h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Controls */}
-          <div className="space-y-4">
-            {/* Size Controls */}
-            <div className="bg-white rounded-lg p-4 shadow">
-              <h2 className="text-lg font-semibold mb-3">Map Size</h2>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className="w-20">Width:</span>
-                  <button 
-                    onClick={() => resizeMap(Math.max(1, width - 1), height)}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <span className="w-12 text-center">{width}</span>
-                  <button 
-                    onClick={() => resizeMap(Math.min(10, width + 1), height)}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-20">Height:</span>
-                  <button 
-                    onClick={() => resizeMap(width, Math.max(1, height - 1))}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <span className="w-12 text-center">{height}</span>
-                  <button 
-                    onClick={() => resizeMap(width, Math.min(10, height + 1))}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-20">Tile Size:</span>
-                  <button 
-                    onClick={() => setTileSize(Math.max(32, tileSize - 8))}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Minus size={16} />
-                  </button>
-                  <span className="w-12 text-center">{tileSize}</span>
-                  <button 
-                    onClick={() => setTileSize(Math.min(128, tileSize + 8))}
-                    className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
-              </div>
+    <div className="h-screen bg-black text-white flex flex-col" onMouseUp={handleMouseUp}>
+      {/* Header Bar - Apple Style */}
+      <div className="bg-zinc-900/90 backdrop-blur-xl border-b border-white/10 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-1.5 border border-white/5">
+              <span className="text-zinc-400 text-xs font-medium uppercase tracking-wider">Level</span>
+              <input
+                type="number"
+                value={levelNumber}
+                onChange={(e) => setLevelNumber(parseInt(e.target.value) || 1)}
+                className="bg-transparent text-white font-medium w-12 text-center focus:outline-none"
+                min="1"
+                max="999"
+              />
             </div>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <button
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Undo"
+            >
+              <Undo size={16} className="text-zinc-300" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="p-2 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Redo"
+            >
+              <Redo size={16} className="text-zinc-300" />
+            </button>
+            <div className="w-px h-5 bg-white/10 mx-2" />
+            <button
+              onClick={copyMapData}
+              className="px-4 py-1.5 bg-white/10 hover:bg-white/15 rounded-lg flex items-center gap-2 transition-all text-sm font-medium border border-white/10"
+              title="Copy Code"
+            >
+              {copied ? <ClipboardCheck size={14} /> : <Clipboard size={14} />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+      </div>
 
-            {/* Placement Mode */}
-            <div className="bg-white rounded-lg p-4 shadow">
-              <h2 className="text-lg font-semibold mb-3">Placement Mode</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPlacingMode('tile')}
-                  className={`px-3 py-2 rounded ${placingMode === 'tile' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                >
-                  Place Tiles
-                </button>
-                <button
-                  onClick={() => setPlacingMode('player')}
-                  className={`px-3 py-2 rounded ${placingMode === 'player' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-                >
-                  Place Player
-                </button>
-                <button
-                  onClick={() => setPlacingMode('dot')}
-                  className={`px-3 py-2 rounded ${placingMode === 'dot' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-                >
-                  Place Dots
-                </button>
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Apple Style */}
+        <div className="bg-zinc-900/50 backdrop-blur-xl border-r border-white/10 w-72">
+          <div className="p-5 space-y-6 h-full overflow-y-auto">
+            {/* Tools */}
+            <div>
+              <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tools</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {TOOLS.map(tool => (
+                  <button
+                    key={tool.id}
+                    onClick={() => setSelectedTool(tool.id as Tool)}
+                    className={`p-3 rounded-xl flex flex-col items-center gap-1.5 transition-all border ${
+                      selectedTool === tool.id 
+                        ? 'bg-white/10 text-white border-white/20 shadow-lg' 
+                        : 'bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 border-white/5'
+                    }`}
+                    title={tool.name}
+                  >
+                    <tool.icon size={18} />
+                    <span className="text-xs font-medium">{tool.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Tile Selection */}
-            {placingMode === 'tile' && (
-              <div className="bg-white rounded-lg p-4 shadow">
-                <h2 className="text-lg font-semibold mb-3">Select Tile</h2>
-                <div className="flex gap-2">
-                  {TILE_TYPES.map(tile => (
+            {selectedTool === 'tile' && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tile Type</h3>
+                <div className="space-y-1.5">
+                  {TILE_TYPES.map((tile) => (
                     <button
                       key={tile.symbol}
                       onClick={() => setSelectedTile(tile.symbol)}
-                      className={`px-4 py-2 rounded font-mono ${
+                      className={`w-full px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all border ${
                         selectedTile === tile.symbol 
-                          ? 'ring-2 ring-blue-500 bg-gray-100' 
-                          : 'bg-gray-50 hover:bg-gray-100'
+                          ? 'bg-zinc-800 border-white/20 shadow-md' 
+                          : 'bg-zinc-800/30 hover:bg-zinc-800/50 border-white/5'
                       }`}
-                      style={{ borderColor: tile.color, borderWidth: 2 }}
                     >
-                      {tile.name}
+                      <tile.icon size={16} style={{ color: tile.color }} />
+                      <span className="flex-1 text-left text-sm font-medium">{tile.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Player Direction */}
+            {selectedTool === 'player' && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Direction</h3>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {PLAYER_DIRECTIONS.map(dir => (
+                    <button
+                      key={dir.dir}
+                      onClick={() => setPlayerDirection(dir.dir)}
+                      className={`p-2.5 rounded-lg flex items-center justify-center gap-2 transition-all border ${
+                        playerDirection === dir.dir
+                          ? 'bg-white/10 text-white border-white/20 shadow-lg'
+                          : 'bg-zinc-800/30 hover:bg-zinc-800/50 text-zinc-400 border-white/5'
+                      }`}
+                    >
+                      <dir.icon size={14} />
+                      <span className="text-xs font-medium">{dir.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Info */}
-            <div className="bg-white rounded-lg p-4 shadow">
-              <h2 className="text-lg font-semibold mb-3">Current State</h2>
-              <div className="space-y-1 text-sm">
-                <p>Player Position: Row {playerPos.row}, Col {playerPos.col}</p>
-                <p>Dots Placed: {dots.length}</p>
-              </div>
+            {/* Clear Map */}
+            <div className="pt-4 border-t border-white/5">
+              <button
+                onClick={clearMap}
+                className="w-full px-3 py-2.5 bg-zinc-800/30 hover:bg-red-500/20 rounded-lg flex items-center justify-center gap-2 transition-all border border-white/5 hover:border-red-500/50 text-zinc-400 hover:text-red-400"
+              >
+                <RotateCcw size={14} />
+                <span className="text-sm font-medium">Clear Map</span>
+              </button>
             </div>
 
-            {/* Actions */}
-            <div className="bg-white rounded-lg p-4 shadow">
-              <h2 className="text-lg font-semibold mb-3">Actions</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={clearMap}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-2"
-                >
-                  <RotateCcw size={16} />
-                  Clear Map
-                </button>
-                <button
-                  onClick={copyMapData}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2"
-                >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                  {copied ? 'Copied!' : 'Copy Map Data'}
-                </button>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* Map Preview */}
-          <div className="bg-white rounded-lg p-6 shadow">
-            <h2 className="text-lg font-semibold mb-3">Map Preview</h2>
-            <div className="bg-gray-50 p-4 rounded overflow-auto">
-              <div className="inline-block">
-                <MapRenderer map={currentMap} />
+        {/* Canvas Area */}
+        <div className="flex-1 bg-zinc-950 relative overflow-hidden">
+
+          {/* Map Canvas */}
+          <div className="absolute inset-0 flex items-center justify-center overflow-auto p-8">
+            <div className="inline-block relative" style={{
+              width: width * tileSize,
+              height: height * tileSize
+            }}>
+              {/* Water Background - centered behind map */}
+              <div className="absolute" style={{ 
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}>
+                <WaterRenderer tilesX={waterTilesX} tilesY={waterTilesY} tileSize={tileSize} />
               </div>
-            </div>
-            
-            {/* Click Grid Overlay */}
-            <div className="mt-4">
-              <h3 className="text-md font-semibold mb-2">Click to Edit</h3>
+              
+              {/* Render the actual map */}
+              <MapRenderer map={currentMap} />
+              
+              
+              {/* Clickable overlay grid */}
               <div 
-                className="inline-grid gap-0 border-2 border-gray-300"
+                className="absolute top-0 left-0 inline-grid z-20"
                 style={{
-                  gridTemplateColumns: `repeat(${width}, ${40}px)`,
-                  gridTemplateRows: `repeat(${height}, ${40}px)`
+                  gridTemplateColumns: `repeat(${width}, ${tileSize}px)`,
+                  gridTemplateRows: `repeat(${height}, ${tileSize}px)`,
+                  gap: 0
                 }}
               >
                 {tiles.map((row, r) => 
                   row.map((tile, c) => (
                     <button
                       key={`${r}-${c}`}
-                      onClick={() => handleTileClick(r, c)}
-                      className={`border border-gray-200 hover:bg-blue-100 hover:bg-opacity-50 text-xs font-mono
-                        ${playerPos.row === r && playerPos.col === c ? 'bg-green-200' : ''}
-                        ${dots.some(d => d.row === r && d.col === c) ? 'bg-yellow-200' : ''}
-                      `}
+                      onMouseDown={(e) => handleMouseDown(r, c, e)}
+                      onMouseEnter={(e) => handleMouseEnter(r, c, e)}
+                      className={`relative ${
+                        showGrid ? 'border border-gray-700 border-opacity-30' : ''
+                      }`}
                       style={{
-                        backgroundColor: tile === '.' ? '#e5f3e5' : tile === '*' ? '#ffe4d1' : '#f5f5f5'
+                        width: tileSize,
+                        height: tileSize
                       }}
                     >
-                      {tile === ' ' ? '·' : tile}
+                      {/* Air tile indicator */}
+                      {tile === ' ' && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <Wind className="text-gray-400 opacity-30" size={Math.min(tileSize * 0.5, 24)} />
+                        </div>
+                      )}
                     </button>
                   ))
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Apple Style */}
+        <div className="bg-zinc-900/50 backdrop-blur-xl border-l border-white/10 w-80">
+          <div className="flex flex-col h-full">
+            {/* Segmented Control */}
+            <div className="p-3 border-b border-white/10">
+              <div className="flex bg-zinc-800/50 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    activeTab === 'settings' 
+                      ? 'bg-zinc-700 text-white shadow-sm' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Settings size={14} />
+                  Settings
+                </button>
+                <button
+                  onClick={() => setActiveTab('code')}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    activeTab === 'code' 
+                      ? 'bg-zinc-700 text-white shadow-sm' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Code size={14} />
+                  Code
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {activeTab === 'settings' && (
+                <div className="space-y-5">
+                  {/* Map Dimensions */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Dimensions</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-zinc-500 font-medium">Width</label>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <button 
+                            onClick={() => resizeMap(Math.max(1, width - 1), height)}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Minus size={12} className="text-zinc-400" />
+                          </button>
+                          <input 
+                            type="number" 
+                            value={width} 
+                            onChange={(e) => resizeMap(parseInt(e.target.value) || 1, height)}
+                            className="flex-1 bg-zinc-800/30 text-center border border-white/5 rounded-lg px-2 py-1.5 text-sm font-medium focus:border-white/20 focus:outline-none focus:bg-zinc-800/50"
+                            min="1"
+                            max="20"
+                          />
+                          <button 
+                            onClick={() => resizeMap(Math.min(20, width + 1), height)}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Plus size={12} className="text-zinc-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-500 font-medium">Height</label>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <button 
+                            onClick={() => resizeMap(width, Math.max(1, height - 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Minus size={12} className="text-zinc-400" />
+                          </button>
+                          <input 
+                            type="number" 
+                            value={height} 
+                            onChange={(e) => resizeMap(width, parseInt(e.target.value) || 1)}
+                            className="flex-1 bg-zinc-800/30 text-center border border-white/5 rounded-lg px-2 py-1.5 text-sm font-medium focus:border-white/20 focus:outline-none focus:bg-zinc-800/50"
+                            min="1"
+                            max="20"
+                          />
+                          <button 
+                            onClick={() => resizeMap(width, Math.min(20, height + 1))}
+                            className="p-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 rounded-lg border border-white/5"
+                          >
+                            <Plus size={12} className="text-zinc-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-500 font-medium flex items-center justify-between">
+                          Tile Size
+                          <span className="text-zinc-300 font-mono text-xs">{tileSize}px</span>
+                        </label>
+                        <input 
+                          type="range" 
+                          value={tileSize} 
+                          onChange={(e) => setTileSize(parseInt(e.target.value))}
+                          className="w-full mt-2 accent-white/50"
+                          min="32"
+                          max="128"
+                          step="8"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Water Background Settings */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Background</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-zinc-500 font-medium flex items-center justify-between">
+                          Water Tiles X
+                          <span className="text-zinc-300 font-mono text-xs">{waterTilesX}</span>
+                        </label>
+                        <input 
+                          type="range" 
+                          value={waterTilesX} 
+                          onChange={(e) => setWaterTilesX(parseInt(e.target.value))}
+                          className="w-full mt-2 accent-white/50"
+                          min="10"
+                          max="50"
+                          step="5"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-500 font-medium flex items-center justify-between">
+                          Water Tiles Y
+                          <span className="text-zinc-300 font-mono text-xs">{waterTilesY}</span>
+                        </label>
+                        <input 
+                          type="range" 
+                          value={waterTilesY} 
+                          onChange={(e) => setWaterTilesY(parseInt(e.target.value))}
+                          className="w-full mt-2 accent-white/50"
+                          min="10"
+                          max="50"
+                          step="5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {activeTab === 'code' && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-2">Initial Code</label>
+                    <textarea
+                      value={initialCode}
+                      onChange={(e) => setInitialCode(e.target.value)}
+                      className="w-full h-32 bg-zinc-800/30 border border-white/5 rounded-lg px-3 py-2.5 text-sm font-mono focus:border-white/20 focus:outline-none focus:bg-zinc-800/50 text-zinc-100 placeholder-zinc-600"
+                      placeholder="Enter ARM assembly code..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-2">Hint</label>
+                    <textarea
+                      value={hint}
+                      onChange={(e) => setHint(e.target.value)}
+                      className="w-full h-24 bg-zinc-800/30 border border-white/5 rounded-lg px-3 py-2.5 text-sm focus:border-white/20 focus:outline-none focus:bg-zinc-800/50 text-zinc-100 placeholder-zinc-600"
+                      placeholder="Enter hint for player..."
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
