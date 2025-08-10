@@ -1,5 +1,6 @@
 import { Bug, Play, Feather, Award } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import StatusBar from './StatusBar'
 
 interface ExecutionBarProps {
@@ -10,9 +11,11 @@ interface ExecutionBarProps {
   playStatus?: 'running'
   hasWon?: boolean
   hint?: string
+  currentLevel?: string
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, hint }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, hint, currentLevel }: ExecutionBarProps) {
+  const router = useRouter()
   const [showStatusBar, setShowStatusBar] = useState(false)
   const [showHintCard, setShowHintCard] = useState(false)
 
@@ -27,6 +30,13 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
 
   const handleDebugClick = () => {
     onDebugClick?.()
+  }
+
+  const handleNextClick = () => {
+    if (hasWon && currentLevel) {
+      const nextLevel = parseInt(currentLevel) + 1
+      router.push(`/level/${nextLevel}`)
+    }
   }
 
   return (
@@ -63,6 +73,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
             className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'} ${hasWon ? 'cursor-pointer' : ''}`}
             onMouseEnter={() => !hasWon && setShowHintCard(true)}
             onMouseLeave={() => setShowHintCard(false)}
+            onClick={hasWon ? handleNextClick : undefined}
           >
             {hasWon ? (
               <Award size={16} color="#50b040" />
