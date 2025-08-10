@@ -9,13 +9,14 @@ import {
   Paintbrush,
   Settings, Code, 
   Clipboard, ClipboardCheck,
-  ArrowRight, ArrowUp, ArrowLeft, ArrowDown
+  ArrowRight, ArrowUp, ArrowLeft, ArrowDown,
+  type LucideIcon
 } from 'lucide-react'
 import MapRenderer from '@/components/MapRenderer'
 import WaterRenderer from '@/components/WaterRenderer'
 import { GameMap, TileSymbol, PlayerDirection } from '@/data/maps'
 
-const TILE_TYPES: { symbol: TileSymbol; name: string; icon: any; color: string; bgColor: string }[] = [
+const TILE_TYPES: { symbol: TileSymbol; name: string; icon: LucideIcon; color: string; bgColor: string }[] = [
   { symbol: '.', name: 'Grass', icon: Trees, color: '#22c55e', bgColor: '#dcfce7' },
   { symbol: '*', name: 'Fire', icon: Flame, color: '#f97316', bgColor: '#fed7aa' },
   { symbol: ' ', name: 'Air', icon: Wind, color: '#94a3b8', bgColor: '#f1f5f9' }
@@ -27,7 +28,7 @@ const TOOLS = [
   { id: 'dot', name: 'Place Dots', icon: Circle }
 ]
 
-const PLAYER_DIRECTIONS: { dir: PlayerDirection; icon: any; name: string }[] = [
+const PLAYER_DIRECTIONS: { dir: PlayerDirection; icon: LucideIcon; name: string }[] = [
   { dir: 'right', icon: ArrowRight, name: 'Right' },
   { dir: 'up', icon: ArrowUp, name: 'Up' },
   { dir: 'left', icon: ArrowLeft, name: 'Left' },
@@ -35,6 +36,16 @@ const PLAYER_DIRECTIONS: { dir: PlayerDirection; icon: any; name: string }[] = [
 ]
 
 type Tool = 'tile' | 'player' | 'dot'
+
+type HistoryState = {
+  tiles: TileSymbol[][]
+  playerPos: { row: number; col: number }
+  playerDirection: PlayerDirection
+  dots: { row: number; col: number }[]
+  levelNumber: number
+  width: number
+  height: number
+}
 
 export default function MapEditor() {
   // Only allow access in development mode
@@ -73,7 +84,7 @@ STR   R1, [R0]`)
   const [showGrid] = useState(true)
   
   // History
-  const [history, setHistory] = useState<any[]>([])
+  const [history, setHistory] = useState<HistoryState[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isDragging, setIsDragging] = useState(false)
   
@@ -105,7 +116,7 @@ STR   R1, [R0]`)
     if (history.length === 0) {
       saveToHistory()
     }
-  }, [])
+  }, [history.length, saveToHistory])
 
   // Undo
   const undo = () => {
@@ -125,7 +136,7 @@ STR   R1, [R0]`)
     }
   }
   
-  const applyHistoryState = (state: any) => {
+  const applyHistoryState = (state: HistoryState) => {
     setTiles(JSON.parse(JSON.stringify(state.tiles)))
     setPlayerPos({...state.playerPos})
     setPlayerDirection(state.playerDirection)
