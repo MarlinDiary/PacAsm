@@ -9,7 +9,7 @@ interface IconButtonProps {
 export default function IconButton({ icon: Icon, onClick, size = 16 }: IconButtonProps) {
   return (
     <button 
-      className="w-8 h-8 flex items-center justify-center hover:bg-[#e7e7e7] hover:rounded-md group"
+      className="w-8 h-8 flex items-center justify-center hover:bg-[#e7e7e7] hover:rounded-md group cursor-pointer"
       onClick={onClick}
     >
       <Icon 

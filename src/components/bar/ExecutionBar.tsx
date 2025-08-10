@@ -38,7 +38,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Debug button */}
         <button 
           onClick={handleDebugClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center"
+          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center cursor-pointer"
         >
           <Bug size={16} color="#f2a53f" />
         </button>
@@ -49,7 +49,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Play button */}
         <button 
           onClick={handlePlayClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] flex items-center justify-center"
+          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] flex items-center justify-center cursor-pointer"
         >
           <Play size={16} color="#686868" fill="#686868" />
         </button>

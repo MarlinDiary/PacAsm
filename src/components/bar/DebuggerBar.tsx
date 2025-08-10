@@ -21,7 +21,7 @@ export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, on
       {/* Square button */}
       <button 
         onClick={handleStopClick}
-        className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center"
+        className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center cursor-pointer"
       >
         <Square size={16} color="#e34940" fill="#e34940" />
       </button>
@@ -54,7 +54,7 @@ export default function DebuggerBar({ onReturnClick, onStopClick, onStepDown, on
         {/* Refresh ccw button - Replay */}
         <button 
           onClick={onReplay}
-          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] rounded-r-sm flex items-center justify-center"
+          className="w-8 h-8 p-2 hover:bg-[#e2e2e2] rounded-r-sm flex items-center justify-center cursor-pointer"
         >
           <RefreshCcw size={16} color="#50b040" />
         </button>
