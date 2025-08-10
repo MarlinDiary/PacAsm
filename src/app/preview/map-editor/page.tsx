@@ -577,7 +577,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                           className="w-full mt-2 accent-white/50"
                           min="10"
                           max="50"
-                          step="5"
+                          step="1"
                         />
                       </div>
                       <div>
@@ -592,7 +592,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                           className="w-full mt-2 accent-white/50"
                           min="10"
                           max="50"
-                          step="5"
+                          step="1"
                         />
                       </div>
                     </div>
