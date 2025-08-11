@@ -441,9 +441,9 @@ export default function LevelPage() {
         <ResizablePanel defaultSize={33} ref={panel4Ref} minSize={10}>
           <Card 
             tabs={[
-              { icon: CircuitBoard, text: "Register", color: "#633dbf" },
+              { icon: CircuitBoard, text: "Register", color: "#9164EA" },
               { icon: HardDrive, text: "Memory", color: "#01A2C2" },
-              { icon: Stethoscope, text: "Diagnostics", color: "#70252e" }
+              { icon: Stethoscope, text: "Diagnostics", color: "#FF0033" }
             ]}
             selectedTab={rightPanelTab}
             onTabChange={setRightPanelTab}
