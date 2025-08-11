@@ -29,7 +29,7 @@ export default function Card({ children, tabs = [], defaultSelectedTab = 0, sele
   }
 
   return (
-    <div className="w-full h-full bg-white rounded-lg flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-white dark:bg-[#262626] rounded-lg flex flex-col overflow-hidden">
       <TabBar>
         {tabs.map((tab, index) => (
           <Tab 

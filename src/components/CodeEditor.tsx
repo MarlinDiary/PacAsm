@@ -1,7 +1,8 @@
 'use client'
 
 import { Editor } from '@monaco-editor/react'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 
 interface CodeEditorProps {
   value?: string
@@ -24,12 +25,20 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const editorRef = useRef<import('monaco-editor').editor.IStandaloneCodeEditor | null>(null)
   const decorationsRef = useRef<string[]>([])
+  const monacoRef = useRef<typeof import('monaco-editor') | null>(null)
+  const { theme, systemTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   function handleEditorDidMount(
     editor: import('monaco-editor').editor.IStandaloneCodeEditor, 
     monaco: typeof import('monaco-editor')
   ) {
     editorRef.current = editor
+    monacoRef.current = monaco
 
     // Register assembly language if not already registered
     if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === 'assembly')) {
@@ -110,8 +119,8 @@ export default function CodeEditor({
       })
     }
 
-    // Define custom theme after language registration
-    monaco.editor.defineTheme('custom-assembly-theme', {
+    // Define light theme
+    monaco.editor.defineTheme('custom-assembly-light', {
       base: 'vs',
       inherit: false,
       rules: [
@@ -152,9 +161,121 @@ export default function CodeEditor({
       }
     })
 
-    // Apply the theme
-    monaco.editor.setTheme('custom-assembly-theme')
+    // Define dark theme
+    monaco.editor.defineTheme('custom-assembly-dark', {
+      base: 'vs-dark',
+      inherit: false,
+      rules: [
+        // Default text - white
+        { token: '', foreground: 'ffffff' },
+        
+        // Comments - #8b92a3
+        { token: 'comment', foreground: '8b92a3' },
+        
+        // Strings - #4da6ff
+        { token: 'string', foreground: '4da6ff' },
+        { token: 'string.invalid', foreground: '4da6ff' },
+        { token: 'string.escape.invalid', foreground: '4da6ff' },
+        { token: 'string.regexp', foreground: '4da6ff' },
+        
+        // Keywords (ARM instructions) - #ff6b7d
+        { token: 'keyword', foreground: 'ff6b7d' },
+        
+        // Functions/Labels - #b794f6
+        { token: 'type', foreground: 'b794f6' },
+        
+        // Variables (ARM registers) - #ffb366
+        { token: 'variable.predefined', foreground: 'ffb366' },
+        { token: 'identifier', foreground: 'ffffff' },
+        
+        // Numbers/Constants - #66b3ff
+        { token: 'number', foreground: '66b3ff' },
+        { token: 'number.hex', foreground: '66b3ff' }
+      ],
+      colors: {
+        'editor.background': '#262626',
+        'editor.foreground': '#ffffff',
+        'editor.lineHighlightBackground': '#2f2f2f',
+        'editor.lineHighlightBorder': '#2f2f2f',
+        'editorLineNumber.foreground': '#6e7681',
+        'editorLineNumber.activeForeground': '#ffffff',
+        'editorCursor.foreground': '#6bb6ff'
+      }
+    })
+
+    // Apply the appropriate theme immediately based on DOM class
+    const isDark = document.documentElement.classList.contains('dark')
+    const currentTheme = isDark ? 'custom-assembly-dark' : 'custom-assembly-light'
+    monaco.editor.setTheme(currentTheme)
   }
+
+  // Effect to update theme when it changes
+  useEffect(() => {
+    if (!monacoRef.current || !mounted) return
+
+    const monaco = monacoRef.current
+    const actualTheme = theme === 'system' ? systemTheme : theme
+    
+    // Re-define themes to ensure they're up to date
+    monaco.editor.defineTheme('custom-assembly-dark', {
+      base: 'vs-dark',
+      inherit: false,
+      rules: [
+        { token: '', foreground: 'ffffff' },
+        { token: 'comment', foreground: '8b92a3' },
+        { token: 'string', foreground: '4da6ff' },
+        { token: 'string.invalid', foreground: '4da6ff' },
+        { token: 'string.escape.invalid', foreground: '4da6ff' },
+        { token: 'string.regexp', foreground: '4da6ff' },
+        { token: 'keyword', foreground: 'ff6b7d' },
+        { token: 'type', foreground: 'b794f6' },
+        { token: 'variable.predefined', foreground: 'ffb366' },
+        { token: 'identifier', foreground: 'ffffff' },
+        { token: 'number', foreground: '66b3ff' },
+        { token: 'number.hex', foreground: '66b3ff' }
+      ],
+      colors: {
+        'editor.background': '#262626',
+        'editor.foreground': '#ffffff',
+        'editor.lineHighlightBackground': '#2f2f2f',
+        'editor.lineHighlightBorder': '#2f2f2f',
+        'editorLineNumber.foreground': '#6e7681',
+        'editorLineNumber.activeForeground': '#ffffff',
+        'editorCursor.foreground': '#6bb6ff'
+      }
+    })
+
+    monaco.editor.defineTheme('custom-assembly-light', {
+      base: 'vs',
+      inherit: false,
+      rules: [
+        { token: '', foreground: '000000' },
+        { token: 'comment', foreground: '647182' },
+        { token: 'string', foreground: '003d99' },
+        { token: 'string.invalid', foreground: '003d99' },
+        { token: 'string.escape.invalid', foreground: '003d99' },
+        { token: 'string.regexp', foreground: '003d99' },
+        { token: 'keyword', foreground: 'df0c24' },
+        { token: 'type', foreground: '894ceb' },
+        { token: 'variable.predefined', foreground: 'a24610' },
+        { token: 'identifier', foreground: '000000' },
+        { token: 'number', foreground: '005fcc' },
+        { token: 'number.hex', foreground: '005fcc' }
+      ],
+      colors: {
+        'editor.background': '#ffffff',
+        'editor.foreground': '#000000',
+        'editor.lineHighlightBackground': '#f6f8fa',
+        'editor.lineHighlightBorder': '#f6f8fa',
+        'editorLineNumber.foreground': '#bdbebf',
+        'editorLineNumber.activeForeground': '#000000',
+        'editorCursor.foreground': '#1b4184'
+      }
+    })
+
+    const themeName = actualTheme === 'dark' ? 'custom-assembly-dark' : 'custom-assembly-light'
+    monaco.editor.setTheme(themeName)
+  }, [theme, systemTheme, mounted])
 
   // Effect to handle line highlighting
   useEffect(() => {
@@ -207,9 +328,15 @@ export default function CodeEditor({
             background-color: #f6f8fa !important;
             border: none !important;
           }
+          .dark .monaco-editor .view-overlays .current-line {
+            background-color: #2f2f2f !important;
+          }
           .monaco-editor .margin-view-overlays .current-line-margin {
             background-color: #f6f8fa !important;
             border: none !important;
+          }
+          .dark .monaco-editor .margin-view-overlays .current-line-margin {
+            background-color: #2f2f2f !important;
           }
           .monaco-editor .scroll-decoration {
             display: none !important;
@@ -223,13 +350,24 @@ export default function CodeEditor({
           .monaco-editor .line-numbers {
             color: #bdbebf !important;
           }
+          .dark .monaco-editor .line-numbers {
+            color: #6e7681 !important;
+          }
           .monaco-editor .current-line .line-numbers,
           .monaco-editor .active-line-number {
             color: #000000 !important;
           }
+          .dark .monaco-editor .current-line .line-numbers,
+          .dark .monaco-editor .active-line-number {
+            color: #ffffff !important;
+          }
           .monaco-editor .margin-view-overlays .current-line-margin,
           .monaco-editor .margin-view-overlays .current-line-margin * {
             color: #000000 !important;
+          }
+          .dark .monaco-editor .margin-view-overlays .current-line-margin,
+          .dark .monaco-editor .margin-view-overlays .current-line-margin * {
+            color: #ffffff !important;
           }
           .monaco-editor .cursors-layer .cursor {
             background-color: #1b4184 !important;
@@ -237,13 +375,25 @@ export default function CodeEditor({
             color: #1b4184 !important;
             transition: all 0.1s ease-out !important;
           }
+          .dark .monaco-editor .cursors-layer .cursor {
+            background-color: #6bb6ff !important;
+            border-left: 1px solid #6bb6ff !important;
+            color: #6bb6ff !important;
+          }
           .monaco-editor .cursors-layer > .cursor {
             background-color: #1b4184 !important;
             border-color: #1b4184 !important;
             transition: all 0.1s ease-out !important;
           }
+          .dark .monaco-editor .cursors-layer > .cursor {
+            background-color: #6bb6ff !important;
+            border-color: #6bb6ff !important;
+          }
           .monaco-editor .highlighted-line-full {
             background-color: #f7f1da !important;
+          }
+          .dark .monaco-editor .highlighted-line-full {
+            background-color: #4a4a3a !important;
           }
           .monaco-editor .view-overlays .highlighted-line-full {
             background-color: #f7f1da !important;
@@ -251,11 +401,20 @@ export default function CodeEditor({
             left: 0 !important;
             right: 0 !important;
           }
+          .dark .monaco-editor .view-overlays .highlighted-line-full {
+            background-color: #4a4a3a !important;
+          }
           .monaco-editor .highlighted-line-margin {
             background-color: #f7f1da !important;
           }
+          .dark .monaco-editor .highlighted-line-margin {
+            background-color: #4a4a3a !important;
+          }
           .monaco-editor .highlighted-line-glyph {
             background-color: #f7f1da !important;
+          }
+          .dark .monaco-editor .highlighted-line-glyph {
+            background-color: #4a4a3a !important;
           }
         `
       }} />
@@ -266,13 +425,8 @@ export default function CodeEditor({
         value={value}
         onChange={onChange}
         onMount={handleEditorDidMount}
-        theme="custom-assembly-theme"
+        theme={mounted && (theme === 'dark' || (theme === 'system' && systemTheme === 'dark')) ? 'custom-assembly-dark' : 'custom-assembly-light'}
         loading=""
-        beforeMount={(monaco) => {
-          if (disabled) {
-            // Additional setup for disabled state if needed
-          }
-        }}
         options={{
           minimap: { enabled: false },
           fontSize: 14,

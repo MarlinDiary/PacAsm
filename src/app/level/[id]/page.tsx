@@ -319,7 +319,7 @@ export default function LevelPage() {
   }, [debugState.hasError, isDebugMode])
 
   return (
-    <div className="h-screen w-full overflow-hidden" style={{ backgroundColor: '#f0f0f0' }}>
+    <div className="h-screen w-full overflow-hidden bg-[#f0f0f0] dark:bg-[#0f0f0f]">
       <div className="p-2 h-full flex flex-col">
         <div className="flex justify-center relative">
           <div className="absolute left-0 top-0">

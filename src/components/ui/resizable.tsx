@@ -45,11 +45,10 @@ function ResizableHandle({
       {...props}
     >
       <div 
-        className="rounded-full"
+        className="rounded-full bg-[#dddddd] dark:bg-[#313131]"
         style={{ 
           width: '2px', 
-          height: '20px', 
-          backgroundColor: '#dddddd' 
+          height: '20px'
         }}
       />
     </ResizablePrimitive.PanelResizeHandle>

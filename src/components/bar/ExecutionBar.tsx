@@ -48,29 +48,29 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Debug button */}
         <button 
           onClick={handleDebugClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-l-sm flex items-center justify-center cursor-pointer"
+          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] rounded-l-sm flex items-center justify-center cursor-pointer"
         >
           <Bug size={16} color="#f2a53f" />
         </button>
         
         {/* First divider */}
-        <div className="w-px h-8 bg-[#f0f0f0]"></div>
+        <div className="w-px h-8 bg-[#f0f0f0] dark:bg-[#0f0f0f]"></div>
         
         {/* Play button */}
         <button 
           onClick={handlePlayClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] hover:bg-[#e2e2e2] flex items-center justify-center cursor-pointer"
+          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer"
         >
-          <Play size={16} color="#686868" fill="#686868" />
+          <Play size={16} className="text-[#686868] dark:text-[#a7a7a7] fill-[#686868] dark:fill-[#a7a7a7]" />
         </button>
         
         {/* Second divider */}
-        <div className="w-px h-8 bg-[#f0f0f0]"></div>
+        <div className="w-px h-8 bg-[#f0f0f0] dark:bg-[#0f0f0f]"></div>
         
         {/* Hint/Next button */}
         <div className="relative">
           <button 
-            className={`h-8 bg-[#e7e7e7] hover:bg-[#e2e2e2] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'} ${hasWon ? 'cursor-pointer' : ''}`}
+            className={`h-8 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] rounded-r-sm flex items-center gap-1 transition-all duration-200 ${showStatusBar || isDebugMode ? 'px-2' : 'px-3'} ${hasWon ? 'cursor-pointer' : ''}`}
             onMouseEnter={() => !hasWon && setShowHintCard(true)}
             onMouseLeave={() => setShowHintCard(false)}
             onClick={hasWon ? handleNextClick : undefined}
@@ -88,20 +88,18 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
           {/* Hint Card */}
           {!hasWon && (
             <div 
-              className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 rounded-lg shadow-lg z-50 pointer-events-none transition-opacity duration-150 ${
+              className={`absolute left-1/2 -translate-x-1/2 top-full mt-2 rounded-lg shadow-lg z-50 pointer-events-none transition-opacity duration-150 bg-white dark:bg-[#3c3c3c] ${
                 showHintCard ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ 
-                backgroundColor: 'white',
                 paddingLeft: '12px',
                 paddingRight: '12px',
                 paddingTop: '8px',
                 paddingBottom: '8px'
               }}
             >
-              <p style={{ 
+              <p className="text-[#262626] dark:text-[#ffffff]" style={{ 
                 fontSize: '14px', 
-                color: '#5a5a5a',
                 margin: 0,
                 lineHeight: '1.5',
                 whiteSpace: 'nowrap'
