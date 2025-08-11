@@ -210,7 +210,7 @@ export default function CodeEditor({
     monaco.editor.setTheme(currentTheme)
     
     // Mark editor as ready after a short delay
-    setTimeout(() => setEditorReady(true), 50)
+    setTimeout(() => setEditorReady(true), 10)
   }
 
   // Effect to update theme when it changes
