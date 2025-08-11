@@ -28,6 +28,7 @@ export default function CodeEditor({
   const monacoRef = useRef<typeof import('monaco-editor') | null>(null)
   const { theme, systemTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [editorReady, setEditorReady] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -207,6 +208,9 @@ export default function CodeEditor({
     const isDark = document.documentElement.classList.contains('dark')
     const currentTheme = isDark ? 'custom-assembly-dark' : 'custom-assembly-light'
     monaco.editor.setTheme(currentTheme)
+    
+    // Mark editor as ready after a short delay
+    setTimeout(() => setEditorReady(true), 50)
   }
 
   // Effect to update theme when it changes
@@ -320,7 +324,7 @@ export default function CodeEditor({
   return (
     <div 
       className={`h-full w-full ${className} ${disabled ? 'pointer-events-none' : ''}`}
-      style={{ opacity: disabled ? 0.8 : 1 }}
+      style={{ opacity: editorReady ? (disabled ? 0.8 : 1) : 0 }}
     >
       <style dangerouslySetInnerHTML={{
         __html: `
