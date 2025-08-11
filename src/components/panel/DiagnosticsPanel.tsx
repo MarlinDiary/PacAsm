@@ -2,23 +2,33 @@
 
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import ErrorCard from '../ErrorCard'
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 // Props type will be added when needed
 type DiagnosticsPanelProps = Record<string, never>
 
 export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const errors = useDiagnosticsStore((state) => state.errors)
   const hasData = errors.length > 0
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  const currentTheme = mounted ? (theme === 'system' ? resolvedTheme : theme) : 'light'
   
   if (!hasData) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <img 
-          src="/res/null.png" 
+          src={currentTheme === 'dark' ? '/res/null-dark.png' : '/res/null.png'} 
           alt="No diagnostics" 
           style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
-        <div style={{ color: '#c4c4c6', fontSize: '14px' }}>
+        <div className="text-[#c4c4c6] dark:text-[#9FA0A2] text-sm">
           No diagnostics data available
         </div>
       </div>

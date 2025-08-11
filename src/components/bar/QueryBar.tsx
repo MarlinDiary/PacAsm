@@ -25,24 +25,14 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
 
   return (
     <div 
-      className="w-full"
-      style={{ 
-        height: '32px',
-        borderBottom: '1px solid #f0f0f0'
-      }}
+      className="w-full h-8 border-b border-[#f0f0f0] dark:border-[#3C3C3C]"
     >
       <div 
-        className="w-full h-full flex items-center"
-        style={{
-          paddingLeft: '20px',
-          paddingRight: '20px',
-          paddingTop: '4px',
-          paddingBottom: '4px'
-        }}
+        className="w-full h-full flex items-center px-5 py-1"
       >
         <Search 
           size={16} 
-          color="#a8a8a8"
+          className="text-[#a8a8a8] dark:text-[#8A8A8A]"
           onClick={() => inputRef.current?.focus()}
         />
         <input
@@ -52,15 +42,14 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
           autoComplete="off"
           value={searchQuery}
           onChange={handleInputChange}
-          className="w-full outline-none border-none bg-transparent focus:bg-transparent placeholder:text-[#c4c4c6] placeholder:font-medium ml-1 text-sm text-[#5c5c5c]"
+          className="w-full outline-none border-none bg-transparent focus:bg-transparent placeholder:text-[#c4c4c6] dark:placeholder:text-[#626265] placeholder:font-medium ml-1 text-sm text-[#5c5c5c] dark:text-[#BDBEC2]"
           style={{
             lineHeight: '1rem'
           }}
         />
         <ListFilter
           size={16}
-          color={isFilterActive ? "#737373" : "#a8a8a8"}
-          className="cursor-pointer ml-1"
+          className={`cursor-pointer ml-1 ${isFilterActive ? 'text-[#737373] dark:text-[#A8A8A8]' : 'text-[#a8a8a8] dark:text-[#7D7D7D]'}`}
           onClick={handleFilterToggle}
         />
       </div>

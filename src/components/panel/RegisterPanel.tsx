@@ -66,24 +66,19 @@ export default function RegisterPanel({ registers: registerData, previousRegiste
             const hasChanged = isRegisterChanged(register)
             
             return (
-              <TableRow key={register} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
+              <TableRow key={register} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white dark:bg-[#262626] dark:hover:bg-[#262626]' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8] dark:bg-[#353535] dark:hover:bg-[#353535]'}`}>
                 <TableCell className="h-12 w-1/4 text-center border-none">
                   <Badge 
                     variant="outline" 
-                    className="font-mono text-xs"
-                    style={{ 
-                      color: hasChanged ? 'white' : '#5a5a5a',
-                      backgroundColor: hasChanged ? '#1a1a1a' : 'transparent',
-                      border: hasChanged ? 'none' : undefined
-                    }}
+                    className={`font-mono text-xs ${hasChanged ? 'text-white bg-[#1a1a1a] dark:bg-[#F5F5F5] dark:text-black border-none' : 'text-[#5a5a5a] dark:text-[#BDBEC2] bg-transparent'}`}
                   >
                     {formatRegisterName(register)}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-mono h-12 w-1/2 text-center border-none" style={{ color: '#5a5a5a' }}>
+                <TableCell className="font-mono h-12 w-1/2 text-center border-none text-[#5a5a5a] dark:text-[#BDBEC2]">
                   {hexValue}
                 </TableCell>
-                <TableCell className="font-mono h-12 w-1/4 text-center border-none" style={{ color: '#5a5a5a' }}>
+                <TableCell className="font-mono h-12 w-1/4 text-center border-none text-[#5a5a5a] dark:text-[#BDBEC2]">
                   {value}
                 </TableCell>
               </TableRow>

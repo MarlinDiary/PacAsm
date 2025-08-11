@@ -71,6 +71,9 @@ export default function MapRenderer({ map }: MapRendererProps) {
                   width={tileSize}
                   height={tileSize}
                   className="object-cover pointer-events-none select-none"
+                  style={{
+                    filter: 'var(--tile-filter)'
+                  }}
                   priority
                 />
               )}

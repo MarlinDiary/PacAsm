@@ -450,9 +450,9 @@ export default function LevelPage() {
             tabContent={[
               <div key="register" className="h-full flex flex-col">
                 <SubBar>
-                  <div className="w-1/4 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Reg</div>
-                  <div className="w-1/2 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Hex</div>
-                  <div className="w-1/4 text-center" style={{ color: '#8a8a8e', fontSize: '14px' }}>Dec</div>
+                  <div className="w-1/4 text-center text-[#8a8a8e] dark:text-[#9FA0A2] text-sm">Reg</div>
+                  <div className="w-1/2 text-center text-[#8a8a8e] dark:text-[#9FA0A2] text-sm">Hex</div>
+                  <div className="w-1/4 text-center text-[#8a8a8e] dark:text-[#9FA0A2] text-sm">Dec</div>
                 </SubBar>
                 <div 
                   className="flex-1 overflow-y-auto"

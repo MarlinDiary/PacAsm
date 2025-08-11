@@ -14,7 +14,7 @@ export default function IconButton({ icon: Icon, onClick, size = 16 }: IconButto
     >
       <Icon 
         size={size} 
-        className="text-[#737373] dark:text-[#a0a0a0] group-hover:text-[#1a1a1a] dark:group-hover:text-[#f5f5f5]"
+        className="text-[#737373] dark:text-[#A8A8A8] group-hover:text-[#1a1a1a] dark:group-hover:text-[#f5f5f5]"
       />
     </button>
   )

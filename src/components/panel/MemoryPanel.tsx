@@ -1,9 +1,13 @@
+'use client'
+
 import {
   Table,
   TableBody,
   TableCell,
   TableRow,
 } from "@/components/ui/table"
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 interface MemoryRow {
   address: string;
@@ -71,7 +75,15 @@ interface MemoryPanelProps {
 }
 
 export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, codeMemory, stackMemory, dataMemory }: MemoryPanelProps) {
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const memoryRows = generateMemoryRows(codeMemory, stackMemory, dataMemory)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  const currentTheme = mounted ? (theme === 'system' ? resolvedTheme : theme) : 'light'
   const filteredRows = memoryRows.filter(row => {
     // Search filter
     const matchesSearch = !searchQuery || 
@@ -89,11 +101,11 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, co
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <img 
-          src="/res/null.png" 
+          src={currentTheme === 'dark' ? '/res/null-dark.png' : '/res/null.png'} 
           alt="No results" 
           style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
-        <div style={{ color: '#c4c4c6', fontSize: '14px' }}>
+        <div className="text-[#c4c4c6] dark:text-[#9FA0A2] text-sm">
           No non-zero memory addresses found
         </div>
       </div>
@@ -105,14 +117,14 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, co
       <Table className="border-none">
         <TableBody>
           {filteredRows.map((row, index) => (
-            <TableRow key={row.address} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8]'}`}>
-              <TableCell className="h-12 w-1/3 text-left border-none font-mono text-xs pl-5" style={{ color: '#5a5a5a' }}>
+            <TableRow key={row.address} className={`h-12 border-none ${index % 2 === 0 ? 'bg-white hover:bg-white dark:bg-[#262626] dark:hover:bg-[#262626]' : 'bg-[#f7f7f8] hover:bg-[#f7f7f8] dark:bg-[#353535] dark:hover:bg-[#353535]'}`}>
+              <TableCell className="h-12 w-1/3 text-left border-none font-mono text-xs pl-5 text-[#5a5a5a] dark:text-[#BDBEC2]">
                 {row.address}
               </TableCell>
-              <TableCell className="font-mono h-12 w-1/3 text-center border-none text-xs" style={{ color: '#5a5a5a' }}>
+              <TableCell className="font-mono h-12 w-1/3 text-center border-none text-xs text-[#5a5a5a] dark:text-[#BDBEC2]">
                 {row.hex}
               </TableCell>
-              <TableCell className="font-mono h-12 w-1/3 text-right border-none text-xs pr-5" style={{ color: '#5a5a5a' }}>
+              <TableCell className="font-mono h-12 w-1/3 text-right border-none text-xs pr-5 text-[#5a5a5a] dark:text-[#BDBEC2]">
                 {row.ascii}
               </TableCell>
             </TableRow>

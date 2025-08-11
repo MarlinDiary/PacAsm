@@ -22,19 +22,16 @@ export default function ActuatorBar({ children }: ActuatorBarProps) {
   return (
     <SubBar>
       <div className="flex items-center justify-center gap-1 w-full">
-        <span style={{ color: '#737373', fontSize: '14px', fontFamily: 'monospace' }}>CMD_PORT: 0x00030000</span>
+        <span className="text-[#737373] dark:text-[#A8A8A8] text-sm font-mono">CMD_PORT: 0x00030000</span>
         {isCopied ? (
           <Check 
             size={14} 
-            style={{ color: '#737373' }}
+            className="text-[#737373] dark:text-[#A8A8A8]"
           />
         ) : (
           <Copy 
             size={14} 
-            className="cursor-pointer transition-colors"
-            style={{ color: '#a8a8a8' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#737373'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#a8a8a8'}
+            className="cursor-pointer transition-colors text-[#a8a8a8] dark:text-[#7D7D7D] hover:text-[#737373] dark:hover:text-[#A8A8A8]"
             onClick={handleCopy}
           />
         )}

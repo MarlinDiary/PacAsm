@@ -45,9 +45,8 @@ export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProp
 
   return (
     <div 
-      className="rounded-lg overflow-hidden"
+      className="rounded-lg overflow-hidden bg-[#fdf1f0] dark:bg-[#372B2B]"
       style={{ 
-        backgroundColor: '#fdf1f0',
         transition: enableTransition ? 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         height: height
       }}
@@ -55,8 +54,7 @@ export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProp
       <div ref={contentRef} className="p-4">
         <div className={isLoading ? '' : 'mb-2'}>
           <p 
-            className={`text-sm font-semibold ${isLoading && !diagnosis ? 'animate-pulse' : ''}`} 
-            style={{ color: '#dd544b' }}
+            className={`text-sm font-semibold text-[#dd544b] dark:text-[#F8615C] ${isLoading && !diagnosis ? 'animate-pulse' : ''}`} 
           >
             {error}
           </p>
@@ -64,7 +62,7 @@ export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProp
 
         {!isLoading && (
           <div>
-            <p className="text-sm" style={{ color: '#e34940' }}>
+            <p className="text-sm text-[#e34940] dark:text-[#F8615C]">
               {diagnosis}
             </p>
           </div>
