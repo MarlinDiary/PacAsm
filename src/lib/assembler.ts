@@ -144,9 +144,10 @@ export class ARMAssembler {
     const lines = assembly
       .split('\n')
       .map(line => {
-        // Remove comments (both @ and ; style)
-        let cleanLine = line.split('@')[0];
-        cleanLine = cleanLine.split(';')[0];
+        // Remove comments (@ and ; and // styles)
+        let cleanLine = line.split('//')[0]; // Remove // comments first
+        cleanLine = cleanLine.split('@')[0];  // Then @ comments
+        cleanLine = cleanLine.split(';')[0];  // Then ; comments
         return cleanLine.trim();
       })
       .filter(line => line.length > 0); // Remove empty lines
