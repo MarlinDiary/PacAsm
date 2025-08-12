@@ -3,6 +3,7 @@
 
 import { ARMAssembler } from './assembler';
 import { disassembleCode } from './disassembler';
+import { MacroPreprocessor, PreprocessResult } from './macro-preprocessor';
 
 interface SourceLine {
   lineNumber: number;
@@ -29,6 +30,8 @@ export class CodeHighlighter {
   private addressMap: Map<number, AddressMapping> = new Map();
   private sourceLines: SourceLine[] = [];
   private baseAddress: number;
+  private preprocessResult: PreprocessResult | null = null;
+  private preprocessor: MacroPreprocessor = new MacroPreprocessor();
 
   constructor(options: { baseAddress?: number } = {}) {
     this.baseAddress = options.baseAddress || 0x10000;
@@ -42,12 +45,16 @@ export class CodeHighlighter {
     // Parse source code into lines
     this.sourceLines = this.parseSourceCode(sourceCode);
     
-    // Assembly the source code to get machine code
+    // Preprocess the source code to expand macros
+    this.preprocessResult = this.preprocessor.preprocess(sourceCode);
+    
+    // Assembly the expanded code to get machine code
     const assembler = new ARMAssembler({ baseAddress: this.baseAddress });
     await assembler.initialize();
     
     try {
-      const assemblyResult = await assembler.assemble(sourceCode);
+      // Use the expanded code for assembly
+      const assemblyResult = await assembler.assemble(this.preprocessResult.expandedCode);
       
       // Use utility function that handles initialization and cleanup automatically
       const disassemblyResult = await disassembleCode(
@@ -56,8 +63,8 @@ export class CodeHighlighter {
         { detail: true }
       );
       
-      // Create address to source line mapping
-      this.createAddressMapping(disassemblyResult);
+      // Create address to source line mapping with macro expansion awareness
+      this.createAddressMappingWithMacros(disassemblyResult);
     } finally {
       assembler.destroy();
     }
@@ -71,6 +78,9 @@ export class CodeHighlighter {
     // Parse source code into lines
     this.sourceLines = this.parseSourceCode(sourceCode);
     
+    // Preprocess the source code to understand macro structure
+    this.preprocessResult = this.preprocessor.preprocess(sourceCode);
+    
     // Use utility function that handles initialization and cleanup automatically
     const disassemblyResult = await disassembleCode(
       machineCode,
@@ -78,8 +88,8 @@ export class CodeHighlighter {
       { detail: true }
     );
     
-    // Create address to source line mapping
-    this.createAddressMapping(disassemblyResult);
+    // Create address to source line mapping with macro expansion awareness
+    this.createAddressMappingWithMacros(disassemblyResult);
   }
 
   /**
@@ -154,6 +164,67 @@ export class CodeHighlighter {
         
         // Update source line with address info
         sourceLine.address = instruction.address;
+      }
+    });
+  }
+
+  /**
+   * Create mapping between addresses and source lines with macro expansion awareness
+   */
+  private createAddressMappingWithMacros(disassemblyResult: Array<{
+    address: number;
+    bytes: Uint8Array;
+    mnemonic: string;
+    op_str: string;
+  }>): void {
+    this.addressMap.clear();
+
+    if (!this.preprocessResult) {
+      // Fallback to simple mapping if no preprocessing was done
+      this.createAddressMapping(disassemblyResult);
+      return;
+    }
+
+    // Parse expanded code to identify executable lines
+    const expandedLines = this.preprocessResult.expandedCode.split('\n');
+    const executableExpandedIndices: number[] = [];
+    
+    expandedLines.forEach((line, index) => {
+      const cleanLine = line.split('@')[0].split('//')[0].trim();
+      const isExecutable = cleanLine.length > 0 && 
+                          !cleanLine.endsWith(':') && 
+                          !cleanLine.startsWith('.');
+      if (isExecutable) {
+        executableExpandedIndices.push(index);
+      }
+    });
+
+    // Map each disassembled instruction to original source lines through the expansion mapping
+    disassemblyResult.forEach((instruction, instrIndex) => {
+      if (instrIndex < executableExpandedIndices.length) {
+        const expandedLineIndex = executableExpandedIndices[instrIndex];
+        const lineMapping = this.preprocessResult!.lineMapping.find(
+          m => m.expandedLine === expandedLineIndex
+        );
+        
+        if (lineMapping) {
+          const originalLineNumber = lineMapping.originalLine + 1; // Convert to 1-based
+          const sourceLine = this.sourceLines[lineMapping.originalLine];
+          
+          const mapping: AddressMapping = {
+            address: instruction.address,
+            lineNumber: originalLineNumber,
+            instruction: `${instruction.mnemonic} ${instruction.op_str}`.trim(),
+            sourceContent: sourceLine ? sourceLine.content : expandedLines[expandedLineIndex]
+          };
+
+          this.addressMap.set(instruction.address, mapping);
+          
+          // Update source line with address info if it exists
+          if (sourceLine) {
+            sourceLine.address = instruction.address;
+          }
+        }
       }
     });
   }

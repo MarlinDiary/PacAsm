@@ -1,5 +1,7 @@
 // TypeScript wrapper for ARM assembly using Keystone.js
 
+import { MacroPreprocessor } from './macro-preprocessor';
+
 declare global {
   interface Window {
     ks: {
@@ -28,6 +30,7 @@ export interface AssemblyResult {
 export class ARMAssembler {
   private keystone: KeystoneInstance | null = null;
   private isInitialized = false;
+  private preprocessor: MacroPreprocessor = new MacroPreprocessor();
 
   constructor(private options: AssemblerOptions = {}) {
     this.options = {
@@ -79,23 +82,9 @@ export class ARMAssembler {
   }
 
   private validateInstructions(lines: string[]): void {
-    // First pass: collect macro names
-    const macroNames: Set<string> = new Set();
-    let inMacro = false;
+    // Since we now preprocess macros before validation,
+    // we only need to validate the expanded code
     
-    for (const line of lines) {
-      const parts = line.split(/\s+/);
-      if (parts.length === 0) continue;
-      
-      const directive = parts[0].toUpperCase();
-      if (directive === '.MACRO' && parts.length > 1) {
-        macroNames.add(parts[1].toUpperCase());
-        inMacro = true;
-      } else if (directive === '.ENDM') {
-        inMacro = false;
-      }
-    }
-
     // Define valid ARM instruction mnemonics (basic set)
     const validInstructions = [
       // Data processing
@@ -128,44 +117,22 @@ export class ARMAssembler {
       'NOP', 'SWI', 'SVC', 'MSR', 'MRS', 'CLZ', 'REV', 'RBIT'
     ];
 
-    // Second pass: validate instructions
-    inMacro = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
-      // Track if we're inside a macro definition
-      const parts = line.split(/\s+/);
-      if (parts.length > 0) {
-        const firstWord = parts[0].toUpperCase();
-        if (firstWord === '.MACRO') {
-          inMacro = true;
-        } else if (firstWord === '.ENDM') {
-          inMacro = false;
-        }
-      }
-      
-      // Skip validation inside macro definitions
-      if (inMacro) {
-        continue;
-      }
       
       if (line.includes(':')) {
         // Skip labels
         continue;
       }
       
+      // Extract the instruction mnemonic (first word)
+      const parts = line.split(/\s+/);
       if (parts.length === 0) continue;
       
       const instruction = parts[0].toUpperCase();
       
       // Skip directives (they start with .)
       if (instruction.startsWith('.')) {
-        // Allow all directives including .macro, .endm, .equ, .set, .word, .byte, etc.
-        continue;
-      }
-      
-      // Check if it's a macro call
-      if (macroNames.has(instruction)) {
         continue;
       }
       
@@ -185,8 +152,11 @@ export class ARMAssembler {
       throw new Error('INPUT_ERROR: Invalid Assembly Input');
     }
 
-    // Clean and normalize the assembly code
-    const lines = assembly
+    // Preprocess to expand macros
+    const preprocessResult = this.preprocessor.preprocess(assembly);
+    
+    // Clean and normalize the expanded assembly code
+    const lines = preprocessResult.expandedCode
       .split('\n')
       .map(line => {
         // Remove comments (@ and ; and // styles)
@@ -198,6 +168,7 @@ export class ARMAssembler {
       .filter(line => line.length > 0); // Remove empty lines
 
     // Validate each line before assembling to catch invalid instructions
+    // Note: We validate the expanded code, not the original
     this.validateInstructions(lines);
 
     const cleanedAssembly = lines.join('\n');
