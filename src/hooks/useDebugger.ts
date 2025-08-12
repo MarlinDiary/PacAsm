@@ -341,7 +341,9 @@ export const useDebugger = () => {
     
     try {
       await emulator.reset()
-    } catch (error) {}
+    } catch {
+      // Silently handle reset failure
+    }
   }, [emulator])
 
   const getCurrentState = () => {

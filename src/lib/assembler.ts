@@ -90,7 +90,7 @@ export interface GASAssemblerOptions {
 export interface GASAssemblyResult {
   objectFile: Uint8Array;
   machineCode?: Uint8Array;
-  debugInfo?: any;
+  debugInfo?: unknown;
   size: number;
 }
 
@@ -106,7 +106,7 @@ export class GASAssembler {
   private target: GASTarget;
   private baseAddress: number;
   private isInitialized = false;
-  private gasInstance: any = null;
+  private gasInstance: unknown = null;
   private lastObjectFile: Uint8Array | null = null;
 
   constructor(options: GASAssemblerOptions = {}) {
@@ -133,7 +133,6 @@ export class GASAssembler {
 
     try {
       let objectFile: Uint8Array | null = null;
-      let output = '';
       let errorOutput = '';
 
       // Assemble with debug info (-g) 
@@ -142,20 +141,20 @@ export class GASAssembler {
         args.push('--defsym', `BASE_ADDR=0x${this.baseAddress.toString(16)}`);
       }
 
-      await this.gasInstance({
+      await (this.gasInstance as CallableFunction)({
         arguments: args,
-        preRun: [(module: any) => {
-          module.FS.writeFile('in.s', assembly);
+        preRun: [(module: unknown) => {
+          (module as { FS: { writeFile: (name: string, content: string) => void } }).FS.writeFile('in.s', assembly);
         }],
-        postRun: [(module: any) => {
+        postRun: [(module: unknown) => {
           try {
-            const fileData = module.FS.readFile('out.o');
+            const fileData = (module as { FS: { readFile: (name: string) => ArrayBuffer } }).FS.readFile('out.o');
             objectFile = new Uint8Array(fileData);
           } catch (e) {
             console.error('Failed to read object file:', e);
           }
         }],
-        print: (text: string) => { output += text + '\n'; },
+        print: () => {},
         printErr: (text: string) => { errorOutput += text + '\n'; }
       });
 
@@ -206,10 +205,10 @@ export class GASAssembler {
       const objdump = await binutilsLoader.default("objdump");
       
       let decoded = '';
-      await objdump({
+      await (objdump as CallableFunction)({
         arguments: ['--dwarf=decodedline', 'output.o'],
-        preRun: [(module: any) => {
-          module.FS.writeFile('output.o', this.lastObjectFile!);
+        preRun: [(module: unknown) => {
+          (module as { FS: { writeFile: (name: string, data: Uint8Array) => void } }).FS.writeFile('output.o', this.lastObjectFile!);
         }],
         print: (s: string) => { decoded += s + '\n'; },
         printErr: (s: string) => { console.log('[OBJDUMP]', s); }
@@ -230,7 +229,7 @@ export class GASAssembler {
         const m = line.match(/^([^\s]+)\s+(\d+)\s+(\d+|0x[0-9a-f]+)\s+(.*)$/i);
         
         if (m) {
-          const [_, file, ln, hex, tail] = m;
+          const [, file, ln, hex, tail] = m;
           rows.push({
             off: hex.startsWith('0x') ? parseInt(hex, 16) : parseInt(hex, 10),
             file: file.trim(),
@@ -281,7 +280,7 @@ export interface AssemblyResult {
   mc: Uint8Array;
   count: number;
   size: number;
-  debugInfo?: any;
+  debugInfo?: unknown;
 }
 
 export class ARMAssembler {
@@ -343,7 +342,7 @@ export class ARMAssembler {
   /**
    * Get line mapping information for debugging
    */
-  async getLineMappingInfo(assembly: string): Promise<any[]> {
+  async getLineMappingInfo(assembly: string): Promise<DebugLineInfo[]> {
     if (!this.isInitialized) {
       throw new Error('Assembler not initialized');
     }

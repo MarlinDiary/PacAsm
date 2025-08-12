@@ -50,7 +50,7 @@ export class CodeHighlighter {
   /**
    * Create address mapping from DWARF line mapping information
    */
-  private createAddressMappingFromDWARF(sourceCode: string, lineMappingInfo: any[]): void {
+  private createAddressMappingFromDWARF(sourceCode: string, lineMappingInfo: Array<{ address: number; lineNumber: number }>): void {
     const sourceLines = sourceCode.split('\n');
 
     lineMappingInfo.forEach((debugLine) => {

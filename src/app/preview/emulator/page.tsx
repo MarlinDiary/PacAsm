@@ -51,14 +51,14 @@ mov r2, r1        @ Store final sum in r2`)
        await assembler.initialize()
 
              const result = await assembler.assemble(assemblyCode)
-      const stats = assembler.getStats(result)
-      const hexBytes = assembler.bytesToHex(result.mc)
+      const hexBytes = Array.from(result.mc).map(b => b.toString(16).padStart(2, '0')).join(' ')
 
      const output = [
        'Assembly successful!',
        '',
        `Statistics:`,
-       `  ${stats}`,
+       `  Instructions: ${result.count}`,
+       `  Size: ${result.size} bytes`,
        `  Base Address: 0x${assemblerOptions.baseAddress?.toString(16).padStart(8, '0')}`,
         '',
         `Machine Code (hex):`,
@@ -164,7 +164,8 @@ mov r2, r1        @ Store final sum in r2`)
 
       // Initialize code highlighter
       setStepOutput('Initializing code highlighter...')
-      const newHighlighter = await createHighlighter(assemblyCode, assemblerOptions)
+      const newHighlighter = createHighlighter()
+      await newHighlighter.initialize(assemblyCode)
       
       setEmulator(newEmulator)
       setHighlighter(newHighlighter)
@@ -250,7 +251,7 @@ mov r2, r1        @ Store final sum in r2`)
     }
     
     if (highlighter) {
-      highlighter.reset()
+      highlighter.clear()
       setHighlighter(null)
     }
     

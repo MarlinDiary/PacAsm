@@ -88,10 +88,10 @@ export const usePlayRunner = () => {
       await executeWithDelays(initialMap, codeHighlighter, abortController)
       
       return { success: true }
-    } catch (error) {
+    } catch {
       addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
       setIsPlaying(false)
-      return { success: false, error }
+      return { success: false, error: 'Failed to initialize' }
     }
   }
 
@@ -213,7 +213,7 @@ export const usePlayRunner = () => {
     return { newRow, newCol, newDirection }
   }
 
-  const updateDotsAfterMovement = (dots: any[] | undefined, newRow: number, newCol: number) => {
+  const updateDotsAfterMovement = (dots: Array<{ row: number; col: number }> | undefined, newRow: number, newCol: number) => {
     if (!dots) return []
     
     const updatedDots = [...dots]
