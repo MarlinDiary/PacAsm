@@ -324,7 +324,7 @@ export default function CodeEditor({
   return (
     <div 
       className={`h-full w-full ${className} ${disabled ? 'disabled-editor' : ''}`}
-      style={{ opacity: editorReady ? (disabled ? 0.8 : 1) : 0 }}
+      style={{ opacity: editorReady ? 1 : 0 }}
     >
       <style dangerouslySetInnerHTML={{
         __html: `
