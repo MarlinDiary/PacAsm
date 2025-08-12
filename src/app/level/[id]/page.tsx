@@ -303,10 +303,10 @@ export default function LevelPage() {
         setIsCodeDisabled(false)
         setHighlightedLine(undefined)
         setPlayStatus(undefined) // Always reset play status
-        // Reset map if this play didn't win, keep victory state if this play won
-        if (!currentPlayWon) {
-          teleportPlayer(levelMap, currentMap.playerPosition)
-        }
+        // Keep Pacman at final position regardless of win/loss
+        // Don't reset the map - keep the current state
+        // Don't reset currentPlayWon here - let confetti play naturally
+        // It will be reset when starting a new game
       }, 300) // Small delay to show final state briefly
     }
   }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap, currentMap.playerPosition])

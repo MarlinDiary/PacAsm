@@ -41,7 +41,7 @@ export const usePlayRunner = () => {
     abortControllerRef.current = abortController
     
     setMovementActions([])
-    // Don't set the map immediately - let the teleport animation complete first
+    setCurrentMap(null) // Clear old map state immediately to prevent false victory detection
     setHighlightedLine(undefined)
     setIsPlaying(true)
     
@@ -239,7 +239,8 @@ export const usePlayRunner = () => {
     setCurrentRegisters([])
     currentRegistersRef.current = []
     setCurrentMemory({ codeMemory: [], stackMemory: [], dataMemory: [] })
-    setCurrentMap(null)
+    // Don't clear the map - keep final state with Pacman's position
+    // setCurrentMap(null) - removed to keep Pacman in place
     
     setMovementActions(actions)
     setHighlightedLine(undefined)
