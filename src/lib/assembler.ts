@@ -79,6 +79,23 @@ export class ARMAssembler {
   }
 
   private validateInstructions(lines: string[]): void {
+    // First pass: collect macro names
+    const macroNames: Set<string> = new Set();
+    let inMacro = false;
+    
+    for (const line of lines) {
+      const parts = line.split(/\s+/);
+      if (parts.length === 0) continue;
+      
+      const directive = parts[0].toUpperCase();
+      if (directive === '.MACRO' && parts.length > 1) {
+        macroNames.add(parts[1].toUpperCase());
+        inMacro = true;
+      } else if (directive === '.ENDM') {
+        inMacro = false;
+      }
+    }
+
     // Define valid ARM instruction mnemonics (basic set)
     const validInstructions = [
       // Data processing
@@ -111,18 +128,46 @@ export class ARMAssembler {
       'NOP', 'SWI', 'SVC', 'MSR', 'MRS', 'CLZ', 'REV', 'RBIT'
     ];
 
+    // Second pass: validate instructions
+    inMacro = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      
+      // Track if we're inside a macro definition
+      const parts = line.split(/\s+/);
+      if (parts.length > 0) {
+        const firstWord = parts[0].toUpperCase();
+        if (firstWord === '.MACRO') {
+          inMacro = true;
+        } else if (firstWord === '.ENDM') {
+          inMacro = false;
+        }
+      }
+      
+      // Skip validation inside macro definitions
+      if (inMacro) {
+        continue;
+      }
+      
       if (line.includes(':')) {
         // Skip labels
         continue;
       }
       
-      // Extract the instruction mnemonic (first word)
-      const parts = line.split(/\s+/);
       if (parts.length === 0) continue;
       
       const instruction = parts[0].toUpperCase();
+      
+      // Skip directives (they start with .)
+      if (instruction.startsWith('.')) {
+        // Allow all directives including .macro, .endm, .equ, .set, .word, .byte, etc.
+        continue;
+      }
+      
+      // Check if it's a macro call
+      if (macroNames.has(instruction)) {
+        continue;
+      }
       
       // Check if it's a valid instruction
       if (!validInstructions.includes(instruction)) {
