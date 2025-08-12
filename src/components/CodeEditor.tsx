@@ -323,7 +323,7 @@ export default function CodeEditor({
 
   return (
     <div 
-      className={`h-full w-full ${className} ${disabled ? 'pointer-events-none' : ''}`}
+      className={`h-full w-full ${className} ${disabled ? 'disabled-editor' : ''}`}
       style={{ opacity: editorReady ? (disabled ? 0.8 : 1) : 0 }}
     >
       <style dangerouslySetInnerHTML={{
@@ -421,6 +421,15 @@ export default function CodeEditor({
           }
           .dark .monaco-editor .highlighted-line-glyph {
             background-color: #4a4a3a !important;
+          }
+          .disabled-editor .monaco-editor * {
+            pointer-events: none !important;
+          }
+          .disabled-editor .monaco-scrollable-element {
+            pointer-events: auto !important;
+          }
+          .disabled-editor .scrollbar {
+            pointer-events: auto !important;
           }
         `
       }} />
