@@ -32,7 +32,7 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
       >
         <Search 
           size={16} 
-          className="text-[#a8a8a8] dark:text-[#8A8A8A]"
+          className="text-[#8A8A8E] dark:text-[#9FA0A2]"
           onClick={() => inputRef.current?.focus()}
         />
         <input
@@ -49,7 +49,7 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
         />
         <ListFilter
           size={16}
-          className={`cursor-pointer ml-1 ${isFilterActive ? 'text-[#737373] dark:text-[#A8A8A8]' : 'text-[#a8a8a8] dark:text-[#7D7D7D]'}`}
+          className={`cursor-pointer ml-1 ${isFilterActive ? 'text-[#262626] dark:text-[#FFFFFF]' : 'text-[#8A8A8E] dark:text-[#9FA0A2]'}`}
           onClick={handleFilterToggle}
         />
       </div>

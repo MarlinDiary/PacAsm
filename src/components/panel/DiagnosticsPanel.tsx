@@ -28,7 +28,7 @@ export default function DiagnosticsPanel({}: DiagnosticsPanelProps) {
           alt="No diagnostics" 
           style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
-        <div className="text-[#c4c4c6] dark:text-[#9FA0A2] text-sm">
+        <div className="text-[#c4c4c6] dark:text-[#626265] text-sm">
           No diagnostics data available
         </div>
       </div>

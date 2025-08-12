@@ -105,7 +105,7 @@ export default function MemoryPanel({ searchQuery = '', hideZeroRows = false, co
           alt="No results" 
           style={{ width: '200px', flexShrink: 0, pointerEvents: 'none', userSelect: 'none' }}
         />
-        <div className="text-[#c4c4c6] dark:text-[#9FA0A2] text-sm">
+        <div className="text-[#c4c4c6] dark:text-[#626265] text-sm">
           No non-zero memory addresses found
         </div>
       </div>

@@ -22,16 +22,16 @@ export default function ActuatorBar({ children }: ActuatorBarProps) {
   return (
     <SubBar>
       <div className="flex items-center justify-center gap-1 w-full">
-        <span className="text-[#737373] dark:text-[#A8A8A8] text-sm font-mono">CMD_PORT: 0x00030000</span>
+        <span className="text-[#8A8A8E] dark:text-[#9FA0A2] text-sm font-mono">CMD_PORT: 0x00030000</span>
         {isCopied ? (
           <Check 
             size={14} 
-            className="text-[#737373] dark:text-[#A8A8A8]"
+            className="text-[#8A8A8E] dark:text-[#9FA0A2]"
           />
         ) : (
           <Copy 
             size={14} 
-            className="cursor-pointer transition-colors text-[#a8a8a8] dark:text-[#7D7D7D] hover:text-[#737373] dark:hover:text-[#A8A8A8]"
+            className="cursor-pointer transition-colors text-[#8A8A8E] dark:text-[#9FA0A2] hover:text-[#262626] dark:hover:text-[#FFFFFF]"
             onClick={handleCopy}
           />
         )}
