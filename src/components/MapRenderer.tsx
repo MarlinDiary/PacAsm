@@ -30,11 +30,26 @@ const getPlayerRotation = (direction: PlayerDirection): number => {
     case 'up':
       return -90; // Left turn 90 degrees
     case 'left':
-      return 180; // Left turn 180 degrees  
+      return 0; // No rotation for left, we'll use scaleX instead
     case 'down':
       return 90; // Right turn 90 degrees
     default:
       return 0;
+  }
+};
+
+const getPlayerTransform = (direction: PlayerDirection): string => {
+  switch (direction) {
+    case 'right':
+      return 'rotate(0deg)'; // Default direction, no rotation
+    case 'up':
+      return 'rotate(-90deg)'; // Left turn 90 degrees
+    case 'left':
+      return 'rotate(0deg) scaleX(-1)'; // Horizontal flip instead of 180° rotation
+    case 'down':
+      return 'rotate(90deg)'; // Right turn 90 degrees
+    default:
+      return 'rotate(0deg)';
   }
 };
 
@@ -128,9 +143,10 @@ export default function MapRenderer({ map }: MapRendererProps) {
             }
             style={{
               transform: !map.playerPosition.teleportAnimation 
-                ? `rotate(${getPlayerRotation(map.playerPosition.direction)}deg)`
+                ? getPlayerTransform(map.playerPosition.direction)
                 : undefined,
               '--rotation': `${getPlayerRotation(map.playerPosition.direction)}deg`,
+              '--scale-x': map.playerPosition.direction === 'left' ? '-1' : '1',
               width: tileSize,
               height: tileSize,
               transformOrigin: 'center'
