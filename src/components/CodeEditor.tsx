@@ -158,7 +158,7 @@ export default function CodeEditor({
         'editor.lineHighlightBorder': '#f6f8fa',
         'editorLineNumber.foreground': '#bdbebf',
         'editorLineNumber.activeForeground': '#000000',
-        'editorCursor.foreground': '#1b4184'
+        'editorCursor.foreground': '#000000'
       }
     })
 
@@ -200,7 +200,7 @@ export default function CodeEditor({
         'editor.lineHighlightBorder': '#2f2f2f',
         'editorLineNumber.foreground': '#6e7681',
         'editorLineNumber.activeForeground': '#ffffff',
-        'editorCursor.foreground': '#6bb6ff'
+        'editorCursor.foreground': '#FFFFFF'
       }
     })
 
@@ -245,7 +245,7 @@ export default function CodeEditor({
         'editor.lineHighlightBorder': '#2f2f2f',
         'editorLineNumber.foreground': '#6e7681',
         'editorLineNumber.activeForeground': '#ffffff',
-        'editorCursor.foreground': '#6bb6ff'
+        'editorCursor.foreground': '#FFFFFF'
       }
     })
 
@@ -273,7 +273,7 @@ export default function CodeEditor({
         'editor.lineHighlightBorder': '#f6f8fa',
         'editorLineNumber.foreground': '#bdbebf',
         'editorLineNumber.activeForeground': '#000000',
-        'editorCursor.foreground': '#1b4184'
+        'editorCursor.foreground': '#000000'
       }
     })
 
@@ -374,24 +374,26 @@ export default function CodeEditor({
             color: #ffffff !important;
           }
           .monaco-editor .cursors-layer .cursor {
-            background-color: #1b4184 !important;
-            border-left: 1px solid #1b4184 !important;
-            color: #1b4184 !important;
+            background-color: #000000 !important;
+            border-left: 1px solid #000000 !important;
+            color: #000000 !important;
             transition: all 0.1s ease-out !important;
           }
           .dark .monaco-editor .cursors-layer .cursor {
-            background-color: #6bb6ff !important;
-            border-left: 1px solid #6bb6ff !important;
-            color: #6bb6ff !important;
+            background-color: #FFFFFF !important;
+            border-left: 1px solid #FFFFFF !important;
+            color: #FFFFFF !important;
+            transition: all 0.1s ease-out !important;
           }
           .monaco-editor .cursors-layer > .cursor {
-            background-color: #1b4184 !important;
-            border-color: #1b4184 !important;
+            background-color: #000000 !important;
+            border-color: #000000 !important;
             transition: all 0.1s ease-out !important;
           }
           .dark .monaco-editor .cursors-layer > .cursor {
-            background-color: #6bb6ff !important;
-            border-color: #6bb6ff !important;
+            background-color: #FFFFFF !important;
+            border-color: #FFFFFF !important;
+            transition: all 0.1s ease-out !important;
           }
           .monaco-editor .highlighted-line-full {
             background-color: #f7f1da !important;
