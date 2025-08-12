@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useEmulator } from './useEmulator'
 import { GameMap } from '@/data/maps'
-import { CodeHighlighter, createHighlighterWithCompiledCode, getHighlightFromStepResult } from '@/lib/highlighter'
+import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
@@ -45,7 +45,7 @@ export const usePlayRunner = () => {
     setHighlightedLine(undefined)
     setIsPlaying(true)
     
-    // Wait for teleport animation to complete (300ms total)
+    // Wait for teleport animation to complete
     await new Promise(resolve => setTimeout(resolve, 300))
     
     setCurrentMap(initialMap)
@@ -65,15 +65,17 @@ export const usePlayRunner = () => {
       await assembler.initialize()
       const result = await assembler.assemble(sourceCode)
       
+      // Initialize memory regions
       const memorySize = 1024
       const zeroData = new Array(memorySize).fill(0)
-      await emulator.writeMemory(0x10000, zeroData)
-      await emulator.writeMemory(0x20000, zeroData)
-      await emulator.writeMemory(0x30000, zeroData)
+      await emulator.writeMemory(0x10000, zeroData) // Code memory
+      await emulator.writeMemory(0x20000, zeroData) // Stack memory
+      await emulator.writeMemory(0x30000, zeroData) // Data memory
       
       await emulator.loadCode(Array.from(result.mc))
       
-      const codeHighlighter = await createHighlighterWithCompiledCode(sourceCode, result.mc)
+      const codeHighlighter = createHighlighter()
+      await codeHighlighter.initialize(sourceCode)
       
       assembler.destroy()
       
@@ -82,24 +84,7 @@ export const usePlayRunner = () => {
         return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
-      const initialRegisters = await emulator.getAllRegisters()
-      const initialCodeMemory = await emulator.getMemory(0x10000, 1024)
-      const initialStackMemory = await emulator.getMemory(0x20000, 1024)
-      const initialDataMemory = await emulator.getMemory(0x30000, 1024)
-      
-      if (initialRegisters) {
-        setPreviousRegisters(initialRegisters)
-        setCurrentRegisters(initialRegisters)
-        currentRegistersRef.current = initialRegisters
-      }
-      if (initialCodeMemory && initialStackMemory && initialDataMemory) {
-        setCurrentMemory({
-          codeMemory: initialCodeMemory.data,
-          stackMemory: initialStackMemory.data,
-          dataMemory: initialDataMemory.data
-        })
-      }
-      
+      await updateSystemState()
       await executeWithDelays(initialMap, codeHighlighter, abortController)
       
       return { success: true }
@@ -107,6 +92,26 @@ export const usePlayRunner = () => {
       addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
       setIsPlaying(false)
       return { success: false, error }
+    }
+  }
+
+  const updateSystemState = async () => {
+    const registers = await emulator.getAllRegisters()
+    const codeMemory = await emulator.getMemory(0x10000, 1024)
+    const stackMemory = await emulator.getMemory(0x20000, 1024)
+    const dataMemory = await emulator.getMemory(0x30000, 1024)
+    
+    if (registers) {
+      setPreviousRegisters(currentRegistersRef.current)
+      setCurrentRegisters(registers)
+      currentRegistersRef.current = registers
+    }
+    if (codeMemory && stackMemory && dataMemory) {
+      setCurrentMemory({
+        codeMemory: codeMemory.data,
+        stackMemory: stackMemory.data,
+        dataMemory: dataMemory.data
+      })
     }
   }
 
@@ -123,9 +128,7 @@ export const usePlayRunner = () => {
       }
       
       const stepResult = await emulator.step()
-      if (!stepResult) {
-        break
-      }
+      if (!stepResult) break
       
       if (!stepResult.success) {
         addError('RUNTIME_ERROR: Execution Failed', currentCodeRef.current)
@@ -147,25 +150,12 @@ export const usePlayRunner = () => {
       const dataMemory = await emulator.getMemory(0x30000, 1)
       
       if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4 && currentMapState.playerPosition) {
+        // Handle movement
         movementCount++
         instructionCount = 0
         
-        let newRow = currentMapState.playerPosition.row
-        let newCol = currentMapState.playerPosition.col
-        let newDirection = currentMapState.playerPosition.direction
-        
-        switch (dataMemory.data[0]) {
-          case 1: newRow = Math.max(0, newRow - 1); newDirection = 'up'; break
-          case 2: newRow = Math.min(currentMapState.height - 1, newRow + 1); newDirection = 'down'; break
-          case 3: newCol = Math.max(0, newCol - 1); newDirection = 'left'; break
-          case 4: newCol = Math.min(currentMapState.width - 1, newCol + 1); newDirection = 'right'; break
-        }
-        
-        const updatedDots = currentMapState.dots ? [...currentMapState.dots] : []
-        const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
-        if (dotIndex !== -1) {
-          updatedDots.splice(dotIndex, 1)
-        }
+        const { newRow, newCol, newDirection } = calculateNewPosition(currentMapState, dataMemory.data[0])
+        const updatedDots = updateDotsAfterMovement(currentMapState.dots, newRow, newCol)
         
         currentMapState = {
           ...currentMapState,
@@ -180,47 +170,12 @@ export const usePlayRunner = () => {
         })
         
         setCurrentMap({ ...currentMapState })
-        
-        const registers = await emulator.getAllRegisters()
-        const codeMemory = await emulator.getMemory(0x10000, 1024)
-        const stackMemory = await emulator.getMemory(0x20000, 1024)
-        const updatedDataMemory = await emulator.getMemory(0x30000, 1024)
-        
-        if (registers) {
-          setPreviousRegisters(currentRegistersRef.current)
-          setCurrentRegisters(registers)
-          currentRegistersRef.current = registers
-        }
-        if (codeMemory && stackMemory && updatedDataMemory) {
-          setCurrentMemory({
-            codeMemory: codeMemory.data,
-            stackMemory: stackMemory.data,
-            dataMemory: updatedDataMemory.data
-          })
-        }
-        
+        await updateSystemState()
         await emulator.writeMemory(0x30000, [0])
-        
         await new Promise(resolve => setTimeout(resolve, 300))
       } else {
-        const registers = await emulator.getAllRegisters()
-        const codeMemory = await emulator.getMemory(0x10000, 1024)
-        const stackMemory = await emulator.getMemory(0x20000, 1024)
-        const currentDataMemory = await emulator.getMemory(0x30000, 1024)
-        
-        if (registers) {
-          setPreviousRegisters(currentRegistersRef.current)
-          setCurrentRegisters(registers)
-          currentRegistersRef.current = registers
-        }
-        if (codeMemory && stackMemory && currentDataMemory) {
-          setCurrentMemory({
-            codeMemory: codeMemory.data,
-            stackMemory: stackMemory.data,
-            dataMemory: currentDataMemory.data
-          })
-        }
-        
+        // Handle non-movement instruction
+        await updateSystemState()
         await new Promise(resolve => setTimeout(resolve, 100))
       }
       
@@ -231,20 +186,43 @@ export const usePlayRunner = () => {
       }
     }
     
-    if (movementCount >= 300) {
-      console.warn('WARNING: Maximum Movement Instructions Reached (300)')
-    }
-    
+    // Clean up after execution
     setPreviousRegisters([])
     setCurrentRegisters([])
     currentRegistersRef.current = []
     setCurrentMemory({ codeMemory: [], stackMemory: [], dataMemory: [] })
-    // Don't clear the map - keep final state with Pacman's position
-    // setCurrentMap(null) - removed to keep Pacman in place
     
     setMovementActions(actions)
     setHighlightedLine(undefined)
     setIsPlaying(false)
+  }
+
+  const calculateNewPosition = (mapState: GameMap, direction: number) => {
+    const { row, col } = mapState.playerPosition!
+    let newRow = row
+    let newCol = col
+    let newDirection = mapState.playerPosition!.direction
+    
+    switch (direction) {
+      case 1: newRow = Math.max(0, row - 1); newDirection = 'up'; break
+      case 2: newRow = Math.min(mapState.height - 1, row + 1); newDirection = 'down'; break
+      case 3: newCol = Math.max(0, col - 1); newDirection = 'left'; break
+      case 4: newCol = Math.min(mapState.width - 1, col + 1); newDirection = 'right'; break
+    }
+    
+    return { newRow, newCol, newDirection }
+  }
+
+  const updateDotsAfterMovement = (dots: any[] | undefined, newRow: number, newCol: number) => {
+    if (!dots) return []
+    
+    const updatedDots = [...dots]
+    const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
+    if (dotIndex !== -1) {
+      updatedDots.splice(dotIndex, 1)
+    }
+    
+    return updatedDots
   }
 
   const stopPlay = useCallback(() => {
@@ -303,8 +281,6 @@ export const usePlayRunner = () => {
     currentMap,
     highlightedLine,
     movementActions,
-    executionHistory: [],
-    currentPlaybackIndex: -1,
     startPlay,
     stopPlay,
     reset,

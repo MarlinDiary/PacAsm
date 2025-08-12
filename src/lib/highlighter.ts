@@ -1,16 +1,7 @@
-// Code highlighter for single-step debugging
-// Maps memory addresses to source code lines for highlighting during debug execution
+// Code highlighter for single-step debugging using DWARF debug information
+// Uses GNU Assembler DWARF line mappings for accurate highlighting
 
 import { ARMAssembler } from './assembler';
-import { disassembleCode } from './disassembler';
-import { MacroPreprocessor, PreprocessResult } from './macro-preprocessor';
-
-interface SourceLine {
-  lineNumber: number;
-  content: string;
-  address?: number;
-  isExecutable: boolean;
-}
 
 interface AddressMapping {
   address: number;
@@ -28,68 +19,65 @@ export interface HighlightInfo {
 
 export class CodeHighlighter {
   private addressMap: Map<number, AddressMapping> = new Map();
-  private sourceLines: SourceLine[] = [];
   private baseAddress: number;
-  private preprocessResult: PreprocessResult | null = null;
-  private preprocessor: MacroPreprocessor = new MacroPreprocessor();
 
   constructor(options: { baseAddress?: number } = {}) {
     this.baseAddress = options.baseAddress || 0x10000;
   }
 
   /**
-   * Initialize the highlighter by processing source code
-   * Creates mapping between addresses and source lines
+   * Initialize the highlighter by processing source code with GAS and DWARF
    */
   async initialize(sourceCode: string): Promise<void> {
-    // Parse source code into lines
-    this.sourceLines = this.parseSourceCode(sourceCode);
-    
-    // Preprocess the source code to expand macros
-    this.preprocessResult = this.preprocessor.preprocess(sourceCode);
-    
-    // Assembly the expanded code to get machine code
     const assembler = new ARMAssembler({ baseAddress: this.baseAddress });
-    await assembler.initialize();
     
     try {
-      // Use the expanded code for assembly
-      const assemblyResult = await assembler.assemble(this.preprocessResult.expandedCode);
-      
-      // Use utility function that handles initialization and cleanup automatically
-      const disassemblyResult = await disassembleCode(
-        assemblyResult.mc,
-        this.baseAddress,
-        { detail: true }
-      );
-      
-      // Create address to source line mapping with macro expansion awareness
-      this.createAddressMappingWithMacros(disassemblyResult);
+      await assembler.initialize();
+      await assembler.assemble(sourceCode);
+      const lineMappingInfo = await assembler.getLineMappingInfo(sourceCode);
+
+      // Create address mapping from DWARF line mapping info
+      this.createAddressMappingFromDWARF(sourceCode, lineMappingInfo);
+
+    } catch (error) {
+      console.error('[CodeHighlighter] Failed to initialize:', error);
+      throw error;
     } finally {
       assembler.destroy();
     }
   }
 
   /**
-   * Initialize the highlighter using pre-compiled machine code
-   * Creates mapping between addresses and source lines without recompiling
+   * Create address mapping from DWARF line mapping information
    */
-  async initializeWithCompiledCode(sourceCode: string, machineCode: Uint8Array): Promise<void> {
-    // Parse source code into lines
-    this.sourceLines = this.parseSourceCode(sourceCode);
+  private createAddressMappingFromDWARF(sourceCode: string, lineMappingInfo: any[]): void {
+    const sourceLines = sourceCode.split('\n');
+
+    lineMappingInfo.forEach((debugLine) => {
+      const sourceContent = sourceLines[debugLine.lineNumber - 1] || '';
+      const instruction = this.extractInstructionFromSource(sourceContent);
+      
+      const mapping: AddressMapping = {
+        address: debugLine.address,
+        lineNumber: debugLine.lineNumber,
+        instruction,
+        sourceContent: sourceContent.trim()
+      };
+      
+      this.addressMap.set(debugLine.address, mapping);
+    });
+  }
+
+  /**
+   * Extract instruction name from source code line
+   */
+  private extractInstructionFromSource(sourceLine: string): string {
+    const trimmed = sourceLine.trim();
+    if (!trimmed) return 'nop';
     
-    // Preprocess the source code to understand macro structure
-    this.preprocessResult = this.preprocessor.preprocess(sourceCode);
-    
-    // Use utility function that handles initialization and cleanup automatically
-    const disassemblyResult = await disassembleCode(
-      machineCode,
-      this.baseAddress,
-      { detail: true }
-    );
-    
-    // Create address to source line mapping with macro expansion awareness
-    this.createAddressMappingWithMacros(disassemblyResult);
+    // Extract first word (instruction mnemonic)
+    const match = trimmed.match(/^\s*([a-zA-Z][a-zA-Z0-9]*)/);
+    return match ? match[1] : 'unknown';
   }
 
   /**
@@ -100,7 +88,7 @@ export class CodeHighlighter {
     if (!mapping) {
       return null;
     }
-
+    
     return {
       lineNumber: mapping.lineNumber,
       address: mapping.address,
@@ -109,159 +97,27 @@ export class CodeHighlighter {
     };
   }
 
-
   /**
-   * Parse source code into structured lines
+   * Get all address mappings
    */
-  private parseSourceCode(sourceCode: string): SourceLine[] {
-    const lines = sourceCode.split('\n');
-    const sourceLines: SourceLine[] = [];
-
-    lines.forEach((line, index) => {
-      const lineNumber = index + 1;
-      const content = line;
-      
-      // Check if line contains executable instruction (not comment or empty)
-      const cleanLine = line.split('@')[0].trim(); // Remove comments
-      const isExecutable = cleanLine.length > 0 && !cleanLine.endsWith(':');
-
-      sourceLines.push({
-        lineNumber,
-        content,
-        isExecutable
-      });
-    });
-
-    return sourceLines;
+  getAllMappings(): AddressMapping[] {
+    return Array.from(this.addressMap.values()).sort((a, b) => a.address - b.address);
   }
 
   /**
-   * Create mapping between addresses and source lines
+   * Clear all data
    */
-  private createAddressMapping(disassemblyResult: Array<{
-    address: number;
-    bytes: Uint8Array;
-    mnemonic: string;
-    op_str: string;
-  }>): void {
+  clear(): void {
     this.addressMap.clear();
-
-    // Get executable source lines (excluding comments and labels)
-    const executableLines = this.sourceLines.filter(line => line.isExecutable);
-    
-    // Map each disassembled instruction to source lines
-    disassemblyResult.forEach((instruction, index) => {
-      if (index < executableLines.length) {
-        const sourceLine = executableLines[index];
-        const mapping: AddressMapping = {
-          address: instruction.address,
-          lineNumber: sourceLine.lineNumber,
-          instruction: `${instruction.mnemonic} ${instruction.op_str}`.trim(),
-          sourceContent: sourceLine.content
-        };
-
-        this.addressMap.set(instruction.address, mapping);
-        
-        // Update source line with address info
-        sourceLine.address = instruction.address;
-      }
-    });
   }
-
-  /**
-   * Create mapping between addresses and source lines with macro expansion awareness
-   */
-  private createAddressMappingWithMacros(disassemblyResult: Array<{
-    address: number;
-    bytes: Uint8Array;
-    mnemonic: string;
-    op_str: string;
-  }>): void {
-    this.addressMap.clear();
-
-    if (!this.preprocessResult) {
-      // Fallback to simple mapping if no preprocessing was done
-      this.createAddressMapping(disassemblyResult);
-      return;
-    }
-
-    // Parse expanded code to identify executable lines
-    const expandedLines = this.preprocessResult.expandedCode.split('\n');
-    const executableExpandedIndices: number[] = [];
-    
-    expandedLines.forEach((line, index) => {
-      const cleanLine = line.split('@')[0].split('//')[0].trim();
-      const isExecutable = cleanLine.length > 0 && 
-                          !cleanLine.endsWith(':') && 
-                          !cleanLine.startsWith('.');
-      if (isExecutable) {
-        executableExpandedIndices.push(index);
-      }
-    });
-
-    // Map each disassembled instruction to original source lines through the expansion mapping
-    disassemblyResult.forEach((instruction, instrIndex) => {
-      if (instrIndex < executableExpandedIndices.length) {
-        const expandedLineIndex = executableExpandedIndices[instrIndex];
-        const lineMapping = this.preprocessResult!.lineMapping.find(
-          m => m.expandedLine === expandedLineIndex
-        );
-        
-        if (lineMapping) {
-          const originalLineNumber = lineMapping.originalLine + 1; // Convert to 1-based
-          const sourceLine = this.sourceLines[lineMapping.originalLine];
-          
-          const mapping: AddressMapping = {
-            address: instruction.address,
-            lineNumber: originalLineNumber,
-            instruction: `${instruction.mnemonic} ${instruction.op_str}`.trim(),
-            sourceContent: sourceLine ? sourceLine.content : expandedLines[expandedLineIndex]
-          };
-
-          this.addressMap.set(instruction.address, mapping);
-          
-          // Update source line with address info if it exists
-          if (sourceLine) {
-            sourceLine.address = instruction.address;
-          }
-        }
-      }
-    });
-  }
-
-
-  /**
-   * Reset the highlighter state
-   */
-  reset(): void {
-    this.addressMap.clear();
-    this.sourceLines = [];
-  }
-
 }
 
-// Utility function to create and initialize highlighter
-export const createHighlighter = async (
-  sourceCode: string,
-  options?: { baseAddress?: number }
-): Promise<CodeHighlighter> => {
-  const highlighter = new CodeHighlighter(options);
-  await highlighter.initialize(sourceCode);
-  return highlighter;
+// Factory function for backward compatibility
+export const createHighlighter = (options?: { baseAddress?: number }): CodeHighlighter => {
+  return new CodeHighlighter(options);
 };
 
-// Utility function to create highlighter with pre-compiled machine code
-export const createHighlighterWithCompiledCode = async (
-  sourceCode: string,
-  machineCode: Uint8Array,
-  options?: { baseAddress?: number }
-): Promise<CodeHighlighter> => {
-  const highlighter = new CodeHighlighter(options);
-  await highlighter.initializeWithCompiledCode(sourceCode, machineCode);
-  return highlighter;
-};
-
-// Helper function to get highlight info from step result
+// Utility function to get highlight info from step result
 export const getHighlightFromStepResult = (
   stepResult: { instruction?: { address: number } },
   highlighter: CodeHighlighter
