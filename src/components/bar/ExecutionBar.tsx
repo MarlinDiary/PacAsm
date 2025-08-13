@@ -61,8 +61,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Play button */}
         <button 
           onClick={handlePlayClick}
-          disabled={isInitializing}
-          className={`w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] flex items-center justify-center ${isInitializing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] cursor-pointer'}`}
+          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer"
         >
           <Play size={16} className="text-[#686868] dark:text-[#a7a7a7] fill-[#686868] dark:fill-[#a7a7a7]" />
         </button>
