@@ -20,6 +20,7 @@ export interface HighlightInfo {
 export class CodeHighlighter {
   private addressMap: Map<number, AddressMapping> = new Map();
   private baseAddress: number;
+  private lastHighlightInfo: HighlightInfo | null = null;
 
   constructor(options: { baseAddress?: number } = {}) {
     this.baseAddress = options.baseAddress || 0x10000;
@@ -85,16 +86,19 @@ export class CodeHighlighter {
    */
   getHighlightLine(pcAddress: number): HighlightInfo | null {
     const mapping = this.addressMap.get(pcAddress);
-    if (!mapping) {
-      return null;
+    if (mapping) {
+      // Found mapping - update and return new highlight info
+      this.lastHighlightInfo = {
+        lineNumber: mapping.lineNumber,
+        address: mapping.address,
+        instruction: mapping.instruction,
+        isActive: true
+      };
+      return this.lastHighlightInfo;
     }
     
-    return {
-      lineNumber: mapping.lineNumber,
-      address: mapping.address,
-      instruction: mapping.instruction,
-      isActive: true
-    };
+    // No mapping found - return the last highlight info to keep previous line highlighted
+    return this.lastHighlightInfo;
   }
 
   /**
@@ -109,6 +113,7 @@ export class CodeHighlighter {
    */
   clear(): void {
     this.addressMap.clear();
+    this.lastHighlightInfo = null;
   }
 }
 
