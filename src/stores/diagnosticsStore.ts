@@ -23,7 +23,7 @@ async function fetchDiagnosis(error: string, code: string): Promise<string> {
       body: JSON.stringify({ error, code })
     })
 
-    if (!response.ok) throw new Error('API_ERROR: Failed to Fetch Diagnosis')
+    if (!response.ok) throw new Error('Failed to fetch diagnosis')
 
     // Wait for complete response instead of streaming
     const fullText = await response.text()

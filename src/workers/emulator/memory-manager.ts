@@ -53,7 +53,7 @@ export class MemoryManager {
 
     const regId = regMap[register.toLowerCase()];
     if (regId === undefined) {
-      throw new Error('REGISTER_ERROR: Unknown Register');
+      throw new Error('Unknown register');
     }
 
     this.unicorn.reg_write_i32(regId, value);
@@ -70,7 +70,7 @@ export class MemoryManager {
 
     const regId = regMap[register.toLowerCase()];
     if (regId === undefined) {
-      throw new Error('REGISTER_ERROR: Unknown Register');
+      throw new Error('Unknown register');
     }
 
     const value = this.unicorn.reg_read_i32(regId);

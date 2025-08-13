@@ -40,7 +40,7 @@ export class UnicornLoader {
 
   getUnicorn(): UnicornGlobal {
     if (typeof this.workerSelf.uc === 'undefined') {
-      throw new Error('INIT_ERROR: Unicorn.js Not Loaded');
+      throw new Error('Unicorn.js not loaded');
     }
     return this.workerSelf.uc;
   }

@@ -71,7 +71,7 @@ export class EmulatorWorker {
     } catch (error) {
       this.postMessage({
         type: 'error',
-        payload: `Failed to initialize emulator: ${error}`
+        payload: String(error)
       });
     }
   }
@@ -79,7 +79,7 @@ export class EmulatorWorker {
   private loadCode(machineCode: number[]): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       this.memoryManager.loadCode(machineCode);
@@ -99,7 +99,7 @@ export class EmulatorWorker {
   private setRegister(register: string, value: number): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       this.memoryManager.setRegister(register, value);
@@ -119,7 +119,7 @@ export class EmulatorWorker {
   private getRegister(register: string): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       const registerInfo = this.memoryManager.getRegister(register);
@@ -139,7 +139,7 @@ export class EmulatorWorker {
   private getAllRegisters(): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       const allRegisters = this.memoryManager.getAllRegisters();
@@ -159,7 +159,7 @@ export class EmulatorWorker {
   private stepExecution(): void {
     try {
       if (!this.executionEngine || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       this.executionEngine.stepExecution();
@@ -171,7 +171,7 @@ export class EmulatorWorker {
     } catch (error) {
       this.postMessage({
         type: 'error',
-        payload: `Execution failed: ${error}`
+        payload: String(error)
       });
     }
   }
@@ -179,7 +179,7 @@ export class EmulatorWorker {
   private stepDebugExecution(): void {
     try {
       if (!this.executionEngine || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       const stepResult = this.executionEngine.stepDebugExecution();
@@ -193,7 +193,7 @@ export class EmulatorWorker {
         type: 'step-result',
         payload: {
           success: false,
-          message: `Step execution failed: ${error}`,
+          message: String(error),
           pc: 0
         }
       });
@@ -203,7 +203,7 @@ export class EmulatorWorker {
   private runExecution(instructionCount?: number): void {
     try {
       if (!this.executionEngine || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       const result = this.executionEngine.runExecution(instructionCount);
@@ -215,7 +215,7 @@ export class EmulatorWorker {
     } catch (error) {
       this.postMessage({
         type: 'error',
-        payload: `Execution failed: ${error}`
+        payload: String(error)
       });
     }
   }
@@ -223,7 +223,7 @@ export class EmulatorWorker {
   private getMemory(address: number, size: number): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       const memoryData = this.memoryManager.readMemory(address, size);
@@ -243,7 +243,7 @@ export class EmulatorWorker {
   private writeMemory(address: number, data: number[]): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       this.memoryManager.writeMemory(address, data);
@@ -263,7 +263,7 @@ export class EmulatorWorker {
   private reset(): void {
     try {
       if (!this.memoryManager || !this.isInitialized) {
-        throw new Error('INIT_ERROR: Emulator Not Initialized');
+        throw new Error('Emulator not initialized');
       }
 
       this.memoryManager.resetRegisters();

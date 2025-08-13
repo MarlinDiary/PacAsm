@@ -99,11 +99,12 @@ export const usePlayRunner = () => {
       
       setIsInitializing(false)
       return { success: true }
-    } catch {
-      addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      addError(errorMessage, currentCodeRef.current)
       setIsPlaying(false)
       setIsInitializing(false)
-      return { success: false, error: 'Failed to initialize' }
+      return { success: false, error: errorMessage }
     }
   }
 
@@ -143,7 +144,8 @@ export const usePlayRunner = () => {
       if (!stepResult) break
       
       if (!stepResult.success) {
-        addError('RUNTIME_ERROR: Execution Failed', currentCodeRef.current)
+        const errorMessage = stepResult.message || 'Execution failed'
+        addError(errorMessage, currentCodeRef.current)
         break
       }
       
@@ -193,8 +195,9 @@ export const usePlayRunner = () => {
       
       if (instructionCount >= 1000) {
         setIsPlaying(false)
-        addError('TIMEOUT_ERROR: Too Many Instructions without Movement', currentCodeRef.current)
-        return { success: false, error: 'TIMEOUT_ERROR: Too Many Instructions without Movement' }
+        const errorMessage = 'Too many instructions without movement'
+        addError(errorMessage, currentCodeRef.current)
+        return { success: false, error: errorMessage }
       }
     }
     

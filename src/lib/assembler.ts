@@ -151,7 +151,7 @@ export class GASAssembler {
             const fileData = (module as { FS: { readFile: (name: string) => ArrayBuffer } }).FS.readFile('out.o');
             objectFile = new Uint8Array(fileData);
           } catch (e) {
-            console.error('Failed to read object file:', e);
+            // Failed to read object file - error will be handled by throwing below
           }
         }],
         print: () => {},
@@ -159,7 +159,7 @@ export class GASAssembler {
       });
 
       if (errorOutput && !objectFile) {
-        throw new Error(`Assembly failed: ${errorOutput}`);
+        throw new Error(errorOutput.trim());
       }
 
       if (!objectFile) {
@@ -172,7 +172,7 @@ export class GASAssembler {
         const elfResult = extractMachineCode(objectFile);
         machineCode = elfResult.machineCode;
       } catch (error) {
-        console.warn('[GASAssembler] ELF parsing failed, using raw object file:', error);
+        // ELF parsing failed, use raw object file as fallback
         machineCode = objectFile;
       }
 
@@ -187,7 +187,7 @@ export class GASAssembler {
       };
 
     } catch (error) {
-      throw new Error(`Assembly error: ${error instanceof Error ? error.message : String(error)}`);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -211,7 +211,7 @@ export class GASAssembler {
           (module as { FS: { writeFile: (name: string, data: Uint8Array) => void } }).FS.writeFile('output.o', this.lastObjectFile!);
         }],
         print: (s: string) => { decoded += s + '\n'; },
-        printErr: (s: string) => { console.log('[OBJDUMP]', s); }
+        printErr: () => {} // Silently ignore objdump errors
       });
 
       // Parse objdump decodedline output
@@ -256,7 +256,7 @@ export class GASAssembler {
       return lineTable;
 
     } catch (error) {
-      console.error('[GASAssembler] objdump failed:', error);
+      // objdump failed - return empty array, error handling is done at higher level
       return [];
     }
   }
@@ -309,7 +309,7 @@ export class ARMAssembler {
       await this.gasAssembler.initialize();
       this.isInitialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize assembler: ${error instanceof Error ? error.message : String(error)}`);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 
@@ -335,7 +335,7 @@ export class ARMAssembler {
       return assemblyResult;
 
     } catch (error) {
-      throw new Error(`Assembly error: ${error instanceof Error ? error.message : String(error)}`);
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 

@@ -202,8 +202,9 @@ export const useDebugger = () => {
       }
     } catch (error) {
       setIsInitializing(false)
-      addError('INIT_ERROR: Failed to Initialize Debugger', currentCodeRef.current)
-      return { success: false, error }
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      addError(errorMessage, currentCodeRef.current)
+      return { success: false, error: errorMessage }
     }
   }
 
@@ -259,7 +260,7 @@ export const useDebugger = () => {
     // Check if debugger is properly initialized
     if (!highlighter || executionHistory.length === 0 || currentPlaybackIndex < 0) {
       console.error('[DEBUGGER] Debugger not properly initialized for step operation')
-      addError('RUNTIME_ERROR: Debugger not ready', currentCodeRef.current)
+      addError('Debugger not ready for step operation', currentCodeRef.current)
       return null
     }
     
@@ -280,7 +281,8 @@ export const useDebugger = () => {
       const stepResult = await emulator.step()
       if (!stepResult || !stepResult.success) {
         setHasError(true)
-        addError('RUNTIME_ERROR: Step Execution Failed', currentCodeRef.current)
+        const errorMessage = stepResult?.message || 'Step execution failed'
+        addError(errorMessage, currentCodeRef.current)
         return null
       }
       
@@ -318,7 +320,8 @@ export const useDebugger = () => {
       return newState
     } catch (error) {
       setHasError(true)
-      addError('RUNTIME_ERROR: Step execution failed', currentCodeRef.current)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      addError(errorMessage, currentCodeRef.current)
       return null
     }
   }
