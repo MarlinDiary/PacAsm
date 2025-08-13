@@ -1,14 +1,16 @@
-import { Search, ListFilter } from 'lucide-react'
+import { Search, Trash2, ListFilter } from 'lucide-react'
 import { useState, useRef } from 'react'
 
 interface QueryBarProps {
   children?: React.ReactNode
   onSearch?: (query: string) => void
+  onDelete?: () => void
+  showDeleteButton?: boolean
   onFilterToggle?: (isActive: boolean) => void
   isFilterActive?: boolean
 }
 
-export default function QueryBar({ children, onSearch, onFilterToggle, isFilterActive = false }: QueryBarProps) {
+export default function QueryBar({ children, onSearch, onDelete, showDeleteButton = false, onFilterToggle, isFilterActive = false }: QueryBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -16,6 +18,10 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
     const query = e.target.value
     setSearchQuery(query)
     onSearch?.(query)
+  }
+
+  const handleDelete = () => {
+    onDelete?.()
   }
 
   const handleFilterToggle = () => {
@@ -32,7 +38,8 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
       >
         <Search 
           size={16} 
-          className="text-[#8A8A8E] dark:text-[#9FA0A2]"
+          className="text-[#8A8A8E] dark:text-[#9FA0A2] flex-shrink-0"
+          style={{ width: '16px', height: '16px' }}
           onClick={() => inputRef.current?.focus()}
         />
         <input
@@ -47,11 +54,22 @@ export default function QueryBar({ children, onSearch, onFilterToggle, isFilterA
             lineHeight: '1rem'
           }}
         />
-        <ListFilter
-          size={16}
-          className={`cursor-pointer ml-1 ${isFilterActive ? 'text-[#262626] dark:text-[#FFFFFF]' : 'text-[#8A8A8E] dark:text-[#9FA0A2]'}`}
-          onClick={handleFilterToggle}
-        />
+        {showDeleteButton && (
+          <Trash2
+            size={16}
+            className="cursor-pointer ml-1 text-[#8A8A8E] dark:text-[#9FA0A2] hover:text-[#262626] dark:hover:text-[#FFFFFF] flex-shrink-0"
+            style={{ width: '16px', height: '16px' }}
+            onClick={handleDelete}
+          />
+        )}
+        {onFilterToggle && (
+          <ListFilter
+            size={16}
+            className={`cursor-pointer ml-1 flex-shrink-0 ${isFilterActive ? 'text-[#262626] dark:text-[#FFFFFF]' : 'text-[#8A8A8E] dark:text-[#9FA0A2]'}`}
+            style={{ width: '16px', height: '16px' }}
+            onClick={handleFilterToggle}
+          />
+        )}
       </div>
       {children}
     </div>

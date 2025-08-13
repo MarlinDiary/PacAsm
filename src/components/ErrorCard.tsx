@@ -3,14 +3,17 @@
 import { useRef, useEffect, useState } from 'react'
 
 interface ErrorCardProps {
+  id: string
   error: string
   code: string
   timestamp: Date
   diagnosis: string
   isLoading: boolean
+  hasDiagnosis: boolean
+  onDiagnoseClick?: (id: string) => void
 }
 
-export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProps) {
+export default function ErrorCard({ id, error, diagnosis, isLoading, hasDiagnosis, onDiagnoseClick }: ErrorCardProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState<number | 'auto'>('auto')
   const [enableTransition, setEnableTransition] = useState(false)
@@ -43,25 +46,34 @@ export default function ErrorCard({ error, diagnosis, isLoading }: ErrorCardProp
     }
   }, [])
 
+  const handleClick = () => {
+    if (!hasDiagnosis && !isLoading && onDiagnoseClick) {
+      onDiagnoseClick(id)
+    }
+  }
+
   return (
     <div 
-      className="rounded-lg overflow-hidden bg-[#fdf1f0] dark:bg-[#372B2B]"
+      className={`rounded-lg overflow-hidden bg-[#fdf1f0] dark:bg-[#372B2B] ${
+        !hasDiagnosis && !isLoading ? 'cursor-pointer' : ''
+      }`}
       style={{ 
         transition: enableTransition ? 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         height: height
       }}
+      onClick={handleClick}
     >
       <div ref={contentRef} className="p-4">
-        <div className={isLoading ? '' : 'mb-2'}>
+        <div>
           <p 
-            className={`text-sm font-semibold text-[#dd544b] dark:text-[#F8615C] ${isLoading && !diagnosis ? 'animate-pulse' : ''}`} 
+            className={`text-sm font-semibold text-[#dd544b] dark:text-[#F8615C] ${isLoading && !hasDiagnosis ? 'animate-pulse' : ''}`} 
           >
             {error}
           </p>
         </div>
 
-        {!isLoading && (
-          <div>
+        {hasDiagnosis && (
+          <div className="mt-2">
             <p className="text-sm text-[#e34940] dark:text-[#F8615C]">
               {diagnosis}
             </p>

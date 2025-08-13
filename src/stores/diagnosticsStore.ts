@@ -7,11 +7,13 @@ export interface DiagnosticError {
   timestamp: Date
   diagnosis: string
   isLoading: boolean
+  hasDiagnosis: boolean
 }
 
 interface DiagnosticsStore {
   errors: DiagnosticError[]
   addError: (error: string, code: string) => void
+  generateDiagnosis: (id: string) => void
   clearErrors: () => void
 }
 
@@ -38,10 +40,10 @@ async function fetchDiagnosis(error: string, code: string): Promise<string> {
 export const useDiagnosticsStore = create<DiagnosticsStore>((set, get) => ({
   errors: [],
   
-  addError: async (error, code) => {
+  addError: (error, code) => {
     const id = `${Date.now()}_${Math.random()}`
     
-    // Add error immediately with loading state
+    // Add error immediately without diagnosis
     set((state) => ({
       errors: [
         {
@@ -50,20 +52,36 @@ export const useDiagnosticsStore = create<DiagnosticsStore>((set, get) => ({
           code,
           timestamp: new Date(),
           diagnosis: '',
-          isLoading: true
+          isLoading: false,
+          hasDiagnosis: false
         },
         ...state.errors
       ]
     }))
+  },
+  
+  generateDiagnosis: async (id) => {
+    // Set loading state
+    set((state) => ({
+      errors: state.errors.map(e => 
+        e.id === id 
+          ? { ...e, isLoading: true }
+          : e
+      )
+    }))
+    
+    // Find the error to get its details
+    const error = get().errors.find(e => e.id === id)
+    if (!error) return
     
     // Fetch diagnosis asynchronously
-    const diagnosis = await fetchDiagnosis(error, code)
+    const diagnosis = await fetchDiagnosis(error.error, error.code)
     
     // Update the error with diagnosis
     set((state) => ({
       errors: state.errors.map(e => 
         e.id === id 
-          ? { ...e, diagnosis, isLoading: false }
+          ? { ...e, diagnosis, isLoading: false, hasDiagnosis: true }
           : e
       )
     }))
