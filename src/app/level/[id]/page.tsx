@@ -1,11 +1,10 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Confetti from 'react-confetti'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
-import { ImperativePanelHandle } from 'react-resizable-panels'
 import Card from '@/components/Card'
 import ExecutionBar from '@/components/bar/ExecutionBar'
 import DebuggerBar from '@/components/bar/DebuggerBar'
@@ -22,8 +21,9 @@ import ActuatorBar from '@/components/bar/ActuatorBar'
 import ActuatorPanel from '@/components/panel/ActuatorPanel'
 import { getMapByLevel } from '@/data/maps'
 import { useEmulator } from '@/hooks/useEmulator'
-import { useDebugger } from '@/hooks/useDebugger'
-import { usePlayRunner } from '@/hooks/usePlayRunner'
+import { useGameState } from '@/hooks/useGameState'
+import { usePanelLayout } from '@/hooks/usePanelLayout'
+import { useExecutionControl } from '@/hooks/useExecutionControl'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope, Maximize2, Minimize2 } from 'lucide-react'
 
@@ -37,118 +37,12 @@ export default function LevelPage() {
     notFound()
   }
 
-  // State for toggling between ExecutionBar and DebuggerBar
-  const [isDebugMode, setIsDebugMode] = useState(false)
-  
-  // State for code editor disabled
-  const [isCodeDisabled, setIsCodeDisabled] = useState(false)
-  
-  // State for play mode
-  const [isPlayMode, setIsPlayMode] = useState(false)
-  const [playStatus, setPlayStatus] = useState<'running' | undefined>(undefined)
-  const [hasWon, setHasWon] = useState(false) // Ever won (permanent)
-  const [currentPlayWon, setCurrentPlayWon] = useState(false) // This play won (temporary)
-  
-  // State for current code content
-  const [currentCode, setCurrentCode] = useState(levelMap.initialCode || '')
-  
-  // Debugging state
+  // Initialize hooks
   const emulator = useEmulator()
-  const debugState = useDebugger()
-  const playState = usePlayRunner()
   const errors = useDiagnosticsStore((state) => state.errors)
-  const [highlightedLine, setHighlightedLine] = useState<number | undefined>(undefined)
-  
-  // State for memory search
-  const [memorySearchQuery, setMemorySearchQuery] = useState('')
-  
-  // State for memory filter
-  const [hideZeroRows, setHideZeroRows] = useState(false)
-  
-  // Game map state for player movement
-  const [currentMap, setCurrentMap] = useState(levelMap)
-  
-  // State for right panel tab (0: Register, 1: Memory, 2: Diagnostics)
-  const [rightPanelTab, setRightPanelTab] = useState(0)
-  
-  // State for fullscreen
-  const [isFullscreen, setIsFullscreen] = useState(false)
-
-  // Panel refs for resetting
-  const firstColumnRef = useRef<ImperativePanelHandle>(null)
-  const panel1Ref = useRef<ImperativePanelHandle>(null)
-  const panel2Ref = useRef<ImperativePanelHandle>(null)
-  const panel3Ref = useRef<ImperativePanelHandle>(null)
-  const panel4Ref = useRef<ImperativePanelHandle>(null)
-
-  const resetVerticalPanels = () => {
-    panel1Ref.current?.resize(70)
-    panel2Ref.current?.resize(30)
-  }
-
-  const resetHorizontalPanels = () => {
-    firstColumnRef.current?.resize(33)
-    panel3Ref.current?.resize(34)
-    panel4Ref.current?.resize(33)
-  }
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
-      setIsFullscreen(true)
-    } else {
-      document.exitFullscreen()
-      setIsFullscreen(false)
-    }
-  }
-
-  // Helper function to teleport player with animation
-  const teleportPlayer = (targetMap: typeof levelMap, currentPlayerPosition?: typeof levelMap.playerPosition) => {
-    if (!targetMap.playerPosition) {
-      setCurrentMap(targetMap)
-      return
-    }
-
-    // Check if position is actually changing
-    const isPositionChanging = currentPlayerPosition && (
-      currentPlayerPosition.row !== targetMap.playerPosition.row ||
-      currentPlayerPosition.col !== targetMap.playerPosition.col
-    )
-
-    if (!isPositionChanging) {
-      setCurrentMap(targetMap)
-      return
-    }
-
-    // Start fade out at current position
-    if (currentPlayerPosition) {
-      setCurrentMap({
-        ...currentMap,
-        playerPosition: {
-          ...currentPlayerPosition,
-          teleportAnimation: 'fade-out'
-        }
-      })
-
-      // After fade out, move to new position and fade in
-      setTimeout(() => {
-        setCurrentMap({
-          ...targetMap,
-          playerPosition: {
-            ...targetMap.playerPosition!,
-            teleportAnimation: 'fade-in'
-          }
-        })
-
-        // Remove animation after fade in
-        setTimeout(() => {
-          setCurrentMap(targetMap)
-        }, 150)
-      }, 150)
-    } else {
-      setCurrentMap(targetMap)
-    }
-  }
+  const gameState = useGameState(levelMap, levelMap.initialCode || '')
+  const panelLayout = usePanelLayout()
+  const executionControl = useExecutionControl({ gameState, levelMap })
 
   // Cleanup emulator on unmount
   useEffect(() => {
@@ -157,172 +51,12 @@ export default function LevelPage() {
     }
   }, [emulator.cleanup])
   
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
-    
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
-  
   // Switch to Diagnostics tab when new error appears
   useEffect(() => {
     if (errors.length > 0) {
-      setRightPanelTab(2) // Switch to Diagnostics tab (index 2)
+      gameState.setRightPanelTab(2) // Switch to Diagnostics tab (index 2)
     }
-  }, [errors.length])
-
-  const handlePlayClick = async () => {
-    // Reset map to initial state before starting play with teleport animation
-    teleportPlayer(levelMap, currentMap.playerPosition)
-    setHighlightedLine(undefined)
-    setCurrentPlayWon(false) // Reset current play victory status
-    // Don't clear hasWon - keep Next button permanently after first victory
-    
-    setIsCodeDisabled(true)
-    setIsPlayMode(true)
-    setPlayStatus('running') // Show "Running..." immediately
-    
-    const result = await playState.startPlay(currentCode, levelMap)
-    if (!result.success && result.error) {
-      // Handle error - reset UI state
-      setIsCodeDisabled(false)
-      setIsPlayMode(false)
-      setPlayStatus(undefined)
-      // Play failure already handled by diagnostics
-    } else if (!result.success && !result.error) {
-      // User cancelled - reset UI state without error
-      setIsCodeDisabled(false)
-      setIsPlayMode(false)
-      setPlayStatus(undefined)
-    }
-  }
-
-  const handleDebugClick = async () => {
-    // Reset map to initial state before starting debug with teleport animation
-    teleportPlayer(levelMap, currentMap.playerPosition)
-    setHighlightedLine(undefined)
-    // Don't clear hasWon - keep Next button permanently after first victory
-    
-    setIsDebugMode(true)
-    setIsCodeDisabled(true)
-    
-    const result = await debugState.startDebugLazy(currentCode, levelMap) // Use lazy debug initialization
-    if (result.success && result.initialState) {
-      setCurrentMap(result.initialState.mapState)
-      setHighlightedLine(result.initialState.highlightedLine)
-    } else {
-      // Handle error silently - just reset UI state
-      setIsDebugMode(false)
-      setIsCodeDisabled(false)
-    }
-  }
-
-  const handleStepDown = async () => {
-    const nextState = await debugState.stepDownLazy()
-    if (nextState) {
-      // Enable animation for stepping
-      const mapWithAnimation = {
-        ...nextState.mapState,
-        playerPosition: nextState.mapState.playerPosition ? {
-          ...nextState.mapState.playerPosition,
-          shouldAnimate: true
-        } : undefined
-      }
-      setCurrentMap(mapWithAnimation)
-      setHighlightedLine(nextState.highlightedLine)
-    }
-  }
-
-  const handleStepUp = () => {
-    const prevState = debugState.stepUp()
-    if (prevState) {
-      // Enable animation for stepping
-      const mapWithAnimation = {
-        ...prevState.mapState,
-        playerPosition: prevState.mapState.playerPosition ? {
-          ...prevState.mapState.playerPosition,
-          shouldAnimate: true
-        } : undefined
-      }
-      setCurrentMap(mapWithAnimation)
-      setHighlightedLine(prevState.highlightedLine)
-    }
-  }
-
-  const handleStopClick = async () => {
-    setIsCodeDisabled(false)
-    setIsDebugMode(false)
-    setHighlightedLine(undefined)
-    teleportPlayer(levelMap, currentMap.playerPosition) // Reset map with teleport animation
-    
-    // Reset states to clear panels
-    await Promise.all([
-      debugState.reset(),
-      playState.reset()
-    ])
-  }
-
-  const handleReplay = () => {
-    const firstState = debugState.replay()
-    if (firstState) {
-      // Teleport animation for replay
-      teleportPlayer(firstState.mapState, currentMap.playerPosition)
-      setHighlightedLine(firstState.highlightedLine)
-    }
-  }
-
-  // Get current and previous debug states for panels
-  // Only use play state when actively playing, otherwise use debug state
-  const getCurrentState = useCallback(() => {
-    if (playState.isPlaying) {
-      return playState.getCurrentState()
-    }
-    return debugState.getCurrentState()
-  }, [playState.isPlaying, playState, debugState])
-  
-  const currentDebugState = getCurrentState()
-  const previousDebugState = playState.isPlaying ? playState.getPreviousState() : debugState.getPreviousState()
-
-  // Listen for play state updates (only when actively playing)
-  useEffect(() => {
-    if (playState.isPlaying && playState.currentMap) {
-      setCurrentMap(playState.currentMap)
-      setHighlightedLine(playState.highlightedLine)
-      
-      // Check victory condition during play mode
-      if (isPlayMode && playState.currentMap.dots && playState.currentMap.dots.length === 0) {
-        setHasWon(true) // Permanent victory status
-        setCurrentPlayWon(true) // This play victory status
-      }
-    }
-  }, [playState.isPlaying, playState.currentMap, playState.highlightedLine, isPlayMode])
-
-  // Listen for play completion
-  useEffect(() => {
-    if (isPlayMode && !playState.isPlaying && playState.movementActions.length >= 0) {
-      // Play has finished - reset everything
-      setTimeout(() => {
-        setIsPlayMode(false)
-        setIsCodeDisabled(false)
-        setHighlightedLine(undefined)
-        setPlayStatus(undefined) // Always reset play status
-        // Keep Pacman at final position regardless of win/loss
-        // Don't reset the map - keep the current state
-        // Don't reset currentPlayWon here - let confetti play naturally
-        // It will be reset when starting a new game
-      }, 300) // Small delay to show final state briefly
-    }
-  }, [playState.isPlaying, isPlayMode, playState.movementActions.length, currentPlayWon, levelMap, currentMap.playerPosition])
-
-  // Auto-stop debug mode when error occurs
-  useEffect(() => {
-    if (debugState.hasError && isDebugMode) {
-      handleStopClick()
-    }
-  }, [debugState.hasError, isDebugMode])
+  }, [errors.length, gameState])
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#f0f0f0] dark:bg-[#0f0f0f]">
@@ -333,30 +67,30 @@ export default function LevelPage() {
           </div>
           <div className="relative">
             <ExecutionBar 
-              onDebugClick={handleDebugClick}
-              onPlayClick={handlePlayClick}
-              isDebugMode={isDebugMode}
-              isPlayMode={isPlayMode}
-              playStatus={playStatus}
-              hasWon={hasWon}
+              onDebugClick={executionControl.handleDebugClick}
+              onPlayClick={executionControl.handlePlayClick}
+              isDebugMode={gameState.isDebugMode}
+              isPlayMode={gameState.isPlayMode}
+              playStatus={gameState.playStatus}
+              hasWon={gameState.hasWon}
               currentLevel={id}
             />
-            <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`absolute inset-0 transition-opacity duration-200 ${gameState.isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 
-                onReturnClick={() => setIsDebugMode(false)} 
-                onStopClick={handleStopClick}
-                onStepDown={handleStepDown}
-                onStepUp={handleStepUp}
-                onReplay={handleReplay}
-                canStepUp={debugState.canStepUp}
-                canStepDown={debugState.canStepDown}
+                onReturnClick={() => gameState.setIsDebugMode(false)} 
+                onStopClick={executionControl.handleStopClick}
+                onStepDown={executionControl.handleStepDown}
+                onStepUp={executionControl.handleStepUp}
+                onReplay={executionControl.handleReplay}
+                canStepUp={executionControl.debugState.canStepUp}
+                canStepDown={executionControl.debugState.canStepDown}
               />
             </div>
           </div>
           <div className="absolute right-0 top-0 flex gap-2">
             <IconButton 
-              icon={isFullscreen ? Minimize2 : Maximize2} 
-              onClick={toggleFullscreen}
+              icon={gameState.isFullscreen ? Minimize2 : Maximize2} 
+              onClick={gameState.toggleFullscreen}
               size={15}
             />
             <IconButton icon={Settings2} />
@@ -365,12 +99,12 @@ export default function LevelPage() {
         <div className="flex-1 pt-2 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* First column with two panels */}
-        <ResizablePanel defaultSize={33} ref={firstColumnRef} minSize={10}>
+        <ResizablePanel defaultSize={33} ref={panelLayout.firstColumnRef} minSize={10}>
           <ResizablePanelGroup direction="vertical" className="h-full">
-            <ResizablePanel defaultSize={70} ref={panel1Ref} minSize={10}>
+            <ResizablePanel defaultSize={70} ref={panelLayout.panel1Ref} minSize={10}>
               <Card tabs={[{ icon: Gamepad2, text: "Game", color: "#3579f6" }]}>
                 <div className="w-full h-full relative overflow-hidden">
-                  {currentPlayWon && (
+                  {gameState.currentPlayWon && (
                     <div className="absolute inset-0 z-20">
                       <Confetti
                         recycle={false}
@@ -389,7 +123,7 @@ export default function LevelPage() {
                           tileSize={levelMap.tileSize || 64}
                         />
                         <div className="absolute inset-0 flex items-center justify-center z-10">
-                          <MapRenderer map={currentMap} />
+                          <MapRenderer map={gameState.currentMap} />
                         </div>
                       </div>
                     </div>
@@ -399,9 +133,9 @@ export default function LevelPage() {
             </ResizablePanel>
             <ResizableHandle 
               style={{ height: '8px' }}
-              onDoubleClick={resetVerticalPanels}
+              onDoubleClick={panelLayout.resetVerticalPanels}
             />
-            <ResizablePanel defaultSize={30} ref={panel2Ref} minSize={10}>
+            <ResizablePanel defaultSize={30} ref={panelLayout.panel2Ref} minSize={10}>
               <Card tabs={[{ icon: Move, text: "Actuator", color: "#f4ba40" }]}>
                 <div className="h-full flex flex-col">
                   <ActuatorBar />
@@ -422,36 +156,36 @@ export default function LevelPage() {
         
         <ResizableHandle 
           style={{ width: '8px' }}
-          onDoubleClick={resetHorizontalPanels}
+          onDoubleClick={panelLayout.resetHorizontalPanels}
         />
         
         {/* Second column */}
-        <ResizablePanel defaultSize={34} ref={panel3Ref} minSize={10}>
+        <ResizablePanel defaultSize={34} ref={panelLayout.panel3Ref} minSize={10}>
           <Card tabs={[{ icon: CodeXml, text: "Code", color: "#4fae40" }]}>
             <CodeEditor 
-              value={currentCode} 
-              onChange={(value) => setCurrentCode(value || '')}
-              disabled={isCodeDisabled}
-              highlightedLine={highlightedLine}
+              value={gameState.currentCode} 
+              onChange={(value) => gameState.setCurrentCode(value || '')}
+              disabled={gameState.isCodeDisabled}
+              highlightedLine={gameState.highlightedLine}
             />
           </Card>
         </ResizablePanel>
         
         <ResizableHandle 
           style={{ width: '8px' }}
-          onDoubleClick={resetHorizontalPanels}
+          onDoubleClick={panelLayout.resetHorizontalPanels}
         />
         
         {/* Third column */}
-        <ResizablePanel defaultSize={33} ref={panel4Ref} minSize={10}>
+        <ResizablePanel defaultSize={33} ref={panelLayout.panel4Ref} minSize={10}>
           <Card 
             tabs={[
               { icon: CircuitBoard, text: "Register", color: "#9164EA" },
               { icon: HardDrive, text: "Memory", color: "#01A2C2" },
               { icon: Stethoscope, text: "Diagnostics", color: "#FF0033" }
             ]}
-            selectedTab={rightPanelTab}
-            onTabChange={setRightPanelTab}
+            selectedTab={gameState.rightPanelTab}
+            onTabChange={gameState.setRightPanelTab}
             tabContent={[
               <div key="register" className="h-full flex flex-col">
                 <SubBar>
@@ -467,16 +201,16 @@ export default function LevelPage() {
                   }}
                 >
                   <RegisterPanel 
-                    registers={currentDebugState?.registers} 
-                    previousRegisters={previousDebugState?.registers}
+                    registers={executionControl.currentDebugState?.registers} 
+                    previousRegisters={executionControl.previousDebugState?.registers}
                   />
                 </div>
               </div>,
               <div key="memory" className="h-full flex flex-col">
                 <QueryBar 
-                  onSearch={setMemorySearchQuery} 
-                  onFilterToggle={setHideZeroRows}
-                  isFilterActive={hideZeroRows}
+                  onSearch={gameState.setMemorySearchQuery} 
+                  onFilterToggle={gameState.setHideZeroRows}
+                  isFilterActive={gameState.hideZeroRows}
                 />
                 <div 
                   className="flex-1 overflow-y-auto"
@@ -486,11 +220,11 @@ export default function LevelPage() {
                   }}
                 >
                   <MemoryPanel 
-                    searchQuery={memorySearchQuery} 
-                    hideZeroRows={hideZeroRows}
-                    codeMemory={currentDebugState?.codeMemory}
-                    stackMemory={currentDebugState?.stackMemory}
-                    dataMemory={currentDebugState?.dataMemory}
+                    searchQuery={gameState.memorySearchQuery} 
+                    hideZeroRows={gameState.hideZeroRows}
+                    codeMemory={executionControl.currentDebugState?.codeMemory}
+                    stackMemory={executionControl.currentDebugState?.stackMemory}
+                    dataMemory={executionControl.currentDebugState?.dataMemory}
                   />
                 </div>
               </div>,
