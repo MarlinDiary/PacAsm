@@ -13,8 +13,6 @@ const getTileImage = (tileType: TileType): string | null => {
   switch (tileType) {
     case 'grass':
       return '/res/grass.png';
-    case 'campfire':
-      return '/res/campfire.png';
     case 'air':
       return null; // No image for air tiles
     default:

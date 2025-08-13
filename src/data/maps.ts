@@ -1,15 +1,13 @@
 export interface TileMapping {
   '.': 'grass';
-  '*': 'campfire';
   ' ': 'air';
 }
 
-export type TileType = 'grass' | 'campfire' | 'air';
+export type TileType = 'grass' | 'air';
 export type TileSymbol = keyof TileMapping;
 
 export const TILE_MAPPING: Record<TileSymbol, TileType> = {
-  '.': 'grass', 
-  '*': 'campfire',
+  '.': 'grass',
   ' ': 'air'
 };
 
@@ -61,31 +59,6 @@ export const MAPS: GameMap[] = [
     initialCode: `LDR   R0, =0x00030000
 MOV   R1, #4
 STR   R1, [R0]`,
-  },
-  {
-    id: 'level2',
-    name: 'Level 2',
-    width: 6,
-    height: 5,
-    tileSize: 60,
-    tiles: [
-      ['.', '.', ' ', ' ', ' ', ' '],
-      [' ', '.', '.', ' ', ' ', ' '],
-      [' ', ' ', '.', '.', ' ', ' '],
-      [' ', ' ', ' ', '.', '.', ' '],
-      [' ', ' ', ' ', ' ', '.', '.']
-    ],
-    playerPosition: { row: 0, col: 0, direction: 'right' },
-    dots: [{ row: 4, col: 5 }],
-    waterBackground: { tilesX: 36, tilesY: 35 },
-    initialCode: `LDR   R0, =0x00030000
-MOV   R2, #4
-loop:
-
-
-
-   SUBS  R2, R2, #1
-   BNE   loop`,
   }
 ];
 

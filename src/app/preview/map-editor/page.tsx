@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { notFound } from 'next/navigation'
 import { 
   Plus, Minus, RotateCcw,
-  User, Circle, Trees, Flame, Wind,
+  User, Circle, Trees, Wind,
   Paintbrush,
   Settings, Code, 
   Clipboard, ClipboardCheck,
@@ -18,7 +18,6 @@ import { GameMap, TileSymbol, PlayerDirection } from '@/data/maps'
 
 const TILE_TYPES: { symbol: TileSymbol; name: string; icon: LucideIcon; color: string; bgColor: string }[] = [
   { symbol: '.', name: 'Grass', icon: Trees, color: '#22c55e', bgColor: '#dcfce7' },
-  { symbol: '*', name: 'Fire', icon: Flame, color: '#f97316', bgColor: '#fed7aa' },
   { symbol: ' ', name: 'Air', icon: Wind, color: '#94a3b8', bgColor: '#f1f5f9' }
 ]
 
