@@ -29,8 +29,16 @@ export const usePlayRunner = () => {
   })
   const abortControllerRef = useRef<AbortController | null>(null)
   const currentCodeRef = useRef<string>('')
+  const [isInitializing, setIsInitializing] = useState(false)
 
   const startPlay = async (sourceCode: string, initialMap: GameMap) => {
+    // Prevent concurrent initialization
+    if (isInitializing) {
+      console.warn('[PLAY_RUNNER] Already initializing, ignoring request')
+      return { success: false, error: 'Already initializing' }
+    }
+    
+    setIsInitializing(true)
     currentCodeRef.current = sourceCode
     
     if (abortControllerRef.current) {
@@ -52,6 +60,7 @@ export const usePlayRunner = () => {
     
     try {
       if (abortController.signal.aborted) {
+        setIsInitializing(false)
         return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
@@ -81,16 +90,19 @@ export const usePlayRunner = () => {
       
       if (abortController.signal.aborted) {
         setIsPlaying(false)
+        setIsInitializing(false)
         return { success: false, error: 'INIT_ERROR: Operation Aborted' }
       }
       
       await updateSystemState()
       await executeWithDelays(initialMap, codeHighlighter, abortController)
       
+      setIsInitializing(false)
       return { success: true }
     } catch {
       addError('INIT_ERROR: Failed to Run Code', currentCodeRef.current)
       setIsPlaying(false)
+      setIsInitializing(false)
       return { success: false, error: 'Failed to initialize' }
     }
   }
@@ -278,6 +290,7 @@ export const usePlayRunner = () => {
 
   return {
     isPlaying,
+    isInitializing,
     currentMap,
     highlightedLine,
     movementActions,

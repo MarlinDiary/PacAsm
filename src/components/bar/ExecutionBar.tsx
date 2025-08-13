@@ -12,9 +12,10 @@ interface ExecutionBarProps {
   hasWon?: boolean
   hint?: string
   currentLevel?: string
+  isInitializing?: boolean
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, hint, currentLevel }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, hint, currentLevel, isInitializing }: ExecutionBarProps) {
   const router = useRouter()
   const [showStatusBar, setShowStatusBar] = useState(false)
   const [showHintCard, setShowHintCard] = useState(false)
@@ -48,7 +49,8 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Debug button */}
         <button 
           onClick={handleDebugClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] rounded-l-sm flex items-center justify-center cursor-pointer"
+          disabled={isInitializing}
+          className={`w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] rounded-l-sm flex items-center justify-center ${isInitializing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] cursor-pointer'}`}
         >
           <Bug size={16} color="#f2a53f" />
         </button>
@@ -59,7 +61,8 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Play button */}
         <button 
           onClick={handlePlayClick}
-          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] flex items-center justify-center cursor-pointer"
+          disabled={isInitializing}
+          className={`w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] flex items-center justify-center ${isInitializing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] cursor-pointer'}`}
         >
           <Play size={16} className="text-[#686868] dark:text-[#a7a7a7] fill-[#686868] dark:fill-[#a7a7a7]" />
         </button>

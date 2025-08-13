@@ -34,6 +34,7 @@ export const useDebugger = () => {
   const [hasReachedEnd, setHasReachedEnd] = useState(false)
   const [hasError, setHasError] = useState(false)
   const currentCodeRef = useRef<string>('')
+  const [isInitializing, setIsInitializing] = useState(false)
 
   // Common initialization logic
   const initializeEmulatorAndAssembler = async (sourceCode: string, abortController: AbortController) => {
@@ -144,6 +145,13 @@ export const useDebugger = () => {
 
   // Common debugger initialization
   const initializeDebugger = async (sourceCode: string, currentMap: GameMap, lazy: boolean) => {
+    // Prevent concurrent initialization
+    if (isInitializing) {
+      console.warn('[DEBUGGER] Already initializing, ignoring request')
+      return { success: false, error: 'Already initializing' }
+    }
+    
+    setIsInitializing(true)
     currentCodeRef.current = sourceCode
     
     if (abortControllerRef.current) {
@@ -182,15 +190,18 @@ export const useDebugger = () => {
         // Lazy mode: only set initial state
         setExecutionHistory([initialState])
         setCurrentPlaybackIndex(0)
+        setIsInitializing(false)
         return { success: true, initialState }
       } else {
         // Standard mode: pre-execute all steps
         const fullHistory = await executeAllSteps(codeHighlighter, initialState, abortController)
         setExecutionHistory(fullHistory)
         setCurrentPlaybackIndex(0)
+        setIsInitializing(false)
         return { success: true, initialState: fullHistory[0] }
       }
     } catch (error) {
+      setIsInitializing(false)
       addError('INIT_ERROR: Failed to Initialize Debugger', currentCodeRef.current)
       return { success: false, error }
     }
@@ -239,6 +250,19 @@ export const useDebugger = () => {
 
   // Execute one step on demand for lazy mode
   const stepDownLazy = async () => {
+    // Don't allow stepping during initialization
+    if (isInitializing) {
+      console.warn('[DEBUGGER] Cannot step while initializing')
+      return null
+    }
+    
+    // Check if debugger is properly initialized
+    if (!highlighter || executionHistory.length === 0 || currentPlaybackIndex < 0) {
+      console.error('[DEBUGGER] Debugger not properly initialized for step operation')
+      addError('RUNTIME_ERROR: Debugger not ready', currentCodeRef.current)
+      return null
+    }
+    
     // First check if we can move forward in existing history
     if (currentPlaybackIndex < executionHistory.length - 1) {
       const nextIndex = currentPlaybackIndex + 1
@@ -365,8 +389,9 @@ export const useDebugger = () => {
     executionHistory,
     currentPlaybackIndex,
     hasError,
-    canStepUp: currentPlaybackIndex > 0,
-    canStepDown: emulator.state.isInitialized && (
+    isInitializing,
+    canStepUp: currentPlaybackIndex > 0 && !isInitializing,
+    canStepDown: !isInitializing && emulator.state.isInitialized && (
       isLazyMode ? 
         (currentPlaybackIndex < executionHistory.length - 1 || !hasReachedEnd) :
         (currentPlaybackIndex < executionHistory.length - 1)
