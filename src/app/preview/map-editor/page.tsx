@@ -71,11 +71,10 @@ export default function MapEditor() {
   const [waterTilesX, setWaterTilesX] = useState(35)
   const [waterTilesY, setWaterTilesY] = useState(35)
   
-  // Code and hint
+  // Code
   const [initialCode, setInitialCode] = useState(`LDR   R0, =0x00030000
 MOV   R1, #4
 STR   R1, [R0]`)
-  const [hint, setHint] = useState('Complete the level')
   
   // Editor state
   const [selectedTool, setSelectedTool] = useState<Tool>('tile')
@@ -271,8 +270,7 @@ STR   R1, [R0]`)
       },
       dots: dots.length > 0 ? dots : undefined,
       waterBackground: { tilesX: waterTilesX, tilesY: waterTilesY },
-      initialCode,
-      hint
+      initialCode
     }
   }
 
@@ -290,8 +288,7 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
   playerPosition: { row: ${mapData.playerPosition?.row}, col: ${mapData.playerPosition?.col}, direction: '${mapData.playerPosition?.direction}' },
   dots: [${mapData.dots?.map(d => `{ row: ${d.row}, col: ${d.col} }`).join(', ') || ''}],
   waterBackground: { tilesX: ${waterTilesX}, tilesY: ${waterTilesY} },
-  initialCode: \`${initialCode}\`,
-  hint: '${hint}'
+  initialCode: \`${initialCode}\`
 }`
     
     navigator.clipboard.writeText(mapString)
@@ -672,15 +669,6 @@ ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
                       onChange={(e) => setInitialCode(e.target.value)}
                       className="w-full h-32 bg-zinc-800/30 border border-white/5 rounded-lg px-3 py-2.5 text-sm font-mono focus:border-white/20 focus:outline-none focus:bg-zinc-800/50 text-zinc-100 placeholder-zinc-600"
                       placeholder="Enter ARM assembly code..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-2">Hint</label>
-                    <textarea
-                      value={hint}
-                      onChange={(e) => setHint(e.target.value)}
-                      className="w-full h-24 bg-zinc-800/30 border border-white/5 rounded-lg px-3 py-2.5 text-sm focus:border-white/20 focus:outline-none focus:bg-zinc-800/50 text-zinc-100 placeholder-zinc-600"
-                      placeholder="Enter hint for player..."
                     />
                   </div>
                 </div>

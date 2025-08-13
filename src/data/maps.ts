@@ -43,7 +43,6 @@ export interface GameMap {
   dots?: { row: number; col: number }[];
   waterBackground?: WaterBackground;
   initialCode?: string;
-  hint?: string;
 }
 
 export const MAPS: GameMap[] = [
@@ -62,7 +61,6 @@ export const MAPS: GameMap[] = [
     initialCode: `LDR   R0, =0x00030000
 MOV   R1, #4
 STR   R1, [R0]`,
-    hint: 'Move right twice'
   },
   {
     id: 'level2',
@@ -88,7 +86,6 @@ loop:
 
    SUBS  R2, R2, #1
    BNE   loop`,
-    hint: 'Use the loop'
   }
 ];
 

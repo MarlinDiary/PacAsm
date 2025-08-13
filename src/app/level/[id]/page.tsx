@@ -333,7 +333,6 @@ export default function LevelPage() {
               isPlayMode={isPlayMode}
               playStatus={playStatus}
               hasWon={hasWon}
-              hint={levelMap.hint}
               currentLevel={id}
               isInitializing={debugState.isInitializing}
             />
