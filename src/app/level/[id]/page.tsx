@@ -186,12 +186,17 @@ export default function LevelPage() {
     setPlayStatus('running') // Show "Running..." immediately
     
     const result = await playState.startPlay(currentCode, levelMap)
-    if (!result.success) {
+    if (!result.success && result.error) {
       // Handle error - reset UI state
       setIsCodeDisabled(false)
       setIsPlayMode(false)
       setPlayStatus(undefined)
       // Play failure already handled by diagnostics
+    } else if (!result.success && !result.error) {
+      // User cancelled - reset UI state without error
+      setIsCodeDisabled(false)
+      setIsPlayMode(false)
+      setPlayStatus(undefined)
     }
   }
 
@@ -253,6 +258,7 @@ export default function LevelPage() {
     setHighlightedLine(undefined)
     teleportPlayer(levelMap, currentMap.playerPosition) // Reset map with teleport animation
     
+    // Reset states to clear panels
     await Promise.all([
       debugState.reset(),
       playState.reset()
@@ -334,7 +340,6 @@ export default function LevelPage() {
               playStatus={playStatus}
               hasWon={hasWon}
               currentLevel={id}
-              isInitializing={debugState.isInitializing}
             />
             <div className={`absolute inset-0 transition-opacity duration-200 ${isDebugMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <DebuggerBar 

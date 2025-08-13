@@ -11,10 +11,9 @@ interface ExecutionBarProps {
   playStatus?: 'running'
   hasWon?: boolean
   currentLevel?: string
-  isInitializing?: boolean
 }
 
-export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, currentLevel, isInitializing }: ExecutionBarProps) {
+export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, isPlayMode, playStatus, hasWon, currentLevel }: ExecutionBarProps) {
   const router = useRouter()
   const [showStatusBar, setShowStatusBar] = useState(false)
 
@@ -47,8 +46,7 @@ export default function ExecutionBar({ onDebugClick, onPlayClick, isDebugMode, i
         {/* Debug button */}
         <button 
           onClick={handleDebugClick}
-          disabled={isInitializing}
-          className={`w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] rounded-l-sm flex items-center justify-center ${isInitializing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] cursor-pointer'}`}
+          className="w-8 h-8 p-2 bg-[#e7e7e7] dark:bg-[#222222] rounded-l-sm flex items-center justify-center hover:bg-[#e2e2e2] dark:hover:bg-[#2a2a2a] cursor-pointer"
         >
           <Bug size={16} color="#f2a53f" />
         </button>

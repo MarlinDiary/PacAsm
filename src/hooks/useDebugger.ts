@@ -63,7 +63,7 @@ export const useDebugger = () => {
     assembler.destroy()
     
     if (abortController.signal.aborted) {
-      throw new Error('Operation Aborted')
+      return codeHighlighter
     }
     
     return codeHighlighter
@@ -145,29 +145,24 @@ export const useDebugger = () => {
 
   // Common debugger initialization
   const initializeDebugger = async (sourceCode: string, currentMap: GameMap, lazy: boolean) => {
-    // Prevent concurrent initialization
-    if (isInitializing) {
-      console.warn('[DEBUGGER] Already initializing, ignoring request')
-      return { success: false, error: 'Already initializing' }
-    }
-    
-    setIsInitializing(true)
-    currentCodeRef.current = sourceCode
-    
+    // Cancel any existing initialization
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
     
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-    
-    // Reset state
+    // Reset state immediately to clear panels
     setExecutionHistory([])
     setCurrentPlaybackIndex(-1)
     setHighlighter(null)
     setIsLazyMode(lazy)
     setHasReachedEnd(false)
     setHasError(false)
+    setIsInitializing(true)
+    
+    currentCodeRef.current = sourceCode
+    
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
     
     try {
       const codeHighlighter = await initializeEmulatorAndAssembler(sourceCode, abortController)
@@ -184,6 +179,12 @@ export const useDebugger = () => {
         stepResult: null
       }
       
+      // Check if operation was aborted before setting state
+      if (abortController.signal.aborted) {
+        setIsInitializing(false)
+        return { success: false, error: null }
+      }
+      
       setHighlighter(codeHighlighter)
       
       if (lazy) {
@@ -195,6 +196,10 @@ export const useDebugger = () => {
       } else {
         // Standard mode: pre-execute all steps
         const fullHistory = await executeAllSteps(codeHighlighter, initialState, abortController)
+        if (abortController.signal.aborted) {
+          setIsInitializing(false)
+          return { success: false, error: null }
+        }
         setExecutionHistory(fullHistory)
         setCurrentPlaybackIndex(0)
         setIsInitializing(false)
@@ -215,7 +220,7 @@ export const useDebugger = () => {
     
     while (true) {
       if (abortController.signal.aborted) {
-        throw new Error('Operation Aborted')
+        break
       }
       
       const stepResult = await emulator.step()
@@ -365,6 +370,7 @@ export const useDebugger = () => {
     setIsLazyMode(false)
     setHasReachedEnd(false)
     setHasError(false)
+    setIsInitializing(false)
     
     try {
       await emulator.reset()

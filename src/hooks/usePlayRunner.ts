@@ -32,18 +32,13 @@ export const usePlayRunner = () => {
   const [isInitializing, setIsInitializing] = useState(false)
 
   const startPlay = async (sourceCode: string, initialMap: GameMap) => {
-    // Prevent concurrent initialization
-    if (isInitializing) {
-      console.warn('[PLAY_RUNNER] Already initializing, ignoring request')
-      return { success: false, error: 'Already initializing' }
+    // Cancel any existing initialization
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
     }
     
     setIsInitializing(true)
     currentCodeRef.current = sourceCode
-    
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
     
     const abortController = new AbortController()
     abortControllerRef.current = abortController
@@ -61,7 +56,7 @@ export const usePlayRunner = () => {
     try {
       if (abortController.signal.aborted) {
         setIsInitializing(false)
-        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
+        return { success: false, error: null }
       }
       
       if (!emulator.state.isInitialized) {
@@ -91,7 +86,7 @@ export const usePlayRunner = () => {
       if (abortController.signal.aborted) {
         setIsPlaying(false)
         setIsInitializing(false)
-        return { success: false, error: 'INIT_ERROR: Operation Aborted' }
+        return { success: false, error: null }
       }
       
       await updateSystemState()
@@ -257,6 +252,7 @@ export const usePlayRunner = () => {
     setCurrentRegisters([])
     currentRegistersRef.current = []
     setCurrentMemory({ codeMemory: [], stackMemory: [], dataMemory: [] })
+    setIsInitializing(false)
     
     try {
       await emulator.reset()
