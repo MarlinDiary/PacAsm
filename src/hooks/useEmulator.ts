@@ -108,6 +108,30 @@ export const useEmulator = () => {
     }
   }, [sendMessage]);
 
+  const run = useCallback(async (instructionCount?: number): Promise<{ message: string; executedInstructions: number } | null> => {
+    try {
+      const response = await sendMessage({ 
+        type: 'run', 
+        payload: instructionCount ? { instructionCount } : undefined 
+      });
+      if (response.type === 'execution-complete' && response.payload) {
+        const result = response.payload as { message: string; executedInstructions: number };
+        setState(prev => ({ 
+          ...prev, 
+          isRunning: false 
+        }));
+        return result;
+      }
+      return null;
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'RUNTIME_ERROR: Run Failed' 
+      }));
+      return null;
+    }
+  }, [sendMessage]);
+
   const reset = useCallback(async () => {
     try {
       await sendMessage({ type: 'reset' });
@@ -220,6 +244,7 @@ export const useEmulator = () => {
     initializeEmulator,
     loadCode,
     step,
+    run,
     reset,
     cleanup,
     getMemory,
