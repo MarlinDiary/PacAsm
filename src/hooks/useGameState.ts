@@ -71,7 +71,7 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
       setCurrentMap({
         ...currentMap,
         playerAnimation: {
-          direction: (currentPlayerPos.direction as any) || 'right',
+          direction: (currentPlayerPos.direction as 'up' | 'down' | 'left' | 'right') || 'right',
           teleportAnimation: 'fade-out'
         }
       })

@@ -12,7 +12,7 @@ export interface PlayerAnimationState {
 
 export interface AnimatedGameState {
   mapState: GameMap
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**

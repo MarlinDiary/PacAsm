@@ -6,7 +6,7 @@ import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { checkVictoryCondition } from '@/lib/game-logic'
-import { updateMapWithMovement, ensurePlayerAnimation } from '@/lib/game-animation'
+import { updateMapWithMovement } from '@/lib/game-animation'
 
 export interface PlaybackState {
   mapState: GameMap
@@ -16,6 +16,7 @@ export interface PlaybackState {
   stackMemory: number[]
   dataMemory: number[]
   stepResult: StepResult | null
+  [key: string]: unknown
 }
 
 interface MemoryState {
@@ -94,14 +95,6 @@ export const useDebugger = () => {
     return null
   }
 
-  // Handle player movement based on data memory
-  const handlePlayerMovement = (currentMap: GameMap, dataMemory: number[]): GameMap => {
-    const commandValue = dataMemory[0]
-    if (commandValue < 1 || commandValue > 4) {
-      return currentMap
-    }
-    return updateMapWithMovement(currentMap, commandValue)
-  }
 
   // Check if execution has ended
   const isExecutionComplete = (stepResult: StepResult): boolean => {

@@ -262,12 +262,10 @@ STR   R1, [R0]`)
       height,
       tileSize,
       tiles,
-      playerPosition: {
-        row: playerPos.row,
-        col: playerPos.col,
-        direction: playerDirection
+      playerAnimation: {
+        direction: playerDirection,
+        shouldAnimate: false
       },
-      dots: dots.length > 0 ? dots : undefined,
       waterBackground: { tilesX: waterTilesX, tilesY: waterTilesY },
       initialCode
     }
@@ -284,8 +282,7 @@ STR   R1, [R0]`)
   tiles: [
 ${mapData.tiles.map(row => `    ['${row.join("', '")}']`).join(',\n')}
   ],
-  playerPosition: { row: ${mapData.playerPosition?.row}, col: ${mapData.playerPosition?.col}, direction: '${mapData.playerPosition?.direction}' },
-  dots: [${mapData.dots?.map(d => `{ row: ${d.row}, col: ${d.col} }`).join(', ') || ''}],
+  playerAnimation: { direction: '${mapData.playerAnimation?.direction || 'right'}', shouldAnimate: false },
   waterBackground: { tilesX: ${waterTilesX}, tilesY: ${waterTilesY} },
   initialCode: \`${initialCode}\`
 }`
