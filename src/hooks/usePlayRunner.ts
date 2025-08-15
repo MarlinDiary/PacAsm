@@ -1,12 +1,19 @@
 import { useState, useRef, useCallback } from 'react'
 import { useEmulator } from './useEmulator'
 import { GameMap, getPlayerPosition } from '@/data/maps'
-import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
-import { ARMAssembler } from '@/lib/assembler'
+import { CodeHighlighter } from '@/lib/highlighter'
 import { RegisterInfo } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { checkVictoryCondition } from '@/lib/game-logic'
 import { updateMapAfterMovement } from '@/lib/game-animation'
+import { 
+  initializeEmulatorWithCode, 
+  resetAndReloadCode, 
+  assembleCode,
+  getEmulatorMemoryState,
+  MEMORY_CONFIG 
+} from '@/lib/emulator-utils'
+import { hasValidMovementCommand } from '@/lib/cycle-management'
 
 interface MovementAction {
   instructionCount: number
@@ -61,29 +68,7 @@ export const usePlayRunner = () => {
         return { success: false, error: null }
       }
       
-      if (!emulator.state.isInitialized) {
-        await emulator.initializeEmulator()
-      }
-      
-      await emulator.reset()
-      
-      const assembler = new ARMAssembler()
-      await assembler.initialize()
-      const result = await assembler.assemble(sourceCode)
-      
-      // Initialize memory regions
-      const memorySize = 1024
-      const zeroData = new Array(memorySize).fill(0)
-      await emulator.writeMemory(0x10000, zeroData) // Code memory
-      await emulator.writeMemory(0x20000, zeroData) // Stack memory
-      await emulator.writeMemory(0x30000, zeroData) // Data memory
-      
-      await emulator.loadCode(Array.from(result.mc))
-      
-      const codeHighlighter = createHighlighter()
-      await codeHighlighter.initialize(sourceCode)
-      
-      assembler.destroy()
+      const { codeHighlighter } = await initializeEmulatorWithCode(emulator, sourceCode, abortController)
       
       if (abortController.signal.aborted) {
         setIsPlaying(false)
@@ -106,21 +91,16 @@ export const usePlayRunner = () => {
   }
 
   const updateSystemState = async () => {
-    const registers = await emulator.getAllRegisters()
-    const codeMemory = await emulator.getMemory(0x10000, 1024)
-    const stackMemory = await emulator.getMemory(0x20000, 1024)
-    const dataMemory = await emulator.getMemory(0x30000, 1024)
+    const memoryState = await getEmulatorMemoryState(emulator)
     
-    if (registers) {
+    if (memoryState) {
       setPreviousRegisters(currentRegistersRef.current)
-      setCurrentRegisters(registers)
-      currentRegistersRef.current = registers
-    }
-    if (codeMemory && stackMemory && dataMemory) {
+      setCurrentRegisters(memoryState.registers)
+      currentRegistersRef.current = memoryState.registers
       setCurrentMemory({
-        codeMemory: codeMemory.data,
-        stackMemory: stackMemory.data,
-        dataMemory: dataMemory.data
+        codeMemory: memoryState.codeMemory,
+        stackMemory: memoryState.stackMemory,
+        dataMemory: memoryState.dataMemory
       })
     }
   }
@@ -138,22 +118,9 @@ export const usePlayRunner = () => {
       }
       
       try {
-        // Reset emulator state for fresh execution of user code
-        await emulator.reset()
-        
-        // Initialize memory regions
-        const memorySize = 1024
-        const zeroData = new Array(memorySize).fill(0)
-        await emulator.writeMemory(0x10000, zeroData) // Code memory
-        await emulator.writeMemory(0x20000, zeroData) // Stack memory
-        await emulator.writeMemory(0x30000, zeroData) // Data memory
-        
-        // Assemble and load the user code fresh each time
-        const assembler = new ARMAssembler()
-        await assembler.initialize()
-        const result = await assembler.assemble(currentCodeRef.current)
-        await emulator.loadCode(Array.from(result.mc))
-        assembler.destroy()
+        // Reset emulator state and load fresh code for each iteration
+        const machineCode = await assembleCode(currentCodeRef.current)
+        await resetAndReloadCode(emulator, machineCode)
         
         // Run the complete user code with 3-second timeout
         const startTime = Date.now()
@@ -177,8 +144,8 @@ export const usePlayRunner = () => {
           }
           
           // Check if we have an action in data memory
-          const dataMemory = await emulator.getMemory(0x30000, 1)
-          if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4) {
+          const dataMemory = await emulator.getMemory(MEMORY_CONFIG.DATA_BASE, 1)
+          if (dataMemory && hasValidMovementCommand(dataMemory.data)) {
             nextAction = dataMemory.data[0]
             executionCompleted = true
             break

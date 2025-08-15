@@ -1,12 +1,20 @@
 import { useState, useRef, useCallback } from 'react'
 import { useEmulator } from './useEmulator'
 import { GameMap } from '@/data/maps'
-import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
-import { ARMAssembler } from '@/lib/assembler'
+import { CodeHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
-import { checkVictoryCondition } from '@/lib/game-logic'
 import { updateMapWithMovement } from '@/lib/game-animation'
+import { 
+  initializeEmulatorWithCode, 
+  getEmulatorMemoryState
+} from '@/lib/emulator-utils'
+import { 
+  handleDebugCycleEnd, 
+  clearMovementCommand, 
+  isCodeExecutionComplete,
+  hasValidMovementCommand 
+} from '@/lib/cycle-management'
 
 export interface PlaybackState {
   mapState: GameMap
@@ -34,75 +42,20 @@ export const useDebugger = () => {
   const [currentPlaybackIndex, setCurrentPlaybackIndex] = useState(-1)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [isLazyMode, setIsLazyMode] = useState(false)
-  const [hasReachedEnd, setHasReachedEnd] = useState(false)
+  const [, setHasReachedEnd] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [isGameComplete, setIsGameComplete] = useState(false)
   const currentCodeRef = useRef<string>('')
   const originalCodeMemoryRef = useRef<number[]>([])
   const [isInitializing, setIsInitializing] = useState(false)
 
-  // Common initialization logic
-  const initializeEmulatorAndAssembler = async (sourceCode: string, abortController: AbortController) => {
-    if (!emulator.state.isInitialized) {
-      await emulator.initializeEmulator()
-    }
-    
-    await emulator.reset()
-    
-    const assembler = new ARMAssembler()
-    await assembler.initialize()
-    const result = await assembler.assemble(sourceCode)
-    
-    // Initialize memory regions
-    const memorySize = 1024
-    const zeroData = new Array(memorySize).fill(0)
-    await emulator.writeMemory(0x10000, zeroData) // Code memory
-    await emulator.writeMemory(0x20000, zeroData) // Stack memory  
-    await emulator.writeMemory(0x30000, zeroData) // Data memory
-    
-    await emulator.loadCode(Array.from(result.mc))
-    
-    // Save original code memory for reloading in cycles
-    originalCodeMemoryRef.current = Array.from(result.mc)
-    
-    const codeHighlighter = createHighlighter()
-    await codeHighlighter.initialize(sourceCode)
-    
-    assembler.destroy()
-    
-    if (abortController.signal.aborted) {
-      return codeHighlighter
-    }
-    
-    return codeHighlighter
-  }
 
   // Get current memory state
   const getMemoryState = async (): Promise<MemoryState | null> => {
-    const registers = await emulator.getAllRegisters()
-    const codeMemory = await emulator.getMemory(0x10000, 1024)
-    const stackMemory = await emulator.getMemory(0x20000, 1024)
-    const dataMemory = await emulator.getMemory(0x30000, 1024)
-    
-    if (registers && codeMemory && stackMemory && dataMemory) {
-      return {
-        registers,
-        codeMemory: codeMemory.data,
-        stackMemory: stackMemory.data,
-        dataMemory: dataMemory.data
-      }
-    }
-    return null
+    return await getEmulatorMemoryState(emulator)
   }
 
 
-  // Check if execution has ended
-  const isExecutionComplete = (stepResult: StepResult): boolean => {
-    return stepResult.message?.includes('Execution completed') ||
-           stepResult.message?.includes('reached end of code') ||
-           stepResult.message?.includes('no more instructions') ||
-           false
-  }
 
   // Standard debug mode - pre-execute all steps
   const startDebug = async (sourceCode: string, currentMap: GameMap) => {
@@ -137,7 +90,11 @@ export const useDebugger = () => {
     abortControllerRef.current = abortController
     
     try {
-      const codeHighlighter = await initializeEmulatorAndAssembler(sourceCode, abortController)
+      const { codeHighlighter, machineCode } = await initializeEmulatorWithCode(emulator, sourceCode, abortController)
+      
+      // Save original code memory for reloading in cycles
+      originalCodeMemoryRef.current = machineCode
+      
       const initialMemory = await getMemoryState()
       
       if (!initialMemory) {
@@ -200,7 +157,7 @@ export const useDebugger = () => {
         break
       }
       
-      if (isExecutionComplete(stepResult)) {
+      if (isCodeExecutionComplete(stepResult)) {
         break
       }
       
@@ -210,9 +167,9 @@ export const useDebugger = () => {
       if (!memoryState) continue
       
       // Handle movement
-      if (memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
+      if (hasValidMovementCommand(memoryState.dataMemory)) {
         currentMapState = updateMapWithMovement(currentMapState, memoryState.dataMemory[0])
-        await emulator.writeMemory(0x30000, [0])
+        await clearMovementCommand(emulator)
       }
       
       history.push({
@@ -284,33 +241,18 @@ export const useDebugger = () => {
       let currentHighlight: number | undefined = undefined
       let isCodeComplete = false
       
-      if (isExecutionComplete(stepResult)) {
+      if (isCodeExecutionComplete(stepResult)) {
         isCodeComplete = true
         setHasReachedEnd(true)
         
-        // Only check for movement when code execution is complete
-        const memoryState = await getMemoryState()
-        if (memoryState && memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
-          newMapState = updateMapWithMovement(newMapState, memoryState.dataMemory[0])
-        }
-        
-        // Check if game is complete (all dots collected)
-        if (checkVictoryCondition(newMapState)) {
-          setIsGameComplete(true)
-        } else {
-          // Reset emulator for next cycle
-          await emulator.reset()
-          
-          // Initialize memory regions for next cycle
-          const memorySize = 1024
-          const zeroData = new Array(memorySize).fill(0)
-          await emulator.writeMemory(0x10000, zeroData) // Code memory
-          await emulator.writeMemory(0x20000, zeroData) // Stack memory  
-          await emulator.writeMemory(0x30000, zeroData) // Data memory
-          
-          // Reload original code
-          await emulator.loadCode(originalCodeMemoryRef.current)
-        }
+        // Handle cycle end using common logic
+        const cycleResult = await handleDebugCycleEnd(
+          emulator, 
+          newMapState, 
+          originalCodeMemoryRef.current, 
+          setIsGameComplete
+        )
+        newMapState = cycleResult.newMapState
         
         // Get actual emulator state after reset to show in panels
         const resetMemoryState = await getMemoryState()
