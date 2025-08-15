@@ -58,7 +58,7 @@ export const usePlayRunner = () => {
     setIsPlaying(true)
     
     // Wait for teleport animation to complete
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     setCurrentMap(initialMap)
     
@@ -186,8 +186,8 @@ export const usePlayRunner = () => {
             break
           }
           
-          // Wait 300ms before next iteration
-          await new Promise(resolve => setTimeout(resolve, 300))
+          // Wait 100ms before next iteration
+          await new Promise(resolve => setTimeout(resolve, 100))
         } else {
           // No valid action returned, end the game
           break

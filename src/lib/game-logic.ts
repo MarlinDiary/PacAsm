@@ -104,6 +104,7 @@ export const checkVictoryCondition = (map: GameMap): boolean => {
   return true // No dots found, game won
 }
 
+
 // Game state management interface  
 export interface GameVictoryState {
   hasWon: boolean // Permanent victory status (shows Next button)

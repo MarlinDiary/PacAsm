@@ -59,17 +59,34 @@ export interface GameMap {
   };
 }
 
+// Raw map data for Level 1
+const LEVEL1_RAW_MAP = `
+%%%%%%%%%%%%%%%%%%%%
+%o...%........%....%
+%.%%.%.%%%%%%.%.%%.%
+%.%..............%.%
+%.%.%%.%%  %%.%%.%.%
+%......%G  G%......%
+%.%.%%.%%%%%%.%%.%.%
+%.%..............%.%
+%.%%.%.%%%%%%.%.%%.%
+%....%...P....%...o%
+%%%%%%%%%%%%%%%%%%%%`;
+
+function parseMapFromString(mapString: string): TileSymbol[][] {
+  const lines = mapString.trim().split('\n');
+  return lines.map(line => line.split('') as TileSymbol[]);
+}
+
 export const MAPS: GameMap[] = [
   {
     id: 'level1',
     name: 'Level 1',
-    width: 3,
-    height: 1,
-    tileSize: 64,
-    tiles: [
-      ['P', ' ', '.']
-    ],
-    waterBackground: { tilesX: 35, tilesY: 35 },
+    width: 20,
+    height: 11,
+    tileSize: 20,
+    tiles: parseMapFromString(LEVEL1_RAW_MAP),
+    waterBackground: { tilesX: 72, tilesY: 71 },
     initialCode: `LDR   R0, =0x00030000
 MOV   R1, #4
 STR   R1, [R0]`,

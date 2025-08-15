@@ -161,7 +161,7 @@ export default function MapRenderer({ map }: MapRendererProps) {
       {playerRow !== -1 && (
         <div
           className={`absolute top-0 left-0 pointer-events-none z-10 ${
-            map.playerAnimation?.shouldAnimate ? 'transition-transform duration-300 ease-out' : ''
+            map.playerAnimation?.shouldAnimate ? 'transition-transform duration-100 linear' : ''
           }`}
           style={{
             transform: map.playerAnimation?.animationPosition 

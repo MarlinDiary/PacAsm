@@ -72,6 +72,15 @@ export function updateMapWithMovement(
     default: return currentMap
   }
 
+  // Check if new position is valid (not air/wall)
+  if (currentMap.tiles[newRow][newCol] === '%') {
+    // Cannot move to air/wall, only update direction
+    return {
+      ...currentMap,
+      playerAnimation: createPlayerAnimation(command)
+    }
+  }
+
   // Create updated tiles array
   const updatedTiles = currentMap.tiles.map(row => [...row])
 
@@ -135,6 +144,15 @@ export function updateMapAfterMovement(
   newCol: number, 
   direction: number
 ): GameMap {
+  // Check if new position is valid (not air/wall)
+  if (mapState.tiles[newRow][newCol] === '%') {
+    // Cannot move to air/wall, only update direction
+    return {
+      ...mapState,
+      playerAnimation: createPlayerAnimation(direction)
+    }
+  }
+
   // Create updated tiles array
   const updatedTiles = mapState.tiles.map(row => [...row])
   

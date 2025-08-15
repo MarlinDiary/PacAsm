@@ -25,6 +25,7 @@ import { useGameState } from '@/hooks/useGameState'
 import { usePanelLayout } from '@/hooks/usePanelLayout'
 import { useExecutionControl } from '@/hooks/useExecutionControl'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
+import { KeyboardControl } from '@/hooks/useKeyboardControl'
 import { Gamepad2, Move, CodeXml, CircuitBoard, HardDrive, Settings2, ArrowLeft, Stethoscope, Maximize2, Minimize2 } from 'lucide-react'
 
 export default function LevelPage() {
@@ -59,7 +60,12 @@ export default function LevelPage() {
   }, [errors.length, gameState])
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-[#f0f0f0] dark:bg-[#0f0f0f]">
+    <KeyboardControl
+      enabled={process.env.NODE_ENV === 'development' && !gameState.isPlayMode && !gameState.isDebugMode}
+      currentMap={gameState.currentMap}
+      onMapUpdate={gameState.setCurrentMap}
+    >
+      <div className="h-screen w-full overflow-hidden bg-[#f0f0f0] dark:bg-[#0f0f0f]">
       <div className="p-2 h-full flex flex-col">
         <div className="flex justify-center relative">
           <div className="absolute left-0 top-0">
@@ -237,6 +243,7 @@ export default function LevelPage() {
         </ResizablePanelGroup>
         </div>
       </div>
-    </div>
+      </div>
+    </KeyboardControl>
   )
 }
