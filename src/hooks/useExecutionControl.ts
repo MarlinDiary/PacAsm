@@ -3,6 +3,7 @@ import { GameMap } from '@/data/maps'
 import { useDebugger } from './useDebugger'
 import { usePlayRunner } from './usePlayRunner'
 import { useGameState } from './useGameState'
+import { handleVictoryCheck } from '@/lib/game-logic'
 
 interface UseExecutionControlProps {
   gameState: ReturnType<typeof useGameState>
@@ -146,10 +147,9 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
       setCurrentMap(playState.currentMap)
       setHighlightedLine(playState.highlightedLine)
       
-      // Check victory condition during play mode
-      if (isPlayMode && playState.currentMap.dots && playState.currentMap.dots.length === 0) {
-        setHasWon(true) // Permanent victory status
-        setCurrentPlayWon(true) // This play victory status
+      // Check victory condition during play mode using game logic
+      if (isPlayMode && playState.currentMap) {
+        handleVictoryCheck(playState.currentMap, setHasWon, setCurrentPlayWon, isPlayMode)
       }
     }
   }, [playState.isPlaying, playState.currentMap, playState.highlightedLine, isPlayMode, setCurrentMap, setHighlightedLine, setHasWon, setCurrentPlayWon])

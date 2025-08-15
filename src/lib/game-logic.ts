@@ -85,3 +85,29 @@ export const handleDotCollection = (
     }))
   }, 200)
 }
+
+// Victory condition checking
+export const checkVictoryCondition = (map: GameMap): boolean => {
+  return map.dots ? map.dots.length === 0 : false
+}
+
+// Game state management interface  
+export interface GameVictoryState {
+  hasWon: boolean // Permanent victory status (shows Next button)
+  currentPlayWon: boolean // Current play victory status (shows confetti)
+}
+
+// Victory handler - processes victory condition and updates states
+export const handleVictoryCheck = (
+  map: GameMap,
+  setHasWon: (won: boolean) => void,
+  setCurrentPlayWon: (won: boolean) => void,
+  isPlayMode: boolean
+): boolean => {
+  if (isPlayMode && checkVictoryCondition(map)) {
+    setHasWon(true) // Permanent victory status
+    setCurrentPlayWon(true) // This play victory status
+    return true
+  }
+  return false
+}

@@ -5,6 +5,7 @@ import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
+import { checkVictoryCondition } from '@/lib/game-logic'
 
 interface MovementAction {
   instructionCount: number
@@ -125,73 +126,120 @@ export const usePlayRunner = () => {
 
   const executeWithDelays = async (initialMap: GameMap, codeHighlighter: CodeHighlighter, abortController: AbortController) => {
     let currentMapState = { ...initialMap }
-    let instructionCount = 0
     let movementCount = 0
     const actions: MovementAction[] = []
     
-    while (movementCount < 300 && instructionCount < 1000) {
+    // Execute game loop - each iteration runs the complete user code to get next action
+    while (movementCount < 300) {
       if (abortController.signal.aborted) {
         setIsPlaying(false)
         return
       }
       
-      const stepResult = await emulator.step()
-      if (!stepResult) break
-      
-      if (!stepResult.success) {
-        const errorMessage = stepResult.message || 'Execution failed'
-        addError(errorMessage, currentCodeRef.current)
-        break
-      }
-      
-      if (stepResult.message?.includes('Execution completed') ||
-          stepResult.message?.includes('reached end of code') ||
-          stepResult.message?.includes('no more instructions')) {
-        break
-      }
-      
-      instructionCount++
-      
-      const highlight = getHighlightFromStepResult(stepResult, codeHighlighter)
-      const currentHighlight = highlight?.lineNumber
-      setHighlightedLine(currentHighlight)
-      
-      const dataMemory = await emulator.getMemory(0x30000, 1)
-      
-      if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4 && currentMapState.playerPosition) {
-        // Handle movement
-        movementCount++
-        instructionCount = 0
+      try {
+        // Reset emulator state for fresh execution of user code
+        await emulator.reset()
         
-        const { newRow, newCol, newDirection } = calculateNewPosition(currentMapState, dataMemory.data[0])
-        const updatedDots = updateDotsAfterMovement(currentMapState.dots, newRow, newCol)
+        // Initialize memory regions
+        const memorySize = 1024
+        const zeroData = new Array(memorySize).fill(0)
+        await emulator.writeMemory(0x10000, zeroData) // Code memory
+        await emulator.writeMemory(0x20000, zeroData) // Stack memory
+        await emulator.writeMemory(0x30000, zeroData) // Data memory
         
-        currentMapState = {
-          ...currentMapState,
-          playerPosition: { ...currentMapState.playerPosition, row: newRow, col: newCol, direction: newDirection, shouldAnimate: true },
-          dots: updatedDots
+        // Assemble and load the user code fresh each time
+        const assembler = new ARMAssembler()
+        await assembler.initialize()
+        const result = await assembler.assemble(currentCodeRef.current)
+        await emulator.loadCode(Array.from(result.mc))
+        assembler.destroy()
+        
+        // Run the complete user code with 3-second timeout
+        const startTime = Date.now()
+        const maxExecutionTime = 3000 // 3 seconds in milliseconds
+        
+        let nextAction = 0
+        let executionCompleted = false
+        
+        // Execute the code completely to get the next action
+        while (!executionCompleted && (Date.now() - startTime) < maxExecutionTime) {
+          if (abortController.signal.aborted) {
+            setIsPlaying(false)
+            return
+          }
+          
+          // Run a batch of instructions
+          const runResult = await emulator.run(10000) // Run up to 10000 instructions at once
+          if (!runResult || runResult.executedInstructions === 0) {
+            executionCompleted = true
+            break
+          }
+          
+          // Check if we have an action in data memory
+          const dataMemory = await emulator.getMemory(0x30000, 1)
+          if (dataMemory && dataMemory.data[0] >= 1 && dataMemory.data[0] <= 4) {
+            nextAction = dataMemory.data[0]
+            executionCompleted = true
+            break
+          }
         }
         
-        actions.push({
-          instructionCount: movementCount,
-          mapState: { ...currentMapState },
-          highlightedLine: currentHighlight
-        })
+        // Check for timeout
+        if ((Date.now() - startTime) >= maxExecutionTime) {
+          const errorMessage = 'Code execution timeout (3 seconds exceeded)'
+          addError(errorMessage, currentCodeRef.current)
+          setIsPlaying(false)
+          return { success: false, error: errorMessage }
+        }
         
-        setCurrentMap({ ...currentMapState })
-        await updateSystemState()
-        await emulator.writeMemory(0x30000, [0])
-        await new Promise(resolve => setTimeout(resolve, 300))
-      } else {
-        // Handle non-movement instruction
-        await updateSystemState()
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
-      
-      if (instructionCount >= 1000) {
-        setIsPlaying(false)
-        const errorMessage = 'Too many instructions without movement'
+        // If we got a valid action, execute the movement
+        if (nextAction >= 1 && nextAction <= 4 && currentMapState.playerPosition) {
+          movementCount++
+          
+          const { newRow, newCol, newDirection } = calculateNewPosition(currentMapState, nextAction)
+          const updatedDots = updateDotsAfterMovement(currentMapState.dots, newRow, newCol)
+          
+          currentMapState = {
+            ...currentMapState,
+            playerPosition: { 
+              ...currentMapState.playerPosition, 
+              row: newRow, 
+              col: newCol, 
+              direction: newDirection, 
+              shouldAnimate: true 
+            },
+            dots: updatedDots
+          }
+          
+          // Update UI - no specific line highlighting for complete runs
+          setCurrentMap({ ...currentMapState })
+          setHighlightedLine(undefined)
+          
+          actions.push({
+            instructionCount: movementCount,
+            mapState: { ...currentMapState },
+            highlightedLine: undefined
+          })
+          
+          await updateSystemState()
+          
+          // Check victory condition after movement
+          if (checkVictoryCondition(currentMapState)) {
+            // Victory achieved! Stop the game loop
+            break
+          }
+          
+          // Wait 300ms before next iteration
+          await new Promise(resolve => setTimeout(resolve, 300))
+        } else {
+          // No valid action returned, end the game
+          break
+        }
+        
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Code execution failed'
         addError(errorMessage, currentCodeRef.current)
+        setIsPlaying(false)
         return { success: false, error: errorMessage }
       }
     }

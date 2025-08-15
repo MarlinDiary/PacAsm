@@ -5,6 +5,7 @@ import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
+import { checkVictoryCondition } from '@/lib/game-logic'
 
 export interface PlaybackState {
   mapState: GameMap
@@ -33,7 +34,9 @@ export const useDebugger = () => {
   const [isLazyMode, setIsLazyMode] = useState(false)
   const [hasReachedEnd, setHasReachedEnd] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [isGameComplete, setIsGameComplete] = useState(false)
   const currentCodeRef = useRef<string>('')
+  const originalCodeMemoryRef = useRef<number[]>([])
   const [isInitializing, setIsInitializing] = useState(false)
 
   // Common initialization logic
@@ -56,6 +59,9 @@ export const useDebugger = () => {
     await emulator.writeMemory(0x30000, zeroData) // Data memory
     
     await emulator.loadCode(Array.from(result.mc))
+    
+    // Save original code memory for reloading in cycles
+    originalCodeMemoryRef.current = Array.from(result.mc)
     
     const codeHighlighter = createHighlighter()
     await codeHighlighter.initialize(sourceCode)
@@ -157,6 +163,7 @@ export const useDebugger = () => {
     setIsLazyMode(lazy)
     setHasReachedEnd(false)
     setHasError(false)
+    setIsGameComplete(false)
     setIsInitializing(true)
     
     currentCodeRef.current = sourceCode
@@ -262,22 +269,23 @@ export const useDebugger = () => {
       return null
     }
     
-    // Check if debugger is properly initialized
-    if (!highlighter || executionHistory.length === 0 || currentPlaybackIndex < 0) {
-      console.error('[DEBUGGER] Debugger not properly initialized for step operation')
-      addError('Debugger not ready for step operation', currentCodeRef.current)
-      return null
-    }
-    
-    // First check if we can move forward in existing history
+    // First check if we can move forward in existing history (always allowed)
     if (currentPlaybackIndex < executionHistory.length - 1) {
       const nextIndex = currentPlaybackIndex + 1
       setCurrentPlaybackIndex(nextIndex)
       return executionHistory[nextIndex]
     }
     
-    // If we've reached the end, don't allow further steps
-    if (hasReachedEnd) {
+    // Don't allow NEW step execution if game is complete
+    if (isGameComplete) {
+      console.warn('[DEBUGGER] Game is complete, cannot execute new steps')
+      return null
+    }
+    
+    // Check if debugger is properly initialized for NEW step execution
+    if (!highlighter || executionHistory.length === 0 || currentPlaybackIndex < 0) {
+      console.error('[DEBUGGER] Debugger not properly initialized for step operation')
+      addError('Debugger not ready for step operation', currentCodeRef.current)
       return null
     }
     
@@ -294,35 +302,78 @@ export const useDebugger = () => {
       const currentState = executionHistory[currentPlaybackIndex]
       let newMapState = { ...currentState.mapState }
       let currentHighlight: number | undefined = undefined
+      let isCodeComplete = false
       
       if (isExecutionComplete(stepResult)) {
+        isCodeComplete = true
         setHasReachedEnd(true)
+        
+        // Only check for movement when code execution is complete
+        const memoryState = await getMemoryState()
+        if (memoryState && memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
+          newMapState = updateMapWithMovement(newMapState, memoryState.dataMemory)
+        }
+        
+        // Check if game is complete (all dots collected)
+        if (checkVictoryCondition(newMapState)) {
+          setIsGameComplete(true)
+        } else {
+          // Reset emulator for next cycle
+          await emulator.reset()
+          
+          // Initialize memory regions for next cycle
+          const memorySize = 1024
+          const zeroData = new Array(memorySize).fill(0)
+          await emulator.writeMemory(0x10000, zeroData) // Code memory
+          await emulator.writeMemory(0x20000, zeroData) // Stack memory  
+          await emulator.writeMemory(0x30000, zeroData) // Data memory
+          
+          // Reload original code
+          await emulator.loadCode(originalCodeMemoryRef.current)
+        }
+        
+        // Get actual emulator state after reset to show in panels
+        const resetMemoryState = await getMemoryState()
+        const resetState: PlaybackState = {
+          mapState: newMapState,
+          highlightedLine: undefined,
+          registers: resetMemoryState?.registers || [], // Show actual reset state
+          codeMemory: resetMemoryState?.codeMemory || [], // Show actual reset state
+          stackMemory: resetMemoryState?.stackMemory || [], 
+          dataMemory: resetMemoryState?.dataMemory || [],
+          stepResult
+        }
+        
+        const newHistory = [...executionHistory, resetState]
+        setExecutionHistory(newHistory)
+        setCurrentPlaybackIndex(currentPlaybackIndex + 1)
+        
+        // If code execution is complete, allow continuing to next cycle
+        if (isCodeComplete) {
+          setHasReachedEnd(false)
+        }
+        
+        return resetState
       } else {
         const highlight = highlighter ? getHighlightFromStepResult(stepResult, highlighter) : null
         currentHighlight = highlight?.lineNumber
+        
+        const memoryState = await getMemoryState()
+        if (!memoryState) return null
+        
+        const newState: PlaybackState = {
+          mapState: newMapState,
+          highlightedLine: currentHighlight,
+          ...memoryState,
+          stepResult
+        }
+        
+        const newHistory = [...executionHistory, newState]
+        setExecutionHistory(newHistory)
+        setCurrentPlaybackIndex(currentPlaybackIndex + 1)
+        
+        return newState
       }
-      
-      const memoryState = await getMemoryState()
-      if (!memoryState) return null
-      
-      // Handle movement
-      if (memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
-        newMapState = updateMapWithMovement(newMapState, memoryState.dataMemory)
-        await emulator.writeMemory(0x30000, [0])
-      }
-      
-      const newState: PlaybackState = {
-        mapState: newMapState,
-        highlightedLine: currentHighlight,
-        ...memoryState,
-        stepResult
-      }
-      
-      const newHistory = [...executionHistory, newState]
-      setExecutionHistory(newHistory)
-      setCurrentPlaybackIndex(currentPlaybackIndex + 1)
-      
-      return newState
     } catch (error) {
       setHasError(true)
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -344,6 +395,10 @@ export const useDebugger = () => {
     if (currentPlaybackIndex > 0) {
       const prevIndex = currentPlaybackIndex - 1
       setCurrentPlaybackIndex(prevIndex)
+      // Reset error state when stepping back, allowing forward stepping again
+      if (hasError) {
+        setHasError(false)
+      }
       return executionHistory[prevIndex]
     }
     return null
@@ -370,6 +425,7 @@ export const useDebugger = () => {
     setIsLazyMode(false)
     setHasReachedEnd(false)
     setHasError(false)
+    setIsGameComplete(false)
     setIsInitializing(false)
     
     try {
@@ -400,10 +456,10 @@ export const useDebugger = () => {
     hasError,
     isInitializing,
     canStepUp: currentPlaybackIndex > 0 && !isInitializing,
-    canStepDown: !isInitializing && emulator.state.isInitialized && (
+    canStepDown: !isInitializing && emulator.state.isInitialized && !hasError && (
       isLazyMode ? 
-        (currentPlaybackIndex < executionHistory.length - 1 || !hasReachedEnd) :
-        (currentPlaybackIndex < executionHistory.length - 1)
+        (currentPlaybackIndex < executionHistory.length - 1 || !isGameComplete) : // In lazy mode, allow if in history OR if game not complete
+        (!isGameComplete && currentPlaybackIndex < executionHistory.length - 1)
     ),
     startDebug,
     startDebugLazy,
