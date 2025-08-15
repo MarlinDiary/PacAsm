@@ -1,4 +1,4 @@
-import { GameMap } from '@/data/maps'
+import { GameMap, getPlayerPosition } from '@/data/maps'
 
 export interface PlayerMovement {
   newRow: number
@@ -13,11 +13,12 @@ export const movePlayer = async (
   command: number, 
   writeMemoryFn: (address: number, data: number[]) => Promise<boolean>
 ): Promise<PlayerMovement | null> => {
-  if (!currentMap.playerPosition) return null
+  const playerPos = getPlayerPosition(currentMap)
+  if (!playerPos) return null
   
-  let newRow = currentMap.playerPosition.row
-  let newCol = currentMap.playerPosition.col
-  let newDirection = currentMap.playerPosition.direction
+  let newRow = playerPos.row
+  let newCol = playerPos.col
+  let newDirection = playerPos.direction
   
   switch (command) {
     case 1: // Up
@@ -40,25 +41,23 @@ export const movePlayer = async (
       return null
   }
   
-  // Check for dot collision
-  const updatedDots = currentMap.dots ? [...currentMap.dots] : []
-  const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
-  let collectedDot = false
+  // Create updated tiles array
+  const updatedTiles = currentMap.tiles.map(row => [...row])
   
-  if (dotIndex !== -1) {
+  // Check for dot collision and collect it
+  let collectedDot = false
+  if (updatedTiles[newRow][newCol] === '.') {
     collectedDot = true
-    updatedDots.splice(dotIndex, 1)
+    updatedTiles[newRow][newCol] = ' ' // Replace dot with grass
   }
+  
+  // Move player: clear old position and set new position
+  updatedTiles[playerPos.row][playerPos.col] = ' ' // Clear old player position
+  updatedTiles[newRow][newCol] = 'P' // Set new player position
   
   const updatedMap = {
     ...currentMap,
-    playerPosition: {
-      ...currentMap.playerPosition,
-      row: newRow,
-      col: newCol,
-      direction: newDirection
-    },
-    dots: updatedDots
+    tiles: updatedTiles
   }
   
   // Reset the command memory to 0
@@ -79,16 +78,30 @@ export const handleDotCollection = (
   col: number
 ) => {
   setTimeout(() => {
-    setCurrentMap(prevMap => ({
-      ...prevMap,
-      dots: prevMap.dots?.filter(dot => !(dot.row === row && dot.col === col)) || []
-    }))
+    setCurrentMap(prevMap => {
+      const updatedTiles = prevMap.tiles.map(tileRow => [...tileRow])
+      if (updatedTiles[row][col] === '.') {
+        updatedTiles[row][col] = ' ' // Replace dot with grass
+      }
+      return {
+        ...prevMap,
+        tiles: updatedTiles
+      }
+    })
   }, 200)
 }
 
 // Victory condition checking
 export const checkVictoryCondition = (map: GameMap): boolean => {
-  return map.dots ? map.dots.length === 0 : false
+  // Check if there are any dots left in the tiles array
+  for (let row = 0; row < map.height; row++) {
+    for (let col = 0; col < map.width; col++) {
+      if (map.tiles[row][col] === '.') {
+        return false // Found a dot, game not won yet
+      }
+    }
+  }
+  return true // No dots found, game won
 }
 
 // Game state management interface  

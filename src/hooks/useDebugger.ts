@@ -6,6 +6,7 @@ import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo, StepResult } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { checkVictoryCondition } from '@/lib/game-logic'
+import { updateMapWithMovement, ensurePlayerAnimation } from '@/lib/game-animation'
 
 export interface PlaybackState {
   mapState: GameMap
@@ -94,41 +95,12 @@ export const useDebugger = () => {
   }
 
   // Handle player movement based on data memory
-  const updateMapWithMovement = (currentMap: GameMap, dataMemory: number[]): GameMap => {
+  const handlePlayerMovement = (currentMap: GameMap, dataMemory: number[]): GameMap => {
     const commandValue = dataMemory[0]
-    if (commandValue < 1 || commandValue > 4 || !currentMap.playerPosition) {
+    if (commandValue < 1 || commandValue > 4) {
       return currentMap
     }
-    
-    const { row, col } = currentMap.playerPosition
-    let newRow = row
-    let newCol = col
-    let newDirection = currentMap.playerPosition.direction
-    
-    switch (commandValue) {
-      case 1: newRow = Math.max(0, row - 1); newDirection = 'up'; break
-      case 2: newRow = Math.min(currentMap.height - 1, row + 1); newDirection = 'down'; break
-      case 3: newCol = Math.max(0, col - 1); newDirection = 'left'; break
-      case 4: newCol = Math.min(currentMap.width - 1, col + 1); newDirection = 'right'; break
-    }
-    
-    const updatedDots = currentMap.dots ? [...currentMap.dots] : []
-    const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
-    if (dotIndex !== -1) {
-      updatedDots.splice(dotIndex, 1)
-    }
-    
-    return {
-      ...currentMap,
-      playerPosition: { 
-        ...currentMap.playerPosition, 
-        row: newRow, 
-        col: newCol, 
-        direction: newDirection, 
-        shouldAnimate: true 
-      },
-      dots: updatedDots
-    }
+    return updateMapWithMovement(currentMap, commandValue)
   }
 
   // Check if execution has ended
@@ -246,7 +218,7 @@ export const useDebugger = () => {
       
       // Handle movement
       if (memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
-        currentMapState = updateMapWithMovement(currentMapState, memoryState.dataMemory)
+        currentMapState = updateMapWithMovement(currentMapState, memoryState.dataMemory[0])
         await emulator.writeMemory(0x30000, [0])
       }
       
@@ -259,6 +231,21 @@ export const useDebugger = () => {
     }
     
     return history
+  }
+
+  // Helper function to ensure animation state is added to a state
+  const ensureAnimationState = (state: PlaybackState): PlaybackState => {
+    return {
+      ...state,
+      mapState: {
+        ...state.mapState,
+        playerAnimation: {
+          ...state.mapState.playerAnimation,
+          direction: state.mapState.playerAnimation?.direction || 'right',
+          shouldAnimate: true
+        }
+      }
+    }
   }
 
   // Execute one step on demand for lazy mode
@@ -311,7 +298,7 @@ export const useDebugger = () => {
         // Only check for movement when code execution is complete
         const memoryState = await getMemoryState()
         if (memoryState && memoryState.dataMemory[0] >= 1 && memoryState.dataMemory[0] <= 4) {
-          newMapState = updateMapWithMovement(newMapState, memoryState.dataMemory)
+          newMapState = updateMapWithMovement(newMapState, memoryState.dataMemory[0])
         }
         
         // Check if game is complete (all dots collected)
@@ -386,7 +373,7 @@ export const useDebugger = () => {
     if (currentPlaybackIndex < executionHistory.length - 1) {
       const nextIndex = currentPlaybackIndex + 1
       setCurrentPlaybackIndex(nextIndex)
-      return executionHistory[nextIndex]
+      return ensureAnimationState(executionHistory[nextIndex])
     }
     return null
   }
@@ -399,7 +386,7 @@ export const useDebugger = () => {
       if (hasError) {
         setHasError(false)
       }
-      return executionHistory[prevIndex]
+      return ensureAnimationState(executionHistory[prevIndex])
     }
     return null
   }

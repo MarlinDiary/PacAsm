@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react'
 import { useEmulator } from './useEmulator'
-import { GameMap } from '@/data/maps'
+import { GameMap, getPlayerPosition } from '@/data/maps'
 import { CodeHighlighter, createHighlighter, getHighlightFromStepResult } from '@/lib/highlighter'
 import { ARMAssembler } from '@/lib/assembler'
 import { RegisterInfo } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { checkVictoryCondition } from '@/lib/game-logic'
+import { updateMapAfterMovement } from '@/lib/game-animation'
 
 interface MovementAction {
   instructionCount: number
@@ -193,23 +194,12 @@ export const usePlayRunner = () => {
         }
         
         // If we got a valid action, execute the movement
-        if (nextAction >= 1 && nextAction <= 4 && currentMapState.playerPosition) {
+        const playerPos = getPlayerPosition(currentMapState)
+        if (nextAction >= 1 && nextAction <= 4 && playerPos) {
           movementCount++
           
-          const { newRow, newCol, newDirection } = calculateNewPosition(currentMapState, nextAction)
-          const updatedDots = updateDotsAfterMovement(currentMapState.dots, newRow, newCol)
-          
-          currentMapState = {
-            ...currentMapState,
-            playerPosition: { 
-              ...currentMapState.playerPosition, 
-              row: newRow, 
-              col: newCol, 
-              direction: newDirection, 
-              shouldAnimate: true 
-            },
-            dots: updatedDots
-          }
+          const { newRow, newCol } = calculateNewPosition(currentMapState, nextAction)
+          currentMapState = updateMapAfterMovement(currentMapState, playerPos.row, playerPos.col, newRow, newCol, nextAction)
           
           // Update UI - no specific line highlighting for complete runs
           setCurrentMap({ ...currentMapState })
@@ -256,32 +246,23 @@ export const usePlayRunner = () => {
   }
 
   const calculateNewPosition = (mapState: GameMap, direction: number) => {
-    const { row, col } = mapState.playerPosition!
+    const playerPos = getPlayerPosition(mapState)
+    if (!playerPos) return { newRow: 0, newCol: 0 }
+    
+    const { row, col } = playerPos
     let newRow = row
     let newCol = col
-    let newDirection = mapState.playerPosition!.direction
     
     switch (direction) {
-      case 1: newRow = Math.max(0, row - 1); newDirection = 'up'; break
-      case 2: newRow = Math.min(mapState.height - 1, row + 1); newDirection = 'down'; break
-      case 3: newCol = Math.max(0, col - 1); newDirection = 'left'; break
-      case 4: newCol = Math.min(mapState.width - 1, col + 1); newDirection = 'right'; break
+      case 1: newRow = Math.max(0, row - 1); break
+      case 2: newRow = Math.min(mapState.height - 1, row + 1); break
+      case 3: newCol = Math.max(0, col - 1); break
+      case 4: newCol = Math.min(mapState.width - 1, col + 1); break
     }
     
-    return { newRow, newCol, newDirection }
+    return { newRow, newCol }
   }
 
-  const updateDotsAfterMovement = (dots: Array<{ row: number; col: number }> | undefined, newRow: number, newCol: number) => {
-    if (!dots) return []
-    
-    const updatedDots = [...dots]
-    const dotIndex = updatedDots.findIndex(dot => dot.row === newRow && dot.col === newCol)
-    if (dotIndex !== -1) {
-      updatedDots.splice(dotIndex, 1)
-    }
-    
-    return updatedDots
-  }
 
   const stopPlay = useCallback(() => {
     if (abortControllerRef.current) {

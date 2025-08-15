@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { GameMap } from '@/data/maps'
+import { GameMap, getPlayerPosition } from '@/data/maps'
 
 export interface GameState {
   // Mode states
@@ -47,16 +47,18 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Helper function to teleport player with animation
-  const teleportPlayer = useCallback((targetMap: GameMap, currentPlayerPosition?: typeof initialMap.playerPosition) => {
-    if (!targetMap.playerPosition) {
+  const teleportPlayer = useCallback((targetMap: GameMap, currentPlayerPos?: { row: number; col: number; direction: string } | null) => {
+    const targetPlayerPos = getPlayerPosition(targetMap)
+    
+    if (!targetPlayerPos) {
       setCurrentMap(targetMap)
       return
     }
 
     // Check if position is actually changing
-    const isPositionChanging = currentPlayerPosition && (
-      currentPlayerPosition.row !== targetMap.playerPosition.row ||
-      currentPlayerPosition.col !== targetMap.playerPosition.col
+    const isPositionChanging = currentPlayerPos && (
+      currentPlayerPos.row !== targetPlayerPos.row ||
+      currentPlayerPos.col !== targetPlayerPos.col
     )
 
     if (!isPositionChanging) {
@@ -65,11 +67,11 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
     }
 
     // Start fade out at current position
-    if (currentPlayerPosition) {
+    if (currentPlayerPos) {
       setCurrentMap({
         ...currentMap,
-        playerPosition: {
-          ...currentPlayerPosition,
+        playerAnimation: {
+          direction: (currentPlayerPos.direction as any) || 'right',
           teleportAnimation: 'fade-out'
         }
       })
@@ -78,8 +80,8 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
       setTimeout(() => {
         setCurrentMap({
           ...targetMap,
-          playerPosition: {
-            ...targetMap.playerPosition!,
+          playerAnimation: {
+            direction: targetPlayerPos.direction,
             teleportAnimation: 'fade-in'
           }
         })
@@ -111,8 +113,10 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
     setPlayStatus(undefined)
     setCurrentPlayWon(false)
     setHighlightedLine(undefined)
-    teleportPlayer(initialMap, currentMap.playerPosition)
-  }, [initialMap, currentMap.playerPosition, teleportPlayer])
+    
+    const currentPlayerPos = getPlayerPosition(currentMap)
+    teleportPlayer(initialMap, currentPlayerPos)
+  }, [initialMap, currentMap, teleportPlayer])
 
   return {
     // States

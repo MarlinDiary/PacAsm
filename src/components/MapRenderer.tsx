@@ -15,6 +15,14 @@ const getTileImage = (tileType: TileType): string | null => {
       return '/res/grass.png';
     case 'air':
       return null; // No image for air tiles
+    case 'dot':
+      return '/res/grass.png'; // Dots are on grass background
+    case 'energizer':
+      return '/res/grass.png'; // Energizers are on grass background
+    case 'player':
+      return '/res/grass.png'; // Player is on grass background
+    case 'ghost':
+      return '/res/grass.png'; // Ghosts are on grass background
     default:
       return '/res/grass.png';
   }
@@ -54,6 +62,20 @@ const getPlayerTransform = (direction: PlayerDirection): string => {
 export default function MapRenderer({ map }: MapRendererProps) {
   const tileSize = map.tileSize || DEFAULT_TILE_SIZE;
   
+  // Find player position in tiles for animation overlay
+  let playerRow = -1, playerCol = -1;
+  for (let row = 0; row < map.height; row++) {
+    for (let col = 0; col < map.width; col++) {
+      if (map.tiles[row][col] === 'P') {
+        playerRow = row;
+        playerCol = col;
+        break;
+      }
+    }
+    if (playerRow !== -1) break;
+  }
+  
+  
   return (
     <div className="inline-block relative">
       <div 
@@ -66,7 +88,6 @@ export default function MapRenderer({ map }: MapRendererProps) {
       >
         {map.tiles.flat().map((tileSymbol: TileSymbol, index: number) => {
           const tileType = TILE_MAPPING[tileSymbol];
-          const imageSrc = getTileImage(tileType);
           
           return (
             <div
@@ -77,10 +98,11 @@ export default function MapRenderer({ map }: MapRendererProps) {
                 height: tileSize
               }}
             >
-              {imageSrc && (
+              {/* Background tile (grass for everything except air) */}
+              {tileType !== 'air' && (
                 <Image
-                  src={imageSrc}
-                  alt={`${tileType} tile`}
+                  src="/res/grass.png"
+                  alt="grass tile"
                   width={tileSize}
                   height={tileSize}
                   className="object-cover pointer-events-none select-none"
@@ -90,61 +112,79 @@ export default function MapRenderer({ map }: MapRendererProps) {
                   priority
                 />
               )}
+              
+              {/* Entity overlays - but NOT player, player is handled separately for animation */}
+              {tileType === 'dot' && (
+                <div className="absolute top-0 left-0">
+                  <Image
+                    src="/res/dot.gif"
+                    alt="Dot"
+                    width={tileSize}
+                    height={tileSize}
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              )}
+              
+              {tileType === 'energizer' && (
+                <div className="absolute top-0 left-0">
+                  <Image
+                    src="/res/energizer.gif"
+                    alt="Energizer"
+                    width={tileSize}
+                    height={tileSize}
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              )}
+              
+              {tileType === 'ghost' && (
+                <div className="absolute top-0 left-0">
+                  <Image
+                    src="/res/ghost.gif"
+                    alt="Ghost"
+                    width={tileSize}
+                    height={tileSize}
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              )}
             </div>
           );
         })}
       </div>
       
-      {/* Dots overlay */}
-      {map.dots && map.dots.map((dot, index) => (
-        <div
-          key={`dot-${index}`}
-          className="absolute top-0 left-0 pointer-events-none z-5"
-          style={{
-            transform: `translate(${dot.col * tileSize}px, ${dot.row * tileSize}px)`,
-            width: tileSize,
-            height: tileSize
-          }}
-        >
-          <Image
-            src="/res/dot.gif"
-            alt="Dot"
-            width={tileSize}
-            height={tileSize}
-            className="object-cover"
-            priority
-          />
-        </div>
-      ))}
-
-      {/* Player overlay */}
-      {map.playerPosition && (
+      {/* Player overlay with animation support */}
+      {playerRow !== -1 && (
         <div
           className={`absolute top-0 left-0 pointer-events-none z-10 ${
-            map.playerPosition.shouldAnimate ? 'transition-transform duration-300 ease-out' : ''
+            map.playerAnimation?.shouldAnimate ? 'transition-transform duration-300 ease-out' : ''
           }`}
           style={{
-            transform: map.playerPosition.animationPosition 
-              ? `translate(${map.playerPosition.animationPosition.x}px, ${map.playerPosition.animationPosition.y}px)`
-              : `translate(${map.playerPosition.col * tileSize}px, ${map.playerPosition.row * tileSize}px)`,
+            transform: map.playerAnimation?.animationPosition 
+              ? `translate(${map.playerAnimation.animationPosition.x}px, ${map.playerAnimation.animationPosition.y}px)`
+              : `translate(${playerCol * tileSize}px, ${playerRow * tileSize}px)`,
             width: tileSize,
             height: tileSize
           }}
         >
           <div
             className={
-              map.playerPosition.teleportAnimation === 'fade-out' 
+              map.playerAnimation?.teleportAnimation === 'fade-out' 
                 ? 'animate-teleport-fade-out' 
-                : map.playerPosition.teleportAnimation === 'fade-in'
+                : map.playerAnimation?.teleportAnimation === 'fade-in'
                 ? 'animate-teleport-fade-in'
                 : ''
             }
             style={{
-              transform: !map.playerPosition.teleportAnimation 
-                ? getPlayerTransform(map.playerPosition.direction)
+              transform: !map.playerAnimation?.teleportAnimation 
+                ? getPlayerTransform(map.playerAnimation?.direction || 'right')
                 : undefined,
-              '--rotation': `${getPlayerRotation(map.playerPosition.direction)}deg`,
-              '--scale-x': map.playerPosition.direction === 'left' ? '-1' : '1',
+              '--rotation': `${getPlayerRotation(map.playerAnimation?.direction || 'right')}deg`,
+              '--scale-x': map.playerAnimation?.direction === 'left' ? '-1' : '1',
               width: tileSize,
               height: tileSize,
               transformOrigin: 'center'

@@ -1,9 +1,10 @@
 import { useCallback, useEffect } from 'react'
-import { GameMap } from '@/data/maps'
+import { GameMap, getPlayerPosition } from '@/data/maps'
 import { useDebugger } from './useDebugger'
 import { usePlayRunner } from './usePlayRunner'
 import { useGameState } from './useGameState'
 import { handleVictoryCheck } from '@/lib/game-logic'
+import { ensurePlayerAnimation } from '@/lib/game-animation'
 
 interface UseExecutionControlProps {
   gameState: ReturnType<typeof useGameState>
@@ -31,7 +32,8 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
 
   const handlePlayClick = useCallback(async () => {
     // Reset map to initial state before starting play with teleport animation
-    teleportPlayer(levelMap, gameState.currentMap.playerPosition)
+    const currentPlayerPos = getPlayerPosition(gameState.currentMap)
+    teleportPlayer(levelMap, currentPlayerPos)
     setHighlightedLine(undefined)
     setCurrentPlayWon(false) // Reset current play victory status
     // Don't clear hasWon - keep Next button permanently after first victory
@@ -53,11 +55,12 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
       setIsPlayMode(false)
       setPlayStatus(undefined)
     }
-  }, [currentCode, levelMap, gameState.currentMap.playerPosition, teleportPlayer, setHighlightedLine, setCurrentPlayWon, setIsCodeDisabled, setIsPlayMode, setPlayStatus, playState])
+  }, [currentCode, levelMap, gameState.currentMap, teleportPlayer, setHighlightedLine, setCurrentPlayWon, setIsCodeDisabled, setIsPlayMode, setPlayStatus, playState])
 
   const handleDebugClick = useCallback(async () => {
     // Reset map to initial state before starting debug with teleport animation
-    teleportPlayer(levelMap, gameState.currentMap.playerPosition)
+    const currentPlayerPos = getPlayerPosition(gameState.currentMap)
+    teleportPlayer(levelMap, currentPlayerPos)
     setHighlightedLine(undefined)
     // Don't clear hasWon - keep Next button permanently after first victory
     
@@ -73,20 +76,13 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
       setIsDebugMode(false)
       setIsCodeDisabled(false)
     }
-  }, [currentCode, levelMap, gameState.currentMap.playerPosition, teleportPlayer, setHighlightedLine, setIsDebugMode, setIsCodeDisabled, setCurrentMap, debugState])
+  }, [currentCode, levelMap, gameState.currentMap, teleportPlayer, setHighlightedLine, setIsDebugMode, setIsCodeDisabled, setCurrentMap, debugState])
 
   const handleStepDown = useCallback(async () => {
     const nextState = await debugState.stepDownLazy()
     if (nextState) {
-      // Enable animation for stepping
-      const mapWithAnimation = {
-        ...nextState.mapState,
-        playerPosition: nextState.mapState.playerPosition ? {
-          ...nextState.mapState.playerPosition,
-          shouldAnimate: true
-        } : undefined
-      }
-      setCurrentMap(mapWithAnimation)
+      const stateWithAnimation = ensurePlayerAnimation(nextState)
+      setCurrentMap(stateWithAnimation.mapState)
       setHighlightedLine(nextState.highlightedLine)
     }
   }, [debugState, setCurrentMap, setHighlightedLine])
@@ -94,15 +90,8 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
   const handleStepUp = useCallback(() => {
     const prevState = debugState.stepUp()
     if (prevState) {
-      // Enable animation for stepping
-      const mapWithAnimation = {
-        ...prevState.mapState,
-        playerPosition: prevState.mapState.playerPosition ? {
-          ...prevState.mapState.playerPosition,
-          shouldAnimate: true
-        } : undefined
-      }
-      setCurrentMap(mapWithAnimation)
+      const stateWithAnimation = ensurePlayerAnimation(prevState)
+      setCurrentMap(stateWithAnimation.mapState)
       setHighlightedLine(prevState.highlightedLine)
     }
   }, [debugState, setCurrentMap, setHighlightedLine])
@@ -111,23 +100,26 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
     setIsCodeDisabled(false)
     setIsDebugMode(false)
     setHighlightedLine(undefined)
-    teleportPlayer(levelMap, gameState.currentMap.playerPosition) // Reset map with teleport animation
+    
+    const currentPlayerPos = getPlayerPosition(gameState.currentMap)
+    teleportPlayer(levelMap, currentPlayerPos) // Reset map with teleport animation
     
     // Reset states to clear panels
     await Promise.all([
       debugState.reset(),
       playState.reset()
     ])
-  }, [setIsCodeDisabled, setIsDebugMode, setHighlightedLine, teleportPlayer, levelMap, gameState.currentMap.playerPosition, debugState, playState])
+  }, [setIsCodeDisabled, setIsDebugMode, setHighlightedLine, teleportPlayer, levelMap, gameState.currentMap, debugState, playState])
 
   const handleReplay = useCallback(() => {
     const firstState = debugState.replay()
     if (firstState) {
       // Teleport animation for replay
-      teleportPlayer(firstState.mapState, gameState.currentMap.playerPosition)
+      const currentPlayerPos = getPlayerPosition(gameState.currentMap)
+      teleportPlayer(firstState.mapState, currentPlayerPos)
       setHighlightedLine(firstState.highlightedLine)
     }
-  }, [debugState, teleportPlayer, gameState.currentMap.playerPosition, setHighlightedLine])
+  }, [debugState, teleportPlayer, gameState.currentMap, setHighlightedLine])
 
   // Get current and previous debug states for panels
   // Only use play state when actively playing, otherwise use debug state
