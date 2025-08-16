@@ -206,6 +206,13 @@ export const useDebugger = () => {
       return null
     }
     
+    // Check if current state has game over
+    const currentState = getCurrentState()
+    if (currentState && currentState.mapState.gameOver) {
+      console.warn('[DEBUGGER] Game is over, cannot execute new steps')
+      return null
+    }
+    
     // First check if we can move forward in existing history (always allowed)
     if (currentPlaybackIndex < executionHistory.length - 1) {
       const nextIndex = currentPlaybackIndex + 1
@@ -371,6 +378,9 @@ export const useDebugger = () => {
     return executionHistory[currentPlaybackIndex - 1]
   }
 
+  const currentState = getCurrentState()
+  const isGameOver = currentState && currentState.mapState.gameOver
+  
   return {
     highlighter,
     executionHistory,
@@ -378,7 +388,7 @@ export const useDebugger = () => {
     hasError,
     isInitializing,
     canStepUp: currentPlaybackIndex > 0 && !isInitializing,
-    canStepDown: !isInitializing && emulator.state.isInitialized && !hasError && (
+    canStepDown: !isInitializing && emulator.state.isInitialized && !hasError && !isGameOver && (
       isLazyMode ? 
         (currentPlaybackIndex < executionHistory.length - 1 || !isGameComplete) : // In lazy mode, allow if in history OR if game not complete
         (!isGameComplete && currentPlaybackIndex < executionHistory.length - 1)

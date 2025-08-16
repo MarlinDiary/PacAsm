@@ -161,7 +161,17 @@ export default function MapRenderer({ map }: MapRendererProps) {
       })}
       
       {/* Player overlay with animation support */}
-      {playerPosition && (
+      {(() => {
+        // Always render player if position exists - let fade-out animation handle disappearing
+        const shouldRender = !!playerPosition;
+        console.log('[RENDERER] Player render check:', { 
+          hasPlayerPosition: !!playerPosition, 
+          gameOver: map.gameOver,
+          shouldRender: shouldRender,
+          hasFadeOut: map.playerAnimation?.teleportAnimation === 'fade-out'
+        });
+        return shouldRender;
+      })() && (
         <div
           className={`absolute top-0 left-0 pointer-events-none z-10 ${
             map.playerAnimation?.shouldAnimate ? 'transition-transform duration-100 linear' : ''

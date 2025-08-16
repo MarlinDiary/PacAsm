@@ -16,6 +16,7 @@ export interface CycleEndResult {
   isGameComplete: boolean
   shouldContinue: boolean
   memoryState?: MemoryState | null
+  hasError?: boolean // For collision detection
 }
 
 // Type for emulator objects (avoiding 'any')
@@ -34,6 +35,7 @@ export interface CycleEndOptions {
   currentMapState: GameMap
   originalMachineCode?: number[]
   skipEmulatorReset?: boolean
+  isDebugMode?: boolean // To distinguish between debug and play modes
 }
 
 /**
@@ -62,7 +64,7 @@ export function processMovementFromMemory(
  * Handle end of code execution cycle - common logic for both debug and play modes
  */
 export async function handleCycleEnd(options: CycleEndOptions): Promise<CycleEndResult> {
-  const { emulator, currentMapState, originalMachineCode, skipEmulatorReset = false } = options
+  const { emulator, currentMapState, originalMachineCode, skipEmulatorReset = false, isDebugMode = false } = options
   
   // Get current memory state to check for movement commands
   const memoryState = await getEmulatorMemoryState(emulator)
@@ -74,6 +76,17 @@ export async function handleCycleEnd(options: CycleEndOptions): Promise<CycleEnd
   } else {
     // If no player movement, still move ghosts
     newMapState = updateGhostsOnly(currentMapState)
+  }
+  
+  // Check for game over (collision)
+  if (newMapState.gameOver) {
+    // Game over should end the game in both debug and play modes
+    return {
+      newMapState,
+      isGameComplete: true, // End the game
+      shouldContinue: false, // Stop execution
+      hasError: !isDebugMode // Mark as error only in play mode
+    }
   }
   
   // Check victory condition
@@ -104,7 +117,8 @@ export async function handleDebugCycleEnd(
   const result = await handleCycleEnd({
     emulator,
     currentMapState,
-    originalMachineCode
+    originalMachineCode,
+    isDebugMode: true
   })
   
   // Set game complete state for debug mode
@@ -125,7 +139,8 @@ export async function handlePlayCycleEnd(
   return await handleCycleEnd({
     emulator,
     currentMapState,
-    skipEmulatorReset: true // Play mode handles reset differently
+    skipEmulatorReset: true, // Play mode handles reset differently
+    isDebugMode: false
   })
 }
 

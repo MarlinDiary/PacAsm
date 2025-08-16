@@ -68,12 +68,14 @@ export interface GameMap {
     teleportAnimation?: 'fade-out' | 'fade-in';
   };
   ghostAnimations?: GhostAnimationState[]; // Animation state for each ghost
+  // Game state
+  gameOver?: boolean; // Game over due to collision
 }
 
 // Raw map data for Level 1 (without P and G)
 const LEVEL1_RAW_MAP = `
 %%%%%%%%%%%%%%%%%%%%
-%o...%........%....%
+%....%........%....%
 %.%%.%.%%%%%%.%.%%.%
 %.%..............%.%
 %.%.%%.%%  %%.%%.%.%
@@ -81,7 +83,7 @@ const LEVEL1_RAW_MAP = `
 %.%.%%.%%%%%%.%%.%.%
 %.%..............%.%
 %.%%.%.%%%%%%.%.%%.%
-%....%... ....%...o%
+%....%... ....%....%
 %%%%%%%%%%%%%%%%%%%%`;
 
 function parseMapFromString(mapString: string): TileSymbol[][] {

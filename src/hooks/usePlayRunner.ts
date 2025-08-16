@@ -171,6 +171,16 @@ export const usePlayRunner = () => {
           currentMapState = updateGhostsOnly(currentMapState)
         }
         
+        // Check for game over (collision)
+        if (currentMapState.gameOver) {
+          console.log('[PLAY_RUNNER] Game over detected! Map state:', currentMapState);
+          // Game over due to collision - stop execution
+          setCurrentMap({ ...currentMapState })
+          setHighlightedLine(undefined)
+          setIsPlaying(false)
+          return { success: false, error: 'Game Over: Collision with ghost!' }
+        }
+        
         // Update UI - no specific line highlighting for complete runs
         setCurrentMap({ ...currentMapState })
         setHighlightedLine(undefined)

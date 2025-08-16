@@ -160,6 +160,68 @@ export function createGhostTeleportAnimation(
 }
 
 /**
+ * Checks for collision between player and ghosts
+ */
+function checkCollision(
+  currentPlayerPos: {row: number, col: number}, 
+  newPlayerPos: {row: number, col: number},
+  currentGhostPositions: {row: number, col: number}[],
+  nextGhostPositions: {row: number, col: number}[]
+): { hasCollision: boolean, collisionType: 'same-position' | 'position-swap' | null } {
+  console.log('[COLLISION] Checking collision:', {
+    currentPlayerPos,
+    newPlayerPos,
+    currentGhostPositions,
+    nextGhostPositions
+  });
+  
+  // Log each position comparison
+  console.log('[COLLISION] Position comparison:');
+  console.log(`  Player: (${currentPlayerPos.row},${currentPlayerPos.col}) -> (${newPlayerPos.row},${newPlayerPos.col})`);
+  for (let i = 0; i < currentGhostPositions.length; i++) {
+    const currentGhost = currentGhostPositions[i];
+    const nextGhost = nextGhostPositions[i];
+    console.log(`  Ghost ${i}: (${currentGhost.row},${currentGhost.col}) -> (${nextGhost.row},${nextGhost.col})`);
+  }
+
+  // Check if player and any ghost will be at the same position
+  for (let i = 0; i < nextGhostPositions.length; i++) {
+    const nextGhostPos = nextGhostPositions[i];
+    if (newPlayerPos.row === nextGhostPos.row && newPlayerPos.col === nextGhostPos.col) {
+      console.log('[COLLISION] Same position collision detected!', {
+        playerPos: newPlayerPos,
+        ghostPos: nextGhostPos,
+        ghostIndex: i
+      });
+      return { hasCollision: true, collisionType: 'same-position' };
+    }
+  }
+  
+  // Check for position swapping (player and ghost exchange positions)
+  for (let i = 0; i < currentGhostPositions.length; i++) {
+    const currentGhostPos = currentGhostPositions[i];
+    const nextGhostPos = nextGhostPositions[i];
+    
+    if (currentPlayerPos.row === nextGhostPos.row && 
+        currentPlayerPos.col === nextGhostPos.col &&
+        newPlayerPos.row === currentGhostPos.row && 
+        newPlayerPos.col === currentGhostPos.col) {
+      console.log('[COLLISION] Position swap collision detected!', {
+        currentPlayerPos,
+        newPlayerPos,
+        currentGhostPos,
+        nextGhostPos,
+        ghostIndex: i
+      });
+      return { hasCollision: true, collisionType: 'position-swap' };
+    }
+  }
+  
+  console.log('[COLLISION] No collision detected');
+  return { hasCollision: false, collisionType: null };
+}
+
+/**
  * Updates both ghost and player positions together
  * Ghosts make decisions based on current state, then both move simultaneously
  */
@@ -196,8 +258,50 @@ export function updateMapWithMovementAndGhosts(
     case 4: newCol = Math.min(currentMap.width - 1, playerPosition.col + 1); newDirection = 'right'; break;
   }
 
+  // Check for collision FIRST before wall check - even if player hits wall, ghost can still collide
+  const newPlayerPos = { row: newRow, col: newCol };
+  const collisionResult = checkCollision(
+    playerPosition, 
+    newPlayerPos, 
+    currentMap.ghostPositions, 
+    nextGhostPositions
+  );
+
   // Check if new player position is valid (not air/wall)
   if (currentMap.tiles[newRow][newCol] === '%') {
+    console.log('[MOVEMENT] Player hit wall, but checking collision anyway');
+    
+    // Check collision even when hitting wall - ghost might move to player's current position
+    const wallCollisionResult = checkCollision(
+      playerPosition, 
+      playerPosition, // Player doesn't move when hitting wall
+      currentMap.ghostPositions, 
+      nextGhostPositions
+    );
+    
+    if (wallCollisionResult.hasCollision) {
+      console.log('[COLLISION] Wall collision detected! Player stays in place but ghost moves to same spot');
+      const ghostAnimations = nextGhostPositions.map((newPos, index) => {
+        const oldPos = currentMap.ghostPositions[index];
+        return createGhostAnimation(oldPos, newPos);
+      });
+
+      const gameOverMap = {
+        ...currentMap,
+        ghostPositions: nextGhostPositions,
+        ghostPreviousPositions: currentMap.ghostPositions,
+        playerAnimation: {
+          direction: MOVEMENT_DIRECTIONS[command] || 'right',
+          teleportAnimation: 'fade-out' as 'fade-out' // Player disappears
+        },
+        ghostAnimations: ghostAnimations,
+        gameOver: true // Add game over state
+      };
+      
+      console.log('[COLLISION] Wall collision game over map created:', gameOverMap);
+      return gameOverMap;
+    }
+    
     // Cannot move to air/wall, only update direction and move ghosts
     const ghostAnimations = nextGhostPositions.map((newPos, index) => {
       const oldPos = currentMap.ghostPositions[index];
@@ -211,6 +315,64 @@ export function updateMapWithMovementAndGhosts(
       playerAnimation: createPlayerAnimation(command),
       ghostAnimations: ghostAnimations
     };
+  }
+
+  if (collisionResult.hasCollision) {
+    console.log('[COLLISION] Collision detected! Type:', collisionResult.collisionType);
+    
+    // Create ghost animations based on movement
+    const ghostAnimations = nextGhostPositions.map((newPos, index) => {
+      const oldPos = currentMap.ghostPositions[index];
+      return createGhostAnimation(oldPos, newPos);
+    });
+
+    let playerFinalPosition, playerAnimation;
+    
+    if (collisionResult.collisionType === 'same-position') {
+      // Same position collision: player moves to target position and disappears there
+      console.log('[COLLISION] Same position - player moves to target and disappears');
+      playerFinalPosition = {
+        row: newRow,
+        col: newCol,
+        direction: newDirection
+      };
+      playerAnimation = {
+        direction: newDirection,
+        shouldAnimate: true,
+        teleportAnimation: 'fade-out' as 'fade-out'
+      };
+    } else {
+      // Position swap collision: player disappears at halfway point
+      console.log('[COLLISION] Position swap - player disappears at halfway point');
+      playerFinalPosition = {
+        row: playerPosition.row, // Stay at original position
+        col: playerPosition.col,
+        direction: newDirection
+      };
+      playerAnimation = {
+        direction: newDirection,
+        shouldAnimate: true,
+        animationPosition: { // Show 1/3 position
+          x: (playerPosition.col + (newCol - playerPosition.col) * 0.33) * (currentMap.tileSize || 20),
+          y: (playerPosition.row + (newRow - playerPosition.row) * 0.33) * (currentMap.tileSize || 20)
+        },
+        teleportAnimation: 'fade-out' as 'fade-out'
+      };
+    }
+
+    const collisionMap = {
+      ...currentMap,
+      // tiles unchanged - player doesn't affect target tile (no dot collection)
+      playerPosition: playerFinalPosition,
+      ghostPositions: nextGhostPositions,
+      ghostPreviousPositions: currentMap.ghostPositions,
+      playerAnimation: playerAnimation,
+      ghostAnimations: ghostAnimations,
+      gameOver: true // Mark as game over
+    };
+    
+    console.log('[COLLISION] Collision map created:', collisionMap);
+    return collisionMap;
   }
 
   // Create updated tiles array

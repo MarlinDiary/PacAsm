@@ -133,9 +133,14 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
   const currentDebugState = getCurrentState()
   const previousDebugState = playState.isPlaying ? playState.getPreviousState() : debugState.getPreviousState()
 
-  // Listen for play state updates (only when actively playing)
+  // Listen for play state updates (including when game ends)
   useEffect(() => {
-    if (playState.isPlaying && playState.currentMap) {
+    if (playState.currentMap) {
+      console.log('[EXECUTION_CONTROL] Updating map from play state:', {
+        isPlaying: playState.isPlaying,
+        gameOver: playState.currentMap.gameOver,
+        mapUpdate: 'about to set'
+      });
       setCurrentMap(playState.currentMap)
       setHighlightedLine(playState.highlightedLine)
       
@@ -144,7 +149,7 @@ export const useExecutionControl = ({ gameState, levelMap }: UseExecutionControl
         handleVictoryCheck(playState.currentMap, setHasWon, setCurrentPlayWon, isPlayMode)
       }
     }
-  }, [playState.isPlaying, playState.currentMap, playState.highlightedLine, isPlayMode, setCurrentMap, setHighlightedLine, setHasWon, setCurrentPlayWon])
+  }, [playState.currentMap, playState.highlightedLine, isPlayMode, setCurrentMap, setHighlightedLine, setHasWon, setCurrentPlayWon])
 
   // Listen for play completion
   useEffect(() => {
