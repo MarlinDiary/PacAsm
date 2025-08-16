@@ -1,6 +1,6 @@
 import { GameMap } from '@/data/maps'
 import { checkVictoryCondition } from '@/lib/game-logic'
-import { updateMapWithMovement } from '@/lib/game-animation'
+import { updateMapWithMovementAndGhosts, updateGhostsOnly } from '@/lib/game-animation'
 import { resetAndReloadCode, getEmulatorMemoryState, MEMORY_CONFIG } from '@/lib/emulator-utils'
 import { RegisterInfo } from '@/workers/emulator/types'
 
@@ -51,9 +51,11 @@ export function processMovementFromMemory(
   dataMemory: number[]
 ): GameMap {
   if (hasValidMovementCommand(dataMemory)) {
-    return updateMapWithMovement(mapState, dataMemory[0])
+    return updateMapWithMovementAndGhosts(mapState, dataMemory[0])
+  } else {
+    // If no player movement, still move ghosts
+    return updateGhostsOnly(mapState)
   }
-  return mapState
 }
 
 /**
@@ -65,10 +67,13 @@ export async function handleCycleEnd(options: CycleEndOptions): Promise<CycleEnd
   // Get current memory state to check for movement commands
   const memoryState = await getEmulatorMemoryState(emulator)
   
-  // Process any movement commands
+  // Process any movement commands and ghost movements
   let newMapState = currentMapState
   if (memoryState && hasValidMovementCommand(memoryState.dataMemory)) {
-    newMapState = updateMapWithMovement(currentMapState, memoryState.dataMemory[0])
+    newMapState = updateMapWithMovementAndGhosts(currentMapState, memoryState.dataMemory[0])
+  } else {
+    // If no player movement, still move ghosts
+    newMapState = updateGhostsOnly(currentMapState)
   }
   
   // Check victory condition

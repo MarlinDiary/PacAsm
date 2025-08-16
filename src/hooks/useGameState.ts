@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { GameMap, getPlayerPosition } from '@/data/maps'
+import { GameMap, getPlayerPosition, getGhosts } from '@/data/maps'
+import { createGhostTeleportAnimation } from '@/lib/game-animation'
 
 export interface GameState {
   // Mode states
@@ -46,44 +47,75 @@ export const useGameState = (initialMap: GameMap, initialCode: string = '') => {
   const [hideZeroRows, setHideZeroRows] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // Helper function to teleport player with animation
+  // Helper function to teleport player and ghosts with animation
   const teleportPlayer = useCallback((targetMap: GameMap, currentPlayerPos?: { row: number; col: number; direction: string } | null) => {
     const targetPlayerPos = getPlayerPosition(targetMap)
+    const currentGhostPositions = getGhosts(currentMap)
+    const targetGhostPositions = getGhosts(targetMap)
     
     if (!targetPlayerPos) {
       setCurrentMap(targetMap)
       return
     }
 
-    // Check if position is actually changing
-    const isPositionChanging = currentPlayerPos && (
+    // Check if player position is actually changing
+    const isPlayerPositionChanging = currentPlayerPos && (
       currentPlayerPos.row !== targetPlayerPos.row ||
       currentPlayerPos.col !== targetPlayerPos.col
     )
 
-    if (!isPositionChanging) {
+    // Check if any ghost positions are changing
+    const isAnyGhostPositionChanging = currentGhostPositions.some((currentGhost, index) => {
+      const targetGhost = targetGhostPositions[index]
+      return targetGhost && (
+        currentGhost.row !== targetGhost.row ||
+        currentGhost.col !== targetGhost.col
+      )
+    })
+
+    if (!isPlayerPositionChanging && !isAnyGhostPositionChanging) {
       setCurrentMap(targetMap)
       return
     }
 
-    // Start fade out at current position
-    if (currentPlayerPos) {
+    // Start fade out at current positions
+    if (currentPlayerPos || isAnyGhostPositionChanging) {
+      // Create ghost fade-out animations for ghosts that are moving
+      const ghostFadeOutAnimations = currentGhostPositions.map((currentGhost, index) => {
+        const targetGhost = targetGhostPositions[index]
+        if (targetGhost && (currentGhost.row !== targetGhost.row || currentGhost.col !== targetGhost.col)) {
+          return createGhostTeleportAnimation('right', 'fade-out')
+        }
+        return { shouldAnimate: false } // Provide default animation state for non-moving ghosts
+      })
+
       setCurrentMap({
         ...currentMap,
-        playerAnimation: {
+        playerAnimation: currentPlayerPos ? {
           direction: (currentPlayerPos.direction as 'up' | 'down' | 'left' | 'right') || 'right',
           teleportAnimation: 'fade-out'
-        }
+        } : undefined,
+        ghostAnimations: ghostFadeOutAnimations
       })
 
       // After fade out, move to new position and fade in
       setTimeout(() => {
+        // Create ghost fade-in animations
+        const ghostFadeInAnimations = targetGhostPositions.map((targetGhost, index) => {
+          const currentGhost = currentGhostPositions[index]
+          if (currentGhost && (currentGhost.row !== targetGhost.row || currentGhost.col !== targetGhost.col)) {
+            return createGhostTeleportAnimation('right', 'fade-in')
+          }
+          return { shouldAnimate: false } // Provide default animation state for non-moving ghosts
+        })
+
         setCurrentMap({
           ...targetMap,
-          playerAnimation: {
+          playerAnimation: isPlayerPositionChanging ? {
             direction: targetPlayerPos.direction,
             teleportAnimation: 'fade-in'
-          }
+          } : undefined,
+          ghostAnimations: ghostFadeInAnimations
         })
 
         // Remove animation after fade in

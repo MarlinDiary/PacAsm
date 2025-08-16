@@ -34,6 +34,16 @@ export interface WaterBackground {
   tilesY: number;
 }
 
+export interface GhostAnimationState {
+  direction?: PlayerDirection;
+  animationPosition?: {
+    x: number;
+    y: number;
+  };
+  shouldAnimate?: boolean;
+  teleportAnimation?: 'fade-out' | 'fade-in';
+}
+
 export interface GameMap {
   id: string;
   name: string;
@@ -46,7 +56,8 @@ export interface GameMap {
   // Entity positions (separate from tile data)
   playerPosition: { row: number; col: number; direction: PlayerDirection };
   ghostPositions: { row: number; col: number }[];
-  // Player animation state (separate from tile data)
+  ghostPreviousPositions?: { row: number; col: number }[]; // Track previous positions for smart movement
+  // Animation states (separate from tile data)
   playerAnimation?: {
     direction: PlayerDirection;
     animationPosition?: {
@@ -56,6 +67,7 @@ export interface GameMap {
     shouldAnimate?: boolean;
     teleportAnimation?: 'fade-out' | 'fade-in';
   };
+  ghostAnimations?: GhostAnimationState[]; // Animation state for each ghost
 }
 
 // Raw map data for Level 1 (without P and G)

@@ -1,4 +1,5 @@
-import { GameMap, PlayerDirection } from '@/data/maps'
+import { GameMap, PlayerDirection, GhostAnimationState } from '@/data/maps'
+import { smartPatrolGhostMove, bfsGhostMove } from './ghost-agents'
 
 export interface PlayerAnimationState {
   direction: PlayerDirection
@@ -122,6 +123,7 @@ export function ensurePlayerAnimation<T extends AnimatedGameState>(
   }
 }
 
+
 /**
  * Creates teleport animation state
  */
@@ -133,6 +135,151 @@ export function createTeleportAnimation(
     direction,
     teleportAnimation: animationType
   }
+}
+
+/**
+ * Creates ghost animation state based on movement
+ */
+export function createGhostAnimation(oldPos: {row: number, col: number}, newPos: {row: number, col: number}): GhostAnimationState {
+  return {
+    shouldAnimate: true
+  };
+}
+
+/**
+ * Creates teleport animation for ghosts
+ */
+export function createGhostTeleportAnimation(
+  direction: PlayerDirection,
+  animationType: 'fade-out' | 'fade-in'
+): GhostAnimationState {
+  return {
+    direction,
+    teleportAnimation: animationType
+  };
+}
+
+/**
+ * Updates both ghost and player positions together
+ * Ghosts make decisions based on current state, then both move simultaneously
+ */
+export function updateMapWithMovementAndGhosts(
+  currentMap: GameMap, 
+  command: number
+): GameMap {
+  // First, let ghosts decide their next moves based on current state
+  const nextGhostPositions = currentMap.ghostPositions.map((ghost, index) => {
+    const previousPos = currentMap.ghostPreviousPositions?.[index];
+    
+    if (index === 0) {
+      // First ghost: Smart patrol movement
+      return smartPatrolGhostMove(currentMap, ghost, currentMap.playerPosition, previousPos);
+    } else {
+      // Second ghost: BFS optimal pursuit
+      return bfsGhostMove(currentMap, ghost, currentMap.playerPosition);
+    }
+  });
+
+  // Then move player and apply ghost movements simultaneously
+  const playerPosition = currentMap.playerPosition;
+  if (!playerPosition) return currentMap;
+
+  // Calculate new player position
+  let newRow = playerPosition.row;
+  let newCol = playerPosition.col;
+  let newDirection = playerPosition.direction;
+
+  switch (command) {
+    case 1: newRow = Math.max(0, playerPosition.row - 1); newDirection = 'up'; break;
+    case 2: newRow = Math.min(currentMap.height - 1, playerPosition.row + 1); newDirection = 'down'; break;
+    case 3: newCol = Math.max(0, playerPosition.col - 1); newDirection = 'left'; break;
+    case 4: newCol = Math.min(currentMap.width - 1, playerPosition.col + 1); newDirection = 'right'; break;
+  }
+
+  // Check if new player position is valid (not air/wall)
+  if (currentMap.tiles[newRow][newCol] === '%') {
+    // Cannot move to air/wall, only update direction and move ghosts
+    const ghostAnimations = nextGhostPositions.map((newPos, index) => {
+      const oldPos = currentMap.ghostPositions[index];
+      return createGhostAnimation(oldPos, newPos);
+    });
+
+    return {
+      ...currentMap,
+      ghostPositions: nextGhostPositions,
+      ghostPreviousPositions: currentMap.ghostPositions, // Save current positions as previous
+      playerAnimation: createPlayerAnimation(command),
+      ghostAnimations: ghostAnimations
+    };
+  }
+
+  // Create updated tiles array
+  const updatedTiles = currentMap.tiles.map(row => [...row]);
+
+  // Check for dot collision and collect it
+  if (updatedTiles[newRow][newCol] === '.') {
+    updatedTiles[newRow][newCol] = ' '; // Replace dot with grass
+  }
+
+  // Create ghost animations based on movement
+  const ghostAnimations = nextGhostPositions.map((newPos, index) => {
+    const oldPos = currentMap.ghostPositions[index];
+    return createGhostAnimation(oldPos, newPos);
+  });
+
+  return {
+    ...currentMap,
+    tiles: updatedTiles,
+    playerPosition: {
+      row: newRow,
+      col: newCol,
+      direction: newDirection
+    },
+    ghostPositions: nextGhostPositions,
+    ghostPreviousPositions: currentMap.ghostPositions, // Save current positions as previous
+    playerAnimation: createPlayerAnimation(command),
+    ghostAnimations: ghostAnimations
+  };
+}
+
+/**
+ * Updates only ghost positions (for cases where player doesn't move)
+ */
+export function updateGhostsOnly(mapState: GameMap): GameMap {
+  if (!mapState.ghostPositions || mapState.ghostPositions.length === 0) {
+    return mapState;
+  }
+
+  const pacmanPosition = mapState.playerPosition;
+  if (!pacmanPosition) {
+    return mapState;
+  }
+
+  // Update ghost positions using the two algorithms
+  const updatedGhostPositions = mapState.ghostPositions.map((ghost, index) => {
+    const previousPos = mapState.ghostPreviousPositions?.[index];
+    
+    if (index === 0) {
+      // First ghost: Smart patrol movement
+      return smartPatrolGhostMove(mapState, ghost, pacmanPosition, previousPos);
+    } else {
+      // Second ghost: BFS optimal pursuit
+      return bfsGhostMove(mapState, ghost, pacmanPosition);
+    }
+  });
+
+  // Create ghost animations based on movement
+  const ghostAnimations = updatedGhostPositions.map((newPos, index) => {
+    const oldPos = mapState.ghostPositions[index];
+    return createGhostAnimation(oldPos, newPos);
+  });
+
+  return {
+    ...mapState,
+    ghostPositions: updatedGhostPositions,
+    ghostPreviousPositions: mapState.ghostPositions, // Save current positions as previous
+    ghostAnimations: ghostAnimations
+  };
 }
 
 /**

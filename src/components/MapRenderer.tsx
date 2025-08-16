@@ -117,27 +117,48 @@ export default function MapRenderer({ map }: MapRendererProps) {
         })}
       </div>
       
-      {/* Ghost overlays */}
-      {ghostPositions.map((ghost, index) => (
-        <div
-          key={`ghost-${index}`}
-          className="absolute top-0 left-0 pointer-events-none z-5"
-          style={{
-            transform: `translate(${ghost.col * tileSize}px, ${ghost.row * tileSize}px)`,
-            width: tileSize,
-            height: tileSize
-          }}
-        >
-          <Image
-            src="/res/ghost.gif"
-            alt="Ghost"
-            width={tileSize}
-            height={tileSize}
-            className="object-cover"
-            priority
-          />
-        </div>
-      ))}
+      {/* Ghost overlays with animation support */}
+      {ghostPositions.map((ghost, index) => {
+        const ghostAnimation = map.ghostAnimations?.[index];
+        return (
+          <div
+            key={`ghost-${index}`}
+            className={`absolute top-0 left-0 pointer-events-none z-5 ${
+              ghostAnimation?.shouldAnimate ? 'transition-transform duration-100 linear' : ''
+            }`}
+            style={{
+              transform: ghostAnimation?.animationPosition 
+                ? `translate(${ghostAnimation.animationPosition.x}px, ${ghostAnimation.animationPosition.y}px)`
+                : `translate(${ghost.col * tileSize}px, ${ghost.row * tileSize}px)`,
+              width: tileSize,
+              height: tileSize
+            }}
+          >
+            <div
+              className={
+                ghostAnimation?.teleportAnimation === 'fade-out' 
+                  ? 'animate-teleport-fade-out' 
+                  : ghostAnimation?.teleportAnimation === 'fade-in'
+                  ? 'animate-teleport-fade-in'
+                  : ''
+              }
+              style={{
+                width: tileSize,
+                height: tileSize
+              }}
+            >
+              <Image
+                src="/res/ghost.gif"
+                alt="Ghost"
+                width={tileSize}
+                height={tileSize}
+                className="object-cover"
+                priority
+              />
+            </div>
+          </div>
+        );
+      })}
       
       {/* Player overlay with animation support */}
       {playerPosition && (

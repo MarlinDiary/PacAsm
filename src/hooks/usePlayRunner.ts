@@ -5,7 +5,7 @@ import { CodeHighlighter } from '@/lib/highlighter'
 import { RegisterInfo } from '@/workers/emulator/types'
 import { useDiagnosticsStore } from '@/stores/diagnosticsStore'
 import { checkVictoryCondition } from '@/lib/game-logic'
-import { updateMapAfterMovement } from '@/lib/game-animation'
+import { updateMapAfterMovement, updateMapWithMovementAndGhosts, updateGhostsOnly } from '@/lib/game-animation'
 import { 
   initializeEmulatorWithCode, 
   resetAndReloadCode, 
@@ -160,38 +160,44 @@ export const usePlayRunner = () => {
           return { success: false, error: errorMessage }
         }
         
-        // If we got a valid action, execute the movement
-        const playerPos = getPlayerPosition(currentMapState)
-        if (nextAction >= 1 && nextAction <= 4 && playerPos) {
-          movementCount++
-          
-          const { newRow, newCol } = calculateNewPosition(currentMapState, nextAction)
-          currentMapState = updateMapAfterMovement(currentMapState, playerPos.row, playerPos.col, newRow, newCol, nextAction)
-          
-          // Update UI - no specific line highlighting for complete runs
-          setCurrentMap({ ...currentMapState })
-          setHighlightedLine(undefined)
-          
-          actions.push({
-            instructionCount: movementCount,
-            mapState: { ...currentMapState },
-            highlightedLine: undefined
-          })
-          
-          await updateSystemState()
-          
-          // Check victory condition after movement
-          if (checkVictoryCondition(currentMapState)) {
-            // Victory achieved! Stop the game loop
-            break
-          }
-          
-          // Wait 100ms before next iteration
-          await new Promise(resolve => setTimeout(resolve, 100))
+        // Always move on each cycle - both player and ghosts
+        movementCount++
+        
+        if (nextAction >= 1 && nextAction <= 4) {
+          // Valid player action - move both player and ghosts
+          currentMapState = updateMapWithMovementAndGhosts(currentMapState, nextAction)
         } else {
-          // No valid action returned, end the game
+          // No valid player action - only move ghosts
+          currentMapState = updateGhostsOnly(currentMapState)
+        }
+        
+        // Update UI - no specific line highlighting for complete runs
+        setCurrentMap({ ...currentMapState })
+        setHighlightedLine(undefined)
+        
+        actions.push({
+          instructionCount: movementCount,
+          mapState: { ...currentMapState },
+          highlightedLine: undefined
+        })
+        
+        await updateSystemState()
+        
+        // Check victory condition after movement
+        if (checkVictoryCondition(currentMapState)) {
+          // Victory achieved! Stop the game loop
           break
         }
+        
+        // If no valid action for too many cycles, end the game
+        if (nextAction < 1 || nextAction > 4) {
+          // Still allow some cycles without player movement for ghosts to move
+          // This could be expanded with a counter if needed
+          break
+        }
+        
+        // Wait 100ms before next iteration
+        await new Promise(resolve => setTimeout(resolve, 100))
         
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Code execution failed'
