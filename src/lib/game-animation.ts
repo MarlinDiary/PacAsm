@@ -45,20 +45,12 @@ export function updateMapWithMovement(
   currentMap: GameMap, 
   command: number
 ): GameMap {
-  // Find current player position
-  let playerRow = -1, playerCol = -1
-  for (let row = 0; row < currentMap.height; row++) {
-    for (let col = 0; col < currentMap.width; col++) {
-      if (currentMap.tiles[row][col] === 'P') {
-        playerRow = row
-        playerCol = col
-        break
-      }
-    }
-    if (playerRow !== -1) break
-  }
+  // Get current player position from map data
+  const playerPosition = currentMap.playerPosition
+  if (!playerPosition) return currentMap // No player found
 
-  if (playerRow === -1) return currentMap // No player found
+  const playerRow = playerPosition.row
+  const playerCol = playerPosition.col
 
   // Calculate new position
   let newRow = playerRow
@@ -89,13 +81,23 @@ export function updateMapWithMovement(
     updatedTiles[newRow][newCol] = ' ' // Replace dot with grass
   }
 
-  // Move player: clear old position and set new position
-  updatedTiles[playerRow][playerCol] = ' ' // Clear old player position
-  updatedTiles[newRow][newCol] = 'P' // Set new player position
+  // Get direction for player movement
+  let newDirection = playerPosition.direction
+  switch (command) {
+    case 1: newDirection = 'up'; break
+    case 2: newDirection = 'down'; break
+    case 3: newDirection = 'left'; break
+    case 4: newDirection = 'right'; break
+  }
 
   return {
     ...currentMap,
     tiles: updatedTiles,
+    playerPosition: {
+      row: newRow,
+      col: newCol,
+      direction: newDirection
+    },
     playerAnimation: createPlayerAnimation(command)
   }
 }
@@ -161,13 +163,23 @@ export function updateMapAfterMovement(
     updatedTiles[newRow][newCol] = ' ' // Replace dot with grass
   }
   
-  // Move player: clear old position and set new position
-  updatedTiles[oldRow][oldCol] = ' ' // Clear old player position
-  updatedTiles[newRow][newCol] = 'P' // Set new player position
+  // Get direction for player movement
+  let newDirection = mapState.playerPosition.direction
+  switch (direction) {
+    case 1: newDirection = 'up'; break
+    case 2: newDirection = 'down'; break
+    case 3: newDirection = 'left'; break
+    case 4: newDirection = 'right'; break
+  }
   
   return {
     ...mapState,
     tiles: updatedTiles,
+    playerPosition: {
+      row: newRow,
+      col: newCol,
+      direction: newDirection
+    },
     playerAnimation: createPlayerAnimation(direction)
   }
 }

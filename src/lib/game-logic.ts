@@ -51,13 +51,14 @@ export const movePlayer = async (
     updatedTiles[newRow][newCol] = ' ' // Replace dot with grass
   }
   
-  // Move player: clear old position and set new position
-  updatedTiles[playerPos.row][playerPos.col] = ' ' // Clear old player position
-  updatedTiles[newRow][newCol] = 'P' // Set new player position
-  
   const updatedMap = {
     ...currentMap,
-    tiles: updatedTiles
+    tiles: updatedTiles,
+    playerPosition: {
+      row: newRow,
+      col: newCol,
+      direction: newDirection
+    }
   }
   
   // Reset the command memory to 0

@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image';
-import { GameMap, TILE_MAPPING, TileSymbol, TileType, PlayerDirection } from '@/data/maps';
+import { GameMap, TILE_MAPPING, TileSymbol, PlayerDirection, getGhosts } from '@/data/maps';
 
 interface MapRendererProps {
   map: GameMap;
@@ -9,24 +9,6 @@ interface MapRendererProps {
 
 const DEFAULT_TILE_SIZE = 64;
 
-const getTileImage = (tileType: TileType): string | null => {
-  switch (tileType) {
-    case 'grass':
-      return '/res/grass.png';
-    case 'air':
-      return null; // No image for air tiles
-    case 'dot':
-      return '/res/grass.png'; // Dots are on grass background
-    case 'energizer':
-      return '/res/grass.png'; // Energizers are on grass background
-    case 'player':
-      return '/res/grass.png'; // Player is on grass background
-    case 'ghost':
-      return '/res/grass.png'; // Ghosts are on grass background
-    default:
-      return '/res/grass.png';
-  }
-};
 
 
 const getPlayerRotation = (direction: PlayerDirection): number => {
@@ -62,18 +44,9 @@ const getPlayerTransform = (direction: PlayerDirection): string => {
 export default function MapRenderer({ map }: MapRendererProps) {
   const tileSize = map.tileSize || DEFAULT_TILE_SIZE;
   
-  // Find player position in tiles for animation overlay
-  let playerRow = -1, playerCol = -1;
-  for (let row = 0; row < map.height; row++) {
-    for (let col = 0; col < map.width; col++) {
-      if (map.tiles[row][col] === 'P') {
-        playerRow = row;
-        playerCol = col;
-        break;
-      }
-    }
-    if (playerRow !== -1) break;
-  }
+  // Get player and ghost positions from map data
+  const playerPosition = map.playerPosition;
+  const ghostPositions = getGhosts(map);
   
   
   return (
@@ -113,7 +86,7 @@ export default function MapRenderer({ map }: MapRendererProps) {
                 />
               )}
               
-              {/* Entity overlays - but NOT player, player is handled separately for animation */}
+              {/* Entity overlays */}
               {tileType === 'dot' && (
                 <div className="absolute top-0 left-0">
                   <Image
@@ -139,26 +112,35 @@ export default function MapRenderer({ map }: MapRendererProps) {
                   />
                 </div>
               )}
-              
-              {tileType === 'ghost' && (
-                <div className="absolute top-0 left-0">
-                  <Image
-                    src="/res/ghost.gif"
-                    alt="Ghost"
-                    width={tileSize}
-                    height={tileSize}
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              )}
             </div>
           );
         })}
       </div>
       
+      {/* Ghost overlays */}
+      {ghostPositions.map((ghost, index) => (
+        <div
+          key={`ghost-${index}`}
+          className="absolute top-0 left-0 pointer-events-none z-5"
+          style={{
+            transform: `translate(${ghost.col * tileSize}px, ${ghost.row * tileSize}px)`,
+            width: tileSize,
+            height: tileSize
+          }}
+        >
+          <Image
+            src="/res/ghost.gif"
+            alt="Ghost"
+            width={tileSize}
+            height={tileSize}
+            className="object-cover"
+            priority
+          />
+        </div>
+      ))}
+      
       {/* Player overlay with animation support */}
-      {playerRow !== -1 && (
+      {playerPosition && (
         <div
           className={`absolute top-0 left-0 pointer-events-none z-10 ${
             map.playerAnimation?.shouldAnimate ? 'transition-transform duration-100 linear' : ''
@@ -166,7 +148,7 @@ export default function MapRenderer({ map }: MapRendererProps) {
           style={{
             transform: map.playerAnimation?.animationPosition 
               ? `translate(${map.playerAnimation.animationPosition.x}px, ${map.playerAnimation.animationPosition.y}px)`
-              : `translate(${playerCol * tileSize}px, ${playerRow * tileSize}px)`,
+              : `translate(${playerPosition.col * tileSize}px, ${playerPosition.row * tileSize}px)`,
             width: tileSize,
             height: tileSize
           }}
@@ -181,10 +163,10 @@ export default function MapRenderer({ map }: MapRendererProps) {
             }
             style={{
               transform: !map.playerAnimation?.teleportAnimation 
-                ? getPlayerTransform(map.playerAnimation?.direction || 'right')
+                ? getPlayerTransform(map.playerAnimation?.direction || playerPosition.direction)
                 : undefined,
-              '--rotation': `${getPlayerRotation(map.playerAnimation?.direction || 'right')}deg`,
-              '--scale-x': map.playerAnimation?.direction === 'left' ? '-1' : '1',
+              '--rotation': `${getPlayerRotation(map.playerAnimation?.direction || playerPosition.direction)}deg`,
+              '--scale-x': (map.playerAnimation?.direction || playerPosition.direction) === 'left' ? '-1' : '1',
               width: tileSize,
               height: tileSize,
               transformOrigin: 'center'

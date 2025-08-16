@@ -262,6 +262,8 @@ STR   R1, [R0]`)
       height,
       tileSize,
       tiles,
+      playerPosition: { row: playerPos.row, col: playerPos.col, direction: playerDirection },
+      ghostPositions: [], // No ghosts in map editor for now
       playerAnimation: {
         direction: playerDirection,
         shouldAnimate: false
