@@ -164,12 +164,6 @@ export default function MapRenderer({ map }: MapRendererProps) {
       {(() => {
         // Always render player if position exists - let fade-out animation handle disappearing
         const shouldRender = !!playerPosition;
-        console.log('[RENDERER] Player render check:', { 
-          hasPlayerPosition: !!playerPosition, 
-          gameOver: map.gameOver,
-          shouldRender: shouldRender,
-          hasFadeOut: map.playerAnimation?.teleportAnimation === 'fade-out'
-        });
         return shouldRender;
       })() && (
         <div
